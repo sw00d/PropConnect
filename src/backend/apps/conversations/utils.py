@@ -67,6 +67,7 @@ def init_conversation_util(request):
     # reply = MessagingResponse()
     vendors = Vendor.objects.all()
     tenant, _ = Tenant.objects.get_or_create(number=from_number)
+    # TODO filter this by time as well. Should be a new convo after a few days maybe?
     conversation, _ = Conversation.objects.get_or_create(tenant=tenant, vendor=None)
     if conversation.messages.count() == 0:
         vocations = Vendor.objects.filter(active=True).values_list('vocation', flat=True)
@@ -97,9 +98,10 @@ def init_conversation_util(request):
     conversation_json = get_conversation_messages(conversation)
 
     completion_from_gpt = create_chat_completion(conversation_json)
-
+    # TODO only do vendor check if we have more than 1 user message in the conversation
     vendor_found = get_vendor_from_conversation(conversation)
-    # TODO Maybe ask tenant if the vendor sounds correct? Ask alex what to do here
+
+    # TODO Maybe ask tenant if the vendor sounds correct? Ask alex what to do here?
     if vendor_found:
         # Hardcoded success message right before we connect the vendor and tenant
         vendor_found_response = f"Thanks! That looks good, I think our {vendor_found.vocation} is what you're looking for. " \
@@ -226,19 +228,25 @@ def get_vendor_from_conversation(conversation):
     vocations = ', '.join(list(Vendor.objects.filter(active=True).values_list('vocation', flat=True)))
     user_messages = ', '.join(list(conversation.messages.filter(role="user").values_list('message_content', flat=True)))
 
-    prompt = "Respond with one word. " \
-             f"Responding with only one of these terms ({vocations}), what is " \
-             f"the most applicable profession for this issue that a tenant is having with their residence: " \
-             f"{user_messages}"
+    prompt = (
+        "Your task is to identify the most suitable professional required for a given situation "
+        "in a residential setting. You must respond with only a single word chosen from the following list of professions: {vocations}.\n\n"
+        "Consider this scenario:\n"
+        "{user_messages}\n\n"
+        "Based on the details provided by the tenant, determine the most applicable profession required to address this issue.\n\n"
+        "If the issue presented is too vague or lacks sufficient detail (such as 'I have a maintenance request' with no further explanation), "
+        "you should ask for more specific information about the issue. "
+        "In such cases, your response should be 'more information needed'. Remember, your response should still be limited to a single word or phrase."
+    ).format(vocations=vocations, user_messages=user_messages)
+
     response = create_chat_completion([{'content': prompt, 'role': 'system'}])
+    print(response)
 
     if response.lower().replace('.', '') in vocations:
         for vocation in vocations.split(', '):
             if vocation.lower() in response.lower():
                 return Vendor.objects.get(vocation=vocation)
     else:
-        # TODO if the vendor isn't found/correct. Probably ask for more info to user
-        # TODO test this
         return None
 
 

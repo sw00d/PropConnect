@@ -42,7 +42,7 @@ class TestConversations(CkcAPITestCase):
 
         # This is a mock message from GPT, so we can grab the "plumber" vendor.
         # user won't receive this message
-        mock_create_chat_completion.return_value = "We'll put you in touch with our plumber"
+        mock_create_chat_completion.return_value = "Plumber."
 
         request = HttpRequest()
         request.POST = {'Body': 'My toilet is broken. Can you get me a plumber?', 'From': '+1234567890', "To": '+0987654321'}
@@ -52,6 +52,7 @@ class TestConversations(CkcAPITestCase):
         assert "Thanks! That looks good, I think our" in response
         assert PhoneNumber.objects.count() == 1
 
+        # Test again to make sure it's a new conversation?
         request = HttpRequest()
         request.POST = {'Body': 'My toilet is broken. Can you get me a plumber?', 'From': '+1234567890', "To": '+0987654321'}
         response = init_conversation_util(request)
@@ -85,7 +86,7 @@ class TestConversations(CkcAPITestCase):
 
         # This is a mock message from GPT, so we can grab the "plumber" vendor.
         # user won't receive this message
-        mock_create_chat_completion.return_value = "We'll put you in touch with our plumber"
+        mock_create_chat_completion.return_value = "Plumber."
 
         second_response = init_conversation_util(request)
         assert type(second_response) == str
@@ -152,7 +153,7 @@ class TestConversations(CkcAPITestCase):
 
         # Check that the error handling code was run and the expected message is returned
         assert response == ("Sorry, we're having some issues over here. Can you reach out directly to " \
-                            "your property manager, Alex at 208-660-8828.",)
+                            "your property manager, Alex at +1 (925) 998-1664.",)
 
         # Ensure the create method was called
         mock_create.assert_called_once_with(model="gpt-3.5-turbo", messages=conversation)

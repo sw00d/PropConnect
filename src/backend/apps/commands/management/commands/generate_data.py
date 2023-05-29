@@ -36,11 +36,6 @@ def generate_vendors():
             'number': '+12086608828',
             'keywords': ['heating', 'cooling', 'ventilation', 'ac', 'furnace', 'hvac']
         },
-        "general maintenance": {
-            'name': 'Maintenance Guy Sam',
-            'number': '+12086608828',
-            'keywords': ['repair', 'maintain', 'fix', 'check', 'service', 'maintenance']
-        },
         "locksmith": {
             'name': 'Locksmith Sam',
             'number': '+12086608828',
@@ -99,7 +94,6 @@ class Command(BaseCommand):
         generate_vendors()
 
         for number in get_active_twilio_numbers():
-            print(number == DEFAULT_TWILIO_NUMBER)
             if number == DEFAULT_TWILIO_NUMBER:
                 PhoneNumber.objects.create(number=number, is_base_number=True)
                 print('Made base phone.', number)

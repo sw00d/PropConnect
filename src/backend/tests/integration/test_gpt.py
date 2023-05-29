@@ -31,6 +31,16 @@ class TestVendorDetection(CkcAPITestCase):
         vendor = Vendor.objects.first()  # Add necessary parameters
         self.conversation = Conversation.objects.create(tenant=tenant, vendor=vendor)
 
+    def test_vendor_detection_returns_none(self):
+        Message.objects.create(
+            message_content='Hi there, my name is sam wood. 4861 conrad ave. I have a maintenance request.',
+            role="user", conversation=self.conversation)
+
+        self.conversation.refresh_from_db()
+        response = get_vendor_from_conversation(self.conversation)
+
+        assert response == None
+
     def test_vendor_detection_plumber(self):
         Message.objects.create(message_content='My toilet is broken.', role="user", conversation=self.conversation)
         Message.objects.create(message_content='Its leaking everywhere.', role="user", conversation=self.conversation)
@@ -54,8 +64,7 @@ class TestVendorDetection(CkcAPITestCase):
 
     def test_vendor_detection_handyman(self):
         # Handyman
-        Message.objects.create(message_content='My cabinet door is jammed.', role="user",
-                               conversation=self.conversation)
+        Message.objects.create(message_content='Theres are going under my door and I think it needs something under there.', role="user", conversation=self.conversation)
 
         self.conversation.refresh_from_db()
 
