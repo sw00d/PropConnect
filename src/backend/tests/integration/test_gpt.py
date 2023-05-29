@@ -64,7 +64,8 @@ class TestVendorDetection(CkcAPITestCase):
 
     def test_vendor_detection_handyman(self):
         # Handyman
-        Message.objects.create(message_content='Theres are going under my door and I think it needs something under there.', role="user", conversation=self.conversation)
+        Message.objects.create(message_content='Theres are going under my door and I think it needs something under '
+                                               'there.', role="user", conversation=self.conversation)
 
         self.conversation.refresh_from_db()
 
