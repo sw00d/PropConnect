@@ -1,0 +1,5 @@
+FROM node:18
+
+# Prepare /app directory
+RUN mkdir /app
+WORKDIR /app

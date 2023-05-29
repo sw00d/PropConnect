@@ -1,0 +1,78 @@
+version: "3.4"
+
+
+# NOTE: This _has _to start with `x-`
+x-logging: &default-logging
+  options:
+    max-size: "20k"
+    max-file: "10"
+
+services:
+  django:
+    build:
+      context: .
+      dockerfile: docker/Dockerfile.backend
+    command: uvicorn asgi:application --host 0.0.0.0 --port 8000 --reload
+    environment:
+      # To make things play nice with dj-database-url
+      - DATABASE_URL=postgres://${DB_USERNAME}:${DB_PASSWORD}@${DB_HOST}:${DB_PORT}/${DB_NAME}
+    env_file: .env
+    volumes:
+      - ./src/backend:/app
+    ports:
+      - 8000:8000
+    depends_on:
+      - db
+    stdin_open: true
+    tty: true
+    logging: *default-logging
+
+  db:
+    image: postgres:13-alpine
+    # Use this instead for GeoSpatial stuff..
+    #image: postgis/postgis:13-3.3-alpine
+    env_file: .env
+    environment:
+      - PGDATA=/var/lib/postgresql/data/pgdata
+      - POSTGRES_PASSWORD=${DB_PASSWORD}
+    ports:
+      - 5432:5432
+    volumes:
+      - db_data:/var/lib/postgresql/data:delegated
+    logging: *default-logging
+
+#  builder:
+#    build:
+#      context: .
+#      dockerfile: docker/Dockerfile.frontend
+#    command: bash -c "npm i . && npm run dev"
+#    env_file: .env
+#    environment:
+#      - HOST=0.0.0.0
+#    ports:
+#      - 3000:3000
+#      - 24678:24678
+#    volumes:
+#      - ./src/frontend:/app:cached
+#      # This _deletes_ the node_modules/ host volume folder in docker, so it uses the docker image
+#      # node_modules/ -- if you modify yarn.lock you'll need to build the docker image again.
+#      - /app/node_modules
+#    depends_on:
+#      - django
+#    logging: *default-logging
+
+  redis:
+    image: redis
+    env_file: .env
+    ports:
+        - 6379:6379
+    logging: *default-logging
+    volumes:
+        - ./volumes/redis:/data
+        - ./docker/redis.conf:/redis.conf
+        - ./docker/sysctl.conf:/etc/sysctl.conf
+    restart: unless-stopped
+    command: redis-server /redis.conf --bind 0.0.0.0
+
+volumes:
+  db_data:
