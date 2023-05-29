@@ -6,8 +6,10 @@ export const LIGHT_THEME = "light";
 export const light: ThemeDefinition = {
     dark: false,
     colors: {
+        highContrast: ckcColors.black,
         background: ckcColors.gray[200],
         surface: "#FFFFFF",
+        surfaceSecondary: ckcColors.slate[500],
         primary: ckcColors.purple[600],
         secondary: ckcColors.sky[600],
         error: ckcColors.red[500],
@@ -23,9 +25,10 @@ export const DARK_THEME = "dark";
 export const dark: ThemeDefinition = {
     dark: true,
     colors: {
-
+        highContrast: ckcColors.white,
         background: ckcColors.gray[800],
         surface: ckcColors.slate[900],
+        surfaceSecondary: ckcColors.slate[700],
         primary: ckcColors.purple[600],
         secondary: ckcColors.sky[600],
         error: ckcColors.red[500],

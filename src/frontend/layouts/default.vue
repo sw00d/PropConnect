@@ -1,8 +1,8 @@
 <template>
   <v-app class="overflow-hidden">
     <v-main>
-      <v-container fluid class="fill-height">
-        <div class="z-index-2 d-flex flex-sm-column px-4 pb-4">
+      <v-container fluid class="h-100">
+        <div class="z-index-2 d-flex flex-sm-column px-4 pb-4 relative">
           <v-btn
             icon
             variant="outlined"
@@ -40,23 +40,12 @@
 </template>
 
 <script setup lang="ts">
-import {useTheme} from "vuetify";
 import {useAuth} from "~/composables/useAuth";
-import {navigateTo} from "#app";
+import {useThemeSwitcher} from "~/composables/useThemeSwitcher";
 
 const auth = useAuth()
-const theme = useTheme()
 
-const setThemeFromLocalStorage = () => {
-  const isDark = localStorage.getItem("isDark");
-  theme.global.name.value = isDark === 'true' ? 'dark' : 'light'
-};
-
-const toggle_theme = () => {
-  theme.global.name.value = theme.global.current.value.dark ? 'light' : 'dark'
-  // save to localstorage
-  localStorage.setItem("isDark", JSON.stringify(theme.global.current.value.dark));
-}
+const {theme, toggle_theme} = useThemeSwitcher()
 
 const logout = async () => {
   try {
@@ -66,7 +55,6 @@ const logout = async () => {
   }
 }
 
-onMounted(setThemeFromLocalStorage);
 </script>
 
 <style lang="scss" scoped>

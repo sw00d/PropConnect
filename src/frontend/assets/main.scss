@@ -66,6 +66,23 @@ a {
     display: inline-block;
     cursor: pointer;
 }
+//TABLES
+.v-data-table__tr {
+    background: rgba(var(--v-theme-background), 1) !important;
+
+    &:hover > .v-data-table__td {
+        background: rgba(var(--v-theme-surface), .5) !important;
+    }
+}
+.v-data-table__td{
+    transition: all .1s ease-in-out;
+    background: rgba(var(--v-theme-surface), 1) !important;
+}
+.v-data-table-footer {
+    opacity: .7;
+    margin: 10px !important;
+}
+
 
 // Theme gradients
 .gradient {

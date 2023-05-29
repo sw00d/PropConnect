@@ -3,7 +3,7 @@ from django.contrib.auth import get_user_model
 from django.db import IntegrityError
 from twilio.rest import Client
 
-from conversations.models import Vendor, PhoneNumber
+from conversations.models import Vendor, PhoneNumber, Tenant, Conversation, Message
 from settings.base import DEFAULT_TWILIO_NUMBER, TWILIO_ACCOUNT_SID, TWILIO_AUTH_TOKEN
 
 User = get_user_model()
@@ -78,6 +78,31 @@ def get_active_twilio_numbers():
     return active_numbers
 
 
+def generate_conversations():
+    vendor1 = Vendor.objects.first()
+    vendor2 = Vendor.objects.last()
+
+    tenant1 = Tenant.objects.create(name="Alice", number="5555555555", address="123 Street")
+    tenant2 = Tenant.objects.create(name="Bob", number="4444444444", address="456 Road")
+    conversation1 = Conversation.objects.create(tenant=tenant1, vendor=vendor1, is_active=True)
+    conversation2 = Conversation.objects.create(tenant=tenant2, vendor=vendor2, is_active=True)
+
+    # Create Messages
+    Message.objects.create(sender_number="5555555555", receiver_number="1234567890", role="user",
+                           message_content="My lights are flickering", conversation=conversation1)
+    Message.objects.create(sender_number="1234567890", receiver_number="5555555555", role="assistant",
+                           message_content="I'll be there to check it out", conversation=conversation1)
+
+    Message.objects.create(sender_number="4444444444", receiver_number="9876543210", role="user",
+                           message_content="I have a leaky faucet", conversation=conversation2)
+    Message.objects.create(sender_number="9876543210", receiver_number="4444444444", role="assistant",
+                           message_content="I'm on my way", conversation=conversation2)
+
+    # Create PhoneNumbers
+    PhoneNumber.objects.create(number="5555555555", most_recent_conversation=conversation1, is_base_number=False)
+    PhoneNumber.objects.create(number="4444444444", most_recent_conversation=conversation2, is_base_number=False)
+
+
 class Command(BaseCommand):
     help = "Generate data"
 
@@ -92,6 +117,7 @@ class Command(BaseCommand):
             print('Admin user already exists!')
 
         generate_vendors()
+        generate_conversations()
 
         for number in get_active_twilio_numbers():
             if number == DEFAULT_TWILIO_NUMBER:

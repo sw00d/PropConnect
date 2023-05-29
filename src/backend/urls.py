@@ -5,7 +5,7 @@ from django.contrib import admin
 from django.urls import path
 from rest_framework import routers
 
-from conversations.views import init_conversation, play_the_middle_man
+from conversations.views import init_conversation, play_the_middle_man, ConversationViewSet
 from users.views import LoginView, LogoutView, UserPasswordResetViewSet, UserViewSet
 
 
@@ -16,6 +16,7 @@ router.register('passwordreset', UserPasswordResetViewSet, basename='passwordres
 
 # Custom views
 router.register('users', UserViewSet)
+router.register('conversations', ConversationViewSet)
 
 urlpatterns = [
     # Twilio webhook
