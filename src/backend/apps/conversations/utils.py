@@ -72,12 +72,6 @@ def init_conversation_util(request):
         vocations = Vendor.objects.filter(active=True).values_list('vocation', flat=True)
         vocations_set = set(vocations)
 
-        # content = "You are a helpful assistant for Home Simple property management " \
-        #           "that texts tenants to make sure they can schedule maintenance requests with our vendors. " \
-        #           "The tenant needs to provide their name and address and detailed explanation of the issue. " \
-        #           "After they have provided their name and address, you'll inform them which vendor best suits their situation. You can ask for more information." \
-        #           f"Our vendors include {vocations_set}."
-
         content = "You are a helpful assistant for Home Simple property management " \
                   "that communicates via text messages with tenants to handle and schedule their maintenance requests. " \
                   "Your primary goal is to collect the tenant's full name, address, and a detailed description of the problem they are experiencing. " \
@@ -104,12 +98,13 @@ def init_conversation_util(request):
 
     completion_from_gpt = create_chat_completion(conversation_json)
 
-    vendor_found = get_vendor_from_conversation(conversation, )
-    if vendor_found and False:
+    vendor_found = get_vendor_from_conversation(conversation)
+    # TODO Maybe ask tenant if the vendor sounds correct? Ask alex what to do here
+    if vendor_found:
         # Hardcoded success message right before we connect the vendor and tenant
         vendor_found_response = f"Thanks! That looks good, I think our {vendor_found.vocation} is what you're looking for. " \
                                 f"You should recieve a message from them soon. If this doesn't sound right, or you have any questions, " \
-                                "don't hesitate to reach out to us at <alex's number>."
+                                "don't hesitate to reach out to us at +1 (925) 998-1664."
         Message.objects.create(
             message_content=vendor_found_response,
             role="assistant",
@@ -165,7 +160,6 @@ def start_vendor_tenant_conversation(conversation, tenant, vendor):
         conversation_number.most_recent_conversation = conversation
         conversation_number.save()
 
-    # conversation = Conversation.objects.get(id=conversation.id)
     conversation.vendor = vendor
     conversation.save()
 
@@ -228,7 +222,7 @@ def get_vendor_from_conversation(conversation):
     #         best_vendor = vendor
     #         return vendor
 
-    # GPT-3 approach (less dumb but slow af)
+    # GPT approach (less dumb but slower)
     vocations = ', '.join(list(Vendor.objects.filter(active=True).values_list('vocation', flat=True)))
     user_messages = ', '.join(list(conversation.messages.filter(role="user").values_list('message_content', flat=True)))
 
@@ -237,11 +231,15 @@ def get_vendor_from_conversation(conversation):
              f"the most applicable profession for this issue that a tenant is having with their residence: " \
              f"{user_messages}"
     response = create_chat_completion([{'content': prompt, 'role': 'system'}])
-    # TODO test if the vendor isn't found. Probably ask for more info to user
 
-    for vocation in vocations.split(', '):
-        if vocation.lower() in response.lower():
-            return Vendor.objects.get(vocation=vocation)
+    if response.lower().replace('.', '') in vocations:
+        for vocation in vocations.split(', '):
+            if vocation.lower() in response.lower():
+                return Vendor.objects.get(vocation=vocation)
+    else:
+        # TODO if the vendor isn't found/correct. Probably ask for more info to user
+        # TODO test this
+        return None
 
 
 def create_chat_completion(conversation, retry_counter=10):
@@ -257,7 +255,7 @@ def create_chat_completion(conversation, retry_counter=10):
             print(f'- Rate limit. Making another request in 5s. Retries left: {retry_counter}')
             logger.error(f'- Rate limit. Making another request in 5s. Retries left: {retry_counter}')
             time.sleep(5)
-            create_chat_completion(conversation, retry_counter - 1)
+            return create_chat_completion(conversation, retry_counter - 1)
         else:
             raise "Max retries exceeded."
 
@@ -265,7 +263,7 @@ def create_chat_completion(conversation, retry_counter=10):
         error_handler(e)
         # Maybe test alex here as well/instead?
         return "Sorry, we're having some issues over here. Can you reach out directly to " \
-               "your property manager, Alex at 208-660-8828.",
+               "your property manager, Alex at +1 (925) 998-1664.",
 
 
 def send_message(to_number, from_number, message):
@@ -296,5 +294,6 @@ def get_conversation_recap(conversation):
 def error_handler(e):
     print("Error:", e)
     logger.error('Error: %s', e)  # This is the correct usage
+    # TODO set conversation to error state, inactive, and send message to alex?
     return "Sorry, we're having some issues over here. Can you reach out directly to " \
-           "your property manager, Alex at 208-660-8828."
+           "your property manager, Alex at +1 (925) 998-1664."
