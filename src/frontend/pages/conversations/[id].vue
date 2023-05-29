@@ -70,13 +70,13 @@
         <v-chip
           class="mr-3"
           @click="switchConversationView('assistant')"
-          :variant="activeConversation === 'assistant' ? 'outlined' : 'default'"
+          :variant="activeConversation === 'vendor' ? 'outlined' : 'flat'"
         >
           Assistant
         </v-chip>
         <v-chip
           @click="switchConversationView('vendor')"
-          :variant="activeConversation === 'vendor' ? 'outlined' : 'default'"
+          :variant="activeConversation === 'assistant' ? 'outlined' : 'flat'"
         >
           Vendor
         </v-chip>
