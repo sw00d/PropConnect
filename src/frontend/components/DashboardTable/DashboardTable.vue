@@ -1,4 +1,11 @@
 <template>
+  <v-sheet class="d-flex align-center justify-center bg-transparent" height="70vh" v-if="loading">
+    <v-progress-circular
+      size="64"
+      indeterminate
+      color="primary"
+    />
+  </v-sheet>
   <v-data-table
     :headers="headers"
     :items="conversations"
@@ -35,6 +42,7 @@
 <script setup>
 import { VDataTable } from 'vuetify/labs/VDataTable'
 import dayjs from "dayjs"
+
 const { $formatPhoneNumber } = useNuxtApp()
 
 const headers = ref([
@@ -44,20 +52,23 @@ const headers = ref([
   { title: 'Status', key: 'status', sortable: false },
 ])
 const conversations = ref([])
+const loading = ref(true)
 
 async function fetchConversations() {
   try {
     const { data, error, execute } = useRequest('/conversations/')
     await execute()
     conversations.value = data.value
-
-    console.log()
   } catch (error) {
+    // TODO handle error with some snack bars
+    alert('Error fetching conversations')
     console.error(error)
+  } finally {
+    loading.value = false
   }
 }
 
-function goToConversation(_, { item }){
+function goToConversation(_, { item }) {
   navigateTo('/conversations/' + item.value.id)
 }
 

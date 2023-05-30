@@ -64,11 +64,11 @@ def init_conversation_util(request):
     from_number = request.POST.get('From', None)
     to_number = request.POST.get('To', None)
     body = request.POST.get('Body', None)
-    # reply = MessagingResponse()
-    vendors = Vendor.objects.all()
     tenant, _ = Tenant.objects.get_or_create(number=from_number)
+
     # TODO filter this by time as well. Should be a new convo after a few days maybe?
     conversation, _ = Conversation.objects.get_or_create(tenant=tenant, vendor=None)
+
     if conversation.messages.count() == 0:
         vocations = Vendor.objects.filter(active=True).values_list('vocation', flat=True)
         vocations_set = set(vocations)
@@ -114,8 +114,10 @@ def init_conversation_util(request):
             sender_number=to_number,
             receiver_number=from_number
         )
+        send_message(to_number, from_number, vendor_found_response)
+        time.sleep(20)  # wait for 20 seconds before starting the vendor/tenant chat
         start_vendor_tenant_conversation(conversation, tenant, vendor_found)
-        return vendor_found_response
+        return None
     else:
         Message.objects.create(
             message_content=completion_from_gpt,

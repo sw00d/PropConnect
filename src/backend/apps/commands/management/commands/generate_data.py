@@ -59,7 +59,8 @@ def generate_vendors():
     }
 
     for vendor, info in vendor_data.items():
-        Vendor.objects.get_or_create(name=info['name'], number=info['number'], keywords=info['keywords'], vocation=vendor)
+        Vendor.objects.get_or_create(name=info['name'], number=info['number'], keywords=info['keywords'],
+                                     vocation=vendor)
         print('Made vendor.', vendor)
 
 
@@ -80,27 +81,59 @@ def get_active_twilio_numbers():
 
 def generate_conversations():
     vendor1 = Vendor.objects.first()
-    vendor2 = Vendor.objects.last()
 
-    tenant1 = Tenant.objects.create(name="Alice", number="5555555555", address="123 Street")
-    tenant2 = Tenant.objects.create(name="Bob", number="4444444444", address="456 Road")
+    tenant1 = Tenant.objects.create(name="Aneesh", number="5555555555", address="123 Street")
     conversation1 = Conversation.objects.create(tenant=tenant1, vendor=vendor1, is_active=True)
-    conversation2 = Conversation.objects.create(tenant=tenant2, vendor=vendor2, is_active=True)
 
     # Create Messages
-    Message.objects.create(sender_number="5555555555", receiver_number="1234567890", role="user",
-                           message_content="My lights are flickering", conversation=conversation1)
-    Message.objects.create(sender_number="1234567890", receiver_number="5555555555", role="assistant",
-                           message_content="I'll be there to check it out", conversation=conversation1)
+    Message.objects.create(sender_number="5555555555", receiver_number=DEFAULT_TWILIO_NUMBER, role="user",
+                           message_content="Hi. I have a maintenance issue", conversation=conversation1)
 
-    Message.objects.create(sender_number="4444444444", receiver_number="9876543210", role="user",
-                           message_content="I have a leaky faucet", conversation=conversation2)
-    Message.objects.create(sender_number="9876543210", receiver_number="4444444444", role="assistant",
-                           message_content="I'm on my way", conversation=conversation2)
+    Message.objects.create(
+        sender_number=DEFAULT_TWILIO_NUMBER, receiver_number="5555555555", role="assistant",
+        message_content="Thanks for letting me know! Can you provide your name, address, and a description of the "
+                        "issue so I can find the right professional for your situation?",
+        conversation=conversation1
+    )
+
+    Message.objects.create(sender_number="5555555555", receiver_number=DEFAULT_TWILIO_NUMBER, role="user",
+                           message_content="My name is Alice. I live at 123 Street. I have a leaky faucet",
+                           conversation=conversation1
+
+                           )
+
+    Message.objects.create(
+        sender_number=DEFAULT_TWILIO_NUMBER, receiver_number="5555555555", role="assistant",
+        message_content="Thank you! I think we should send a plumber out to you. I'll put you in touch with our "
+                        "preferred plumber and from there you can schedule a time for him to come by your place and "
+                        "give it a look.",
+        conversation=conversation1
+    )
+
+    Message.objects.create(
+        sender_number=vendor1.number, receiver_number="5555555555", role="assistant",
+        message_content="A leaky faucet, huh? When would be a good time for me to come by and take a look?",
+        conversation=conversation1
+    )
+
+    Message.objects.create(
+        sender_number="5555555555", receiver_number=vendor1.number, role="user",
+        message_content="Tomorrow at 10:30am?", conversation=conversation1
+    )
+
+    Message.objects.create(
+        sender_number=vendor1.number, receiver_number="5555555555", role="assistant",
+        message_content="Sounds great! I'll see you then.",
+        conversation=conversation1
+    )
+
+    Message.objects.create(
+        sender_number="5555555555", receiver_number=vendor1.number, role="user",
+        message_content="Amazing! Thank you!", conversation=conversation1
+    )
 
     # Create PhoneNumbers
     PhoneNumber.objects.create(number="5555555555", most_recent_conversation=conversation1, is_base_number=False)
-    PhoneNumber.objects.create(number="4444444444", most_recent_conversation=conversation2, is_base_number=False)
 
 
 class Command(BaseCommand):
@@ -127,4 +160,3 @@ class Command(BaseCommand):
             else:
                 PhoneNumber.objects.create(number=number, is_base_number=False)
                 print('Made phone.', number)
-

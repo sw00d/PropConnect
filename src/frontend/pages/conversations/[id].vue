@@ -16,7 +16,7 @@
     <v-row v-else class="fade-in mt-10">
       <v-col md="6" xs="12" sm="12" class="bg">
         <v-card>
-          <v-card-title>
+          <v-card-title class="font-weight-bold">
             Conversation Details
           </v-card-title>
 
@@ -64,26 +64,34 @@
             </div>
           </v-card-text>
         </v-card>
-        <!--      {{ conversation }}-->
       </v-col>
       <v-col md="6" sm="12">
-        <v-chip
-          class="mr-3"
-          @click="switchConversationView('assistant')"
-          :variant="activeConversation === 'vendor' ? 'outlined' : 'flat'"
-        >
-          Assistant
-        </v-chip>
-        <v-chip
-          @click="switchConversationView('vendor')"
-          :variant="activeConversation === 'assistant' ? 'outlined' : 'flat'"
-        >
-          Vendor
-        </v-chip>
+        <div class="d-flex align-center">
 
+          <v-chip
+            class="mr-3"
+            @click="switchConversationView('assistant')"
+            :variant="activeConversationType === 'vendor' ? 'outlined' : 'flat'"
+
+          >
+            Assistant
+          </v-chip>
+          <v-chip
+            @click="switchConversationView('vendor')"
+            :variant="activeConversationType === 'assistant' ? 'outlined' : 'flat'"
+          >
+            Vendor
+          </v-chip>
+          <div v-if="activeConversationType === 'assistant'" class="font-12 ml-3">
+            *The initial conversation with the bot
+          </div>
+          <div v-else class="font-12 ml-3">
+            *The conversation between the vendor and the tenant
+          </div>
+        </div>
         <v-sheet class="border pa-3 rounded-lg mt-4 overflow-auto bg-background" max-height="80vh">
           <div
-            v-for="(message,i) in conversation.messages"
+            v-for="(message,i) in activeConversationMessages"
             :key="i"
             class="d-flex flex-column"
           >
@@ -97,7 +105,9 @@
             </div>
 
             <div v-else-if="message.role === 'assistant'" class="right-msg mt-3">
-              <div class="font-12 text-highContrast text-right">Bot Assistant</div>
+              <div class="font-12 text-highContrast text-right">
+                {{ activeConversationType === 'assistant' ? 'Bot Assistant' : conversation.vendor?.name }}
+              </div>
               <div class="rounded-lg pa-2 bg-primary">
                 {{ message.message_content }}
               </div>
@@ -114,7 +124,7 @@
 <script setup>
 import { useRoute } from 'vue-router'
 import { useRequest } from "../../composables/useRequest"
-import { ref, onMounted } from 'vue'
+import { onMounted, ref } from 'vue'
 import dayjs from "dayjs"
 
 const { $formatPhoneNumber } = useNuxtApp()
@@ -127,26 +137,56 @@ const { id } = route.params
 
 const conversation = ref({})
 const loading = ref(true)
-const activeConversation = ref('assistant')
+const activeConversationType = ref('assistant')
+const activeConversationMessages = ref([])
+const runtimeConfig = useRuntimeConfig()
+
 
 const fetchConversations = async (param_id) => {
   try {
     const { data, error, execute } = useRequest(`/conversations/${ param_id }`)
     await execute()
     conversation.value = data.value
-    console.log(toRaw(conversation.value.messages))
+    switchConversationView('assistant')
   } catch (error) {
     console.error(error)
+    alert('Error fetching conversation')
+
   } finally {
     setTimeout(() => loading.value = false, 1000)
-    // loading.value = false
   }
 }
 const switchConversationView = (view) => {
-  activeConversation.value = view
+  // TODO Move this to properties of the model on the backend
+  if (view === 'assistant') {
+    activeConversationMessages.value = conversation.value?.messages?.filter(message => {
+      return message.receiver_number === runtimeConfig.DEFAULT_TWILIO_NUMBER ||
+        message.sender_number === runtimeConfig.DEFAULT_TWILIO_NUMBER
+    })
+  } else {
+    activeConversationMessages.value = conversation.value?.messages?.filter(message => {
+      console.log(
+        conversation.value.tenant.number === message.sender_number &&
+        conversation.value.vendor.number === message.receiver_number,
+
+        conversation.value.tenant.number, message.receiver_number,
+        conversation.value.vendor.number, message.sender_number,
+
+        message.message_content
+      )
+      return message.sender_number === conversation.value.vendor.number ||
+        (conversation.value.tenant.number === message.sender_number &&
+          conversation.value.vendor.number === message.receiver_number
+        )
+    })
+  }
+  activeConversationType.value = view
 }
 
-onMounted(() => fetchConversations(id))
+onMounted(() => {
+    fetchConversations(id)
+  }
+)
 
 </script>
 

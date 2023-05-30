@@ -48,17 +48,11 @@ class TestConversations(CkcAPITestCase):
         request.POST = {'Body': 'My toilet is broken. Can you get me a plumber?', 'From': '+1234567890', "To": '+0987654321'}
         response = init_conversation_util(request)
 
-        assert type(response) == str
-        assert "Thanks! That looks good, I think our" in response
-        assert PhoneNumber.objects.count() == 1
-
         # Test again to make sure it's a new conversation?
         request = HttpRequest()
         request.POST = {'Body': 'My toilet is broken. Can you get me a plumber?', 'From': '+1234567890', "To": '+0987654321'}
         response = init_conversation_util(request)
 
-        assert type(response) == str
-        assert "Thanks! That looks good, I think our" in response
         assert PhoneNumber.objects.count() == 2
 
     @patch('conversations.utils.send_message')
@@ -89,8 +83,6 @@ class TestConversations(CkcAPITestCase):
         mock_create_chat_completion.return_value = "Plumber."
 
         second_response = init_conversation_util(request)
-        assert type(second_response) == str
-        assert "Thanks! That looks good, I think our" in second_response
 
         # New phone number should have been purchased from twilio and created in our db
         assert PhoneNumber.objects.count() == 1

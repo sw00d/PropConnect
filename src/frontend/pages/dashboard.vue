@@ -1,7 +1,6 @@
 <template>
   <div class="d-md-flex text-left flex-column justify-center align-center">
     <div class="text-h2 font-weight-black text-left fill-width">Welcome, Master Alex</div>
-
     <v-row class="fill-width mt-10">
       <v-col>
        <DashboardTable />

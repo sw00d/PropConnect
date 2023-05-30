@@ -15,10 +15,12 @@
               size="30px"
             />
           </v-btn>
-          <v-sheet class="bg-transparent hidden-sm-and-up" width="150px" height="150px">
-            <v-img
-              src="https://raw.githubusercontent.com/ckc-org/skeletor/master/docs/skeletor_full.png"
-            />
+          <v-sheet class="bg-transparent hidden-sm-and-up relative" width="150px" height="150px">
+            <div class="top-gradient"></div>
+                <div class="bottom-gradient"></div>
+                <div class="left-gradient"></div>
+                <div class="right-gradient"></div>
+                <v-img :src="logo_img" alt="description" class="opacity-3"/>
           </v-sheet>
         </div>
         <v-row no-gutters justify="center" class="fill-height z-index-1 relative">
@@ -27,10 +29,12 @@
               <v-col cols="12" sm="6">
                 <slot/>
               </v-col>
-              <v-col class="hidden-sm-and-down fill-height d-flex justify-center align-center" md="6">
-                <v-img
-                  src="https://raw.githubusercontent.com/ckc-org/skeletor/master/docs/skeletor_full.png"
-                />
+              <v-col class="hidden-sm-and-down fill-height d-flex justify-center align-center relative pl-5" md="6">
+                <div class="top-gradient"></div>
+                <div class="bottom-gradient"></div>
+                <div class="left-gradient"></div>
+                <div class="right-gradient"></div>
+                <v-img :src="logo_img" alt="description" class=""/>
               </v-col>
             </v-row>
           </v-col>
@@ -41,12 +45,49 @@
 </template>
 
 <script setup lang="ts">
+import logo_img from "~/assets/wrench.png";
 import {useThemeSwitcher} from "~/composables/useThemeSwitcher";
 
 const {theme, toggle_theme} = useThemeSwitcher()
 </script>
 
 <style lang="scss" scoped>
+
+//.top-gradient {
+//  z-index: 1;
+//  background: linear-gradient(to bottom, rgb(var(--v-theme-background)), transparent);
+//  position: absolute;
+//  top: 0;
+//  height: 100px;
+//  width: 100%;
+//}
+//.bottom-gradient {
+//  z-index: 1;
+//  background: linear-gradient(to top, rgb(var(--v-theme-background)), transparent);
+//  position: absolute;
+//  bottom: 0;
+//  height: 100px;
+//  width: 100%;
+//}
+//
+//.right-gradient {
+//  z-index: 1;
+//  background: linear-gradient(to left, rgb(var(--v-theme-background)), transparent);
+//  position: absolute;
+//  right: 0;
+//  height: 100%;
+//  width: 100px;
+//}
+//
+//.left-gradient {
+//  z-index: 1;
+//  background: linear-gradient(to right, rgb(var(--v-theme-background)), transparent);
+//  position: absolute;
+//  left: 0;
+//  height: 100%;
+//  width: 100px;
+//}
+
 .rotate-180 {
   transform: rotate(180deg);
   transition: .2s;

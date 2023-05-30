@@ -5,7 +5,7 @@ from .models import Vendor, Tenant, Conversation, Message, PhoneNumber
 class MessageSerializer(serializers.ModelSerializer):
     class Meta:
         model = Message
-        fields = ('role', 'message_content')
+        fields = '__all__'
 
 
 class VendorSerializer(serializers.ModelSerializer):
