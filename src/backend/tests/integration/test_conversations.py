@@ -2,13 +2,14 @@ from datetime import timedelta
 from django.utils.timezone import now
 
 from django.http import HttpRequest
-from unittest.mock import patch
+from unittest.mock import patch, Mock
 
 from openai import OpenAIError
 
+import settings.base
 from commands.management.commands.generate_data import generate_vendors
 from conversations.models import Conversation, Vendor, PhoneNumber, Tenant, Message
-from conversations.tasks import set_old_conversations_to_not_active
+from conversations.tasks import set_old_conversations_to_not_active, start_vendor_tenant_conversation
 from conversations.utils import init_conversation_util, play_the_middle_man_util, \
     create_chat_completion, get_vendor_from_conversation
 from tests.utils import CkcAPITestCase
@@ -20,46 +21,56 @@ class TestConversations(CkcAPITestCase):
         # seed the db
         generate_vendors()
 
-    def test_get_vendor_from_conversation(self):
+    @patch('conversations.utils.send_message')
+    @patch('conversations.tasks.Client')
+    @patch('conversations.tasks.purchase_phone_number_util')
+    def test_start_vendor_tenant_conversation(self, mock_purchase_phone_number, mock_client, mock_send_message):
+        # Arrange
         tenant = Tenant.objects.create(number="1")  # Add necessary parameters
         vendor = Vendor.objects.first()  # Add necessary parameters
         conversation = Conversation.objects.create(tenant=tenant, vendor=vendor)
 
-        Message.objects.create(message_content='My toilet is broken.', role="user", conversation=conversation)
-        Message.objects.create(message_content='Its leaking everywhere.', role="user", conversation=conversation)
+        # Create a mock Twilio client
+        mock_client_instance = mock_client.return_value
+        mock_client_instance.available_phone_numbers.return_value.local.list.return_value = [
+            Mock(phone_number='+0987654321')]
 
-        conversation.refresh_from_db()
+        # Create an available phone number for the test
+        PhoneNumber.objects.create(number="+1234567890", most_recent_conversation=None, is_base_number=False)
 
-        response = get_vendor_from_conversation(conversation)
-        assert response == Vendor.objects.get(vocation='plumber')
+        # Use the existing phone number
+        start_vendor_tenant_conversation(conversation.id, vendor.id)
 
-    # @patch('conversations.utils.send_message')
-    # @patch('conversations.tasks.purchase_phone_number_util')
-    # @patch('conversations.utils.create_chat_completion')
-    # def test_simple_convo_without_purchase_number(self, mock_create_chat_completion, mock_purchase_phone_number_util,
-    #                                               mock_send_message):
-    #     # call start_vendor_tenant_conversation directly
-    #
-    #
-    #     # Testing that phone number objects are being created
-    #     PhoneNumber.objects.create(number='+5555555555', most_recent_conversation=None)
-    #
-    #     # This is a mock message from GPT, so we can grab the "plumber" vendor.
-    #     # user won't receive this message
-    #     mock_create_chat_completion.return_value = "Plumber."
-    #
-    #     request = HttpRequest()
-    #     request.POST = {'Body': 'My toilet is broken. Can you get me a plumber?', 'From': '+12345678901', "To": '+5555555555'}
-    #     response = init_conversation_util(request)
-    #
-    #     # Test again to make sure it's a new conversation
-    #     request = HttpRequest()
-    #     request.POST = {'Body': 'My toilet is broken. Can you get me a plumber?', 'From': '+10234567891', "To": '+5555555555'}
-    #     response = init_conversation_util(request)
-    #
-    #     # assert PhoneNumber.objects.count() == 2
-    #     assert Conversation.objects.count() == 2
-    #     print(response)
+        # Assert
+        conversation.refresh_from_db()  # Fetch the latest state from the database
+        self.assertIsNotNone(conversation.vendor_id)
+        self.assertEqual(conversation.vendor_id, vendor.id)
+
+        phone_number = PhoneNumber.objects.get(most_recent_conversation=conversation)
+        self.assertIsNotNone(phone_number)
+        self.assertEqual(phone_number.number, '+1234567890')  # Verify we used the existing number
+
+        mock_purchase_phone_number.assert_not_called()  # We should not have needed to purchase a number
+
+        # NOW WITH PURCHASING A NUMBER
+        PhoneNumber.objects.all().delete()  # Delete the existing phone number
+
+        conversation2 = Conversation.objects.create(tenant=tenant, vendor=vendor)
+
+        # Use the existing phone number
+        start_vendor_tenant_conversation(conversation2.id, vendor.id)
+
+        # Assert
+        conversation2.refresh_from_db()  # Fetch the latest state from the database
+        self.assertIsNotNone(conversation2.vendor_id)
+        self.assertEqual(conversation2.vendor_id, vendor.id)
+
+        phone_number = PhoneNumber.objects.get(most_recent_conversation=conversation2)
+        self.assertIsNotNone(phone_number)
+        self.assertNotEqual(phone_number.number, '+1234567890')  # Verify we used a new number
+        assert PhoneNumber.objects.count() == 1
+
+        mock_purchase_phone_number.assert_called()  # We should not have needed to purchase a number
 
     @patch('conversations.utils.send_message')
     @patch('conversations.tasks.purchase_phone_number_util')
@@ -97,7 +108,6 @@ class TestConversations(CkcAPITestCase):
         second_response = Conversation.objects.first().messages.last().message_content
         assert "Thanks! Sounds good, I think our handyman" in second_response
 
-
         # This will hit GPT so we can get more info from the tenant
         mock_res = "Can you please tell me more about the situation? Is the wall wet due to a leak?"
         mock_create_chat_completion.return_value = mock_res
@@ -106,7 +116,6 @@ class TestConversations(CkcAPITestCase):
         init_conversation_util(request)
         third_response = Conversation.objects.first().messages.last().message_content
         assert mock_res == third_response
-
 
         # This is a mock message from GPT, so we can grab the "plumber" vendor.
         # user won't receive this message
@@ -124,7 +133,6 @@ class TestConversations(CkcAPITestCase):
         fifth_response = Conversation.objects.first().messages.last().message_content
         assert "Oh sorry about that! Either tell me more specifics about your situation" in fifth_response
 
-
         # This is a mock message from GPT, so we can grab the "plumber" vendor.
         # user won't receive this message
         mock_create_chat_completion.return_value = "Appliance Specialist"
@@ -140,7 +148,6 @@ class TestConversations(CkcAPITestCase):
         init_conversation_util(request)
         seventh_response = Conversation.objects.first().messages.last().message_content
         assert "Thanks for confirming! I'll connect you with the vendor now. You should be receiving a text shortly." == seventh_response
-
 
         #  Make sure a conversation was started between the two parties
         assert Conversation.objects.first().messages.last().receiver_number == Conversation.objects.first().tenant.number
@@ -191,6 +198,19 @@ class TestConversations(CkcAPITestCase):
         assert conversation1.is_active is False
         assert conversation2.is_active is True
 
+    def test_get_vendor_from_conversation(self):
+        tenant = Tenant.objects.create(number="1")  # Add necessary parameters
+        vendor = Vendor.objects.first()  # Add necessary parameters
+        conversation = Conversation.objects.create(tenant=tenant, vendor=vendor)
+
+        Message.objects.create(message_content='My toilet is broken.', role="user", conversation=conversation)
+        Message.objects.create(message_content='Its leaking everywhere.', role="user", conversation=conversation)
+
+        conversation.refresh_from_db()
+
+        response = get_vendor_from_conversation(conversation)
+        assert response == Vendor.objects.get(vocation='plumber')
+
     @patch('openai.ChatCompletion.create')
     def test_create_chat_completion_with_error(self, mock_create):
         # Set up the mock object to raise an error
@@ -202,7 +222,7 @@ class TestConversations(CkcAPITestCase):
 
         # Check that the error handling code was run and the expected message is returned
         assert response == "Sorry, we're having some issues over here. Can you reach out directly to " \
-                            "your property manager at +1 (925) 998-1664"
+                           "your property manager at +1 (925) 998-1664"
 
         # Ensure the create method was called
         mock_create.assert_called_once_with(model="gpt-3.5-turbo", messages=conversation)
