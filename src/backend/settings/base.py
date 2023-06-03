@@ -120,7 +120,22 @@ SESSION_ENGINE = os.environ.get("SESSION_ENGINE", "django.contrib.sessions.backe
 DATABASES = {'default': {}}
 
 db_from_env = dj_database_url.config()
-if db_from_env:  # pragma: no cover
+
+from sys import argv
+
+if 'test' in argv or 'pytest' in argv:
+    DATABASES = {
+        'default': {
+            'ENGINE': 'django.db.backends.postgresql_psycopg2',
+            'NAME': 'test_'+os.environ.get('DB_NAME', 'postgres'),
+            'USER': os.environ.get('DB_USERNAME', 'postgres'),
+            'PASSWORD': os.environ.get('DB_PASSWORD', 'postgres'),
+            'HOST': os.environ.get('DB_HOST', 'db'),
+            'PORT': 5432,
+        }
+    }
+
+elif db_from_env:  # pragma: no cover
     DATABASES['default'].update(db_from_env)
 else:  # pragma: no cover
     DATABASES = {

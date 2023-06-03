@@ -29,7 +29,7 @@ class Conversation(models.Model):
     is_active = models.BooleanField(default=True)  # set to false if no messages in 3 days
 
     def __str__(self):
-        return f"Conversation between {self.tenant} and vendor {self.vendor}"
+        return f"Conversation ({self.pk}) between {self.tenant} and vendor {self.vendor}"
 
 
 class Message(models.Model):
@@ -43,6 +43,17 @@ class Message(models.Model):
         related_name='messages',
         on_delete=models.CASCADE,
     )
+    #  Eventually refactor to this probably
+    # initial_conversation = models.ForeignKey(
+    #     'Conversation',
+    #     related_name='initial_messages',
+    #     on_delete=models.CASCADE,
+    # )
+    # vendor_conversation = models.ForeignKey(
+    #     'Conversation',
+    #     related_name='vendor_conversation_messages',
+    #     on_delete=models.CASCADE,
+    # )
 
 
 class PhoneNumber(models.Model):

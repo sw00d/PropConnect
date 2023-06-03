@@ -31,10 +31,6 @@ def play_the_middle_man(request):
 @permission_classes([AllowAny])
 def init_conversation(request):
     message = init_conversation_util(request)
-
-    if message is None:
-        return HttpResponse()
-
     twiml_response = MessagingResponse()
     twiml_response.message(message)
 

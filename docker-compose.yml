@@ -61,6 +61,21 @@ services:
       - django
     logging: *default-logging
 
+  workers:
+    build:
+      context: .
+      dockerfile: docker/Dockerfile.backend
+    # When deploying this on Dokku, don't need the auto-restarting stuff, can just do the command after "--"
+    # i.e. "celery -A settings.celeryconf worker -l INFO -B"
+    command: watchmedo auto-restart --directory=/app --patterns="*.py" --recursive -- celery -A settings.celeryconf worker -l INFO -B
+    environment:
+      # To make things play nice with dj-database-url
+      - DATABASE_URL=postgres://${DB_USERNAME}:${DB_PASSWORD}@${DB_HOST}:${DB_PORT}/${DB_NAME}
+    env_file: .env
+    volumes:
+      - ./src/backend:/app
+    logging: *default-logging
+
   redis:
     image: redis
     env_file: .env

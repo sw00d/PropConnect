@@ -43,8 +43,8 @@ export default defineNuxtConfig({
     ],
     app: {
         head: {
-            title: "Vuetify 3 + Nuxt 3 Starter",
-            titleTemplate: "%s | Vuetify 3 + Nuxt 3 Starter",
+            title: "SnapRepair",
+            titleTemplate: "%s | SnapRepair",
             link: [
                 {rel: "stylesheet", href: "https://rsms.me/inter/inter.css"},
                 {rel: "preconnect", href: "https://rsms.me/"},

@@ -1,8 +1,7 @@
 import logging
+from sys import argv
 
-from django.db.models import Q
 from twilio.base.exceptions import TwilioRestException
-from twilio.twiml.messaging_response import MessagingResponse
 from twilio.rest import Client
 import time
 
@@ -11,6 +10,7 @@ import openai
 from conversations.models import Vendor, Conversation, Tenant, Message, PhoneNumber
 from conversations.serializers import MessageSerializer
 from settings.base import OPEN_API_KEY, TWILIO_AUTH_TOKEN, TWILIO_ACCOUNT_SID, WEBHOOK_URL
+from .tasks import start_vendor_tenant_conversation
 
 openai.api_key = OPEN_API_KEY
 twilio_auth_token = TWILIO_AUTH_TOKEN
@@ -100,13 +100,50 @@ def init_conversation_util(request):
     completion_from_gpt = create_chat_completion(conversation_json)
     # TODO only do vendor check if we have more than 1 user message in the conversation
     vendor_found = get_vendor_from_conversation(conversation)
+    last_assistant_message = Message.objects.filter(conversation=conversation, role="assistant").last()
 
-    # TODO Maybe ask tenant if the vendor sounds correct? Ask alex what to do here?
-    if vendor_found:
+    confirmation_message_conditions = [
+        'If that sounds like the correct vendor for your situation, reply YES, otherwise reply NO.',
+        "I'm sorry! I'm a little confused. Please reply YES or NO."
+    ]
+    # Check if the last message from assistant was a vendor suggestion or a confusion clarification
+    if last_assistant_message and confirmation_message_conditions[0] in last_assistant_message.message_content:
+
+        # Last step -- detect vendor confirmation
+        if 'yes' in body.lower() and 'no' not in body.lower():
+            # Vendor is confirmed
+            response = "Thanks for confirming! I'll connect you with the vendor now. You should be receiving a text " \
+                       "shortly."
+
+            if 'pytest' in argv[0]:
+                # Call without delay during pytests
+                start_vendor_tenant_conversation(conversation.id, vendor_found.id)
+            else:
+                start_vendor_tenant_conversation.delay(conversation.id, vendor_found.id)
+
+        elif 'no' in body.lower() and 'yes' not in body.lower():
+            # Vendor is denied
+            response = "Oh sorry about that! You can reach out to your property manager at +1 (925) 998-1664"  # don't include period here (twilio hates it)
+
+        else:
+            # Unexpected response
+            response = "I'm sorry! I'm a little confused. Please reply YES or NO."
+
+        Message.objects.create(
+            message_content=response,
+            role="assistant",
+            conversation=conversation,
+            sender_number=to_number,
+            receiver_number=from_number
+        )
+        return response
+
+    elif vendor_found and Message.objects.filter(conversation=conversation, role="user").count() > 1:
+        # Second to last step -- detect vendor confirmation
+
         # Hardcoded success message right before we connect the vendor and tenant
-        vendor_found_response = f"Thanks! That looks good, I think our {vendor_found.vocation} is what you're looking for. " \
-                                f"You should recieve a message from them soon. If this doesn't sound right, or you have any questions, " \
-                                "don't hesitate to reach out to us at +1 (925) 998-1664."
+        vendor_found_response = f"Thanks! Sounds good, I think our {vendor_found.vocation} is best suited for your situation. " \
+                                f"If that sounds like the correct vendor for your situation, reply YES, otherwise reply NO."
         Message.objects.create(
             message_content=vendor_found_response,
             role="assistant",
@@ -114,10 +151,8 @@ def init_conversation_util(request):
             sender_number=to_number,
             receiver_number=from_number
         )
-        send_message(to_number, from_number, vendor_found_response)
-        time.sleep(20)  # wait for 20 seconds before starting the vendor/tenant chat
-        start_vendor_tenant_conversation(conversation, tenant, vendor_found)
-        return None
+
+        return vendor_found_response
     else:
         Message.objects.create(
             message_content=completion_from_gpt,
@@ -141,79 +176,6 @@ def get_conversation_messages(conversation):
             'content': item['message_content'],
         })
     return data
-
-
-def start_vendor_tenant_conversation(conversation, tenant, vendor):
-    # See if we have any available numbers in twilio and if not, buy one
-    available_numbers = PhoneNumber.objects.filter(
-        Q(most_recent_conversation__is_active=False) | Q(most_recent_conversation__isnull=True),
-        is_base_number=False
-    )
-
-    if available_numbers.count() == 0:
-        client = Client(twilio_sid, twilio_auth_token)
-        number = client.available_phone_numbers("US").local.list(area_code='619')[0]
-        print("Purchasing new number:", number.phone_number)
-        logger.info(f"Purchasing new number: {number.phone_number}")
-        purchase_phone_number(number.phone_number)
-        conversation_number = PhoneNumber.objects.create(number=number.phone_number,
-                                                         most_recent_conversation=conversation)
-    else:
-        conversation_number = available_numbers.first()
-        print("Using existing number:", conversation_number.number)
-        conversation_number.most_recent_conversation = conversation
-        conversation_number.save()
-
-    conversation.vendor = vendor
-    conversation.save()
-
-    conversation_recap = get_conversation_recap(conversation)  # do this before we send the initial vendor message
-
-    message_to_vendor = "Hey there! I'm a bot for Home Simple property management. " \
-                        "I have a tenant who is requesting some help. " \
-                        "Reply here to communicate directly with tenant."
-
-    send_message(conversation.vendor.number, conversation_number.number, message_to_vendor)
-    Message.objects.create(
-        message_content=message_to_vendor,
-        role="assistant",
-        conversation=conversation,
-        receiver_number=conversation.vendor.number,
-        sender_number=conversation_number.number
-    )
-
-    conversation_history = f"Conversation: \n\n {conversation_recap}"
-    send_message(conversation.vendor.number, conversation_number.number, conversation_history)
-    Message.objects.create(
-        message_content=conversation_history,
-        role="assistant",
-        conversation=conversation,
-        receiver_number=conversation.vendor.number,
-        sender_number=conversation_number.number
-    )
-
-    message_to_tenant = "Hey there! I'm a bot for Home Simple property management. " \
-                        f"I've informed the {vendor.vocation}, {vendor.name}, of your situation. " \
-                        "You can reply directly to this number to communicate with the them."
-    send_message(conversation.tenant.number, conversation_number.number, message_to_tenant)
-    Message.objects.create(
-        message_content=message_to_tenant,
-        role="assistant",
-        conversation=conversation,
-        receiver_number=conversation.tenant.number,
-        sender_number=conversation_number.number
-    )
-
-
-def purchase_phone_number(phone_number):
-    try:
-        webhook_url = WEBHOOK_URL + "play_the_middle_man/"
-        client = Client(twilio_sid, twilio_auth_token)
-        purchased_number = client.incoming_phone_numbers.create(phone_number=phone_number)
-        purchased_number.update(sms_url=webhook_url)
-    except TwilioRestException as e:
-        print(f"Failed to purchase phone number. Error: {e}")
-        error_handler(e)
 
 
 def get_vendor_from_conversation(conversation):
@@ -242,7 +204,6 @@ def get_vendor_from_conversation(conversation):
     ).format(vocations=vocations, user_messages=user_messages)
 
     response = create_chat_completion([{'content': prompt, 'role': 'system'}])
-    print(response)
 
     if response.lower().replace('.', '') in vocations:
         for vocation in vocations.split(', '):
@@ -273,7 +234,7 @@ def create_chat_completion(conversation, retry_counter=10):
         error_handler(e)
         # Maybe test alex here as well/instead?
         return "Sorry, we're having some issues over here. Can you reach out directly to " \
-               "your property manager, Alex at +1 (925) 998-1664.",
+               "your property manager at +1 (925) 998-1664" # don't include period here (twilio hates it)
 
 
 def send_message(to_number, from_number, message):
@@ -289,21 +250,9 @@ def send_message(to_number, from_number, message):
         error_handler(e)
 
 
-def get_conversation_recap(conversation):
-    string = ''
-    messages = conversation.messages.all().order_by('time_sent')
-    for message in messages:
-        if message.role == 'user':
-            string += f"- Tenant: {message.message_content}\n\n"
-        elif message.role == 'assistant':
-            string += f"- Assistant: {message.message_content}\n\n"
-
-    return string
-
-
 def error_handler(e):
     print("Error:", e)
     logger.error('Error: %s', e)  # This is the correct usage
     # TODO set conversation to error state, inactive, and send message to alex?
     return "Sorry, we're having some issues over here. Can you reach out directly to " \
-           "your property manager, Alex at +1 (925) 998-1664."
+           "your property manager at +1 (925) 998-1664" # don't include period here (twilio hates it)
