@@ -55,6 +55,10 @@ class Message(models.Model):
     #     on_delete=models.CASCADE,
     # )
 
+    def __str__(self):
+        # Return first 50 characters of message content
+        return f"{self.role} message ({self.pk}): {self.message_content[:50]}"
+
 
 class PhoneNumber(models.Model):
     number = models.CharField(max_length=17, blank=True)

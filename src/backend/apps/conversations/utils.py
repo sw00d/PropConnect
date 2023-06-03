@@ -122,15 +122,13 @@ def init_conversation_util(request):
                 start_vendor_tenant_conversation.delay(conversation.id, vendor_found.id)
 
         elif 'no' in body.lower() and 'yes' not in body.lower():
-            # TODO Test this
             # Vendor is denied
             response = "Oh sorry about that! Either tell me more specifics about your situation, or you can reach out " \
                        "to your property manager at +1 (925) 998-1664"  # don't include period here (twilio hates it)
 
         else:
-            # TODO Test this
             # Unexpected response
-            response = "I'm sorry! I'm a little confused. Please reply YES or NO."
+            response = completion_from_gpt
 
         Message.objects.create(
             message_content=response,
@@ -139,7 +137,8 @@ def init_conversation_util(request):
             sender_number=to_number,
             receiver_number=from_number
         )
-        return response
+        send_message(from_number, to_number, response)
+        return None
 
     elif vendor_found and Message.objects.filter(conversation=conversation, role="user").count() > 1:
         # Second to last step -- detect vendor confirmation
@@ -164,7 +163,8 @@ def init_conversation_util(request):
             sender_number=to_number,
             receiver_number=from_number
         )
-        return completion_from_gpt
+        send_message(from_number, to_number, completion_from_gpt)
+        return None
 
 
 def get_conversation_messages(conversation):

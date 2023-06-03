@@ -31,8 +31,14 @@ def play_the_middle_man(request):
 @permission_classes([AllowAny])
 def init_conversation(request):
     message = init_conversation_util(request)
-    twiml_response = MessagingResponse()
-    twiml_response.message(message)
 
-    response = HttpResponse(str(twiml_response), content_type='text/xml')
-    return response
+    if not message:
+        # If we hit GPT, we manually send message instead of returning from this view
+        return HttpResponse()
+    else:
+        # When we don't hit GPT, we just return a string from the view and it sends to the user
+        twiml_response = MessagingResponse()
+        twiml_response.message(message)
+
+        response = HttpResponse(str(twiml_response), content_type='text/xml')
+        return response
