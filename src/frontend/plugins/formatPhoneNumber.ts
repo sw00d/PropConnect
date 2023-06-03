@@ -6,7 +6,8 @@ export default defineNuxtPlugin(() => {
     }
 })
 
-function formatPhoneNumber(number: string): string {
+function formatPhoneNumber(number: string = ''): string {
+    if (!number) return '';
   // Remove the optional '+' from the start if present
   number = number.startsWith('+') ? number.substring(1) : number;
 

@@ -1,5 +1,5 @@
 <template>
-  <div>
+  <div class="pb-10">
     <v-btn
       @click="navigateTo('/dashboard')"
     >
@@ -49,7 +49,7 @@
               </div>
               <div>
                 {{ conversation.vendor?.name || "No Name" }} ({{
-                  $formatPhoneNumber(conversation.vendor.number)
+                  $formatPhoneNumber(conversation.vendor?.number)
                 }})
               </div>
             </div>
@@ -72,7 +72,6 @@
             class="mr-3"
             @click="switchConversationView('assistant')"
             :variant="activeConversationType === 'vendor' ? 'outlined' : 'flat'"
-
           >
             Assistant
           </v-chip>
@@ -88,6 +87,13 @@
           <div v-else class="font-12 ml-3">
             *The conversation between the vendor and the tenant
           </div>
+        </div>
+        <div
+          v-if="conversation.vendor?.number === conversation.tenant.number && activeConversationType === 'vendor'"
+          class="text-warning mt-3 font-12"
+        >
+          <v-icon>mdi-alert</v-icon>
+          Tenant and vendor numbers are the same, so this conversation history may not be accurate
         </div>
         <v-sheet class="border pa-3 rounded-lg mt-4 overflow-auto bg-background" max-height="80vh">
           <div
@@ -114,6 +120,29 @@
             </div>
           </div>
         </v-sheet>
+        <div v-if="activeConversationType === 'vendor'" class="mt-2">
+          <div>Property manager:</div>
+          <div class="d-flex align-center">
+
+            <v-textarea
+              v-model="message"
+              variant="outlined"
+              placeholder="Type a message..."
+              class="mr-2"
+              hide-details
+              auto-grow
+              rows="1"
+
+            />
+            <v-btn
+              width="100px"
+              height="50px"
+            >
+              Send
+            </v-btn>
+          </div>
+
+        </div>
 
       </v-col>
     </v-row>
@@ -138,9 +167,15 @@ const { id } = route.params
 const conversation = ref({})
 const loading = ref(true)
 const activeConversationType = ref('assistant')
-const activeConversationMessages = ref([])
+const activeConversationMessages = computed(()=>{
+  if (activeConversationType.value === 'assistant') {
+    return conversation.value.assistant_messages
+  } else {
+    return conversation.value.vendor_messages
+  }
+})
 const runtimeConfig = useRuntimeConfig()
-
+const message = ref('')
 
 const fetchConversations = async (param_id) => {
   try {
@@ -157,29 +192,6 @@ const fetchConversations = async (param_id) => {
   }
 }
 const switchConversationView = (view) => {
-  // TODO Move this to properties of the model on the backend
-  if (view === 'assistant') {
-    activeConversationMessages.value = conversation.value?.messages?.filter(message => {
-      return message.receiver_number === runtimeConfig.DEFAULT_TWILIO_NUMBER ||
-        message.sender_number === runtimeConfig.DEFAULT_TWILIO_NUMBER
-    })
-  } else {
-    activeConversationMessages.value = conversation.value?.messages?.filter(message => {
-      console.log(
-        conversation.value.tenant.number === message.sender_number &&
-        conversation.value.vendor.number === message.receiver_number,
-
-        conversation.value.tenant.number, message.receiver_number,
-        conversation.value.vendor.number, message.sender_number,
-
-        message.message_content
-      )
-      return message.sender_number === conversation.value.vendor.number ||
-        (conversation.value.tenant.number === message.sender_number &&
-          conversation.value.vendor.number === message.receiver_number
-        )
-    })
-  }
   activeConversationType.value = view
 }
 

@@ -20,14 +20,14 @@
     </template>
     <template #item.tenant="{item}">
       <div>
-        <div>{{ item.value.tenant.name || "No Name" }}</div>
-        <div>{{ $formatPhoneNumber(item.value.tenant.number) }}</div>
+        <div>{{ item.value.tenant?.name || "No Name" }}</div>
+        <div>{{ $formatPhoneNumber(item.value.tenant?.number) }}</div>
       </div>
     </template>
     <template #item.vendor="{item}">
       <div>
-        <div>{{ item.value.vendor.name }}</div>
-        <div>{{ $formatPhoneNumber(item.value.vendor.number) }}</div>
+        <div>{{ item.value.vendor?.name }}</div>
+        <div>{{ $formatPhoneNumber(item.value.vendor?.number) }}</div>
       </div>
     </template>
 
@@ -59,6 +59,7 @@ async function fetchConversations() {
     const { data, error, execute } = useRequest('/conversations/')
     await execute()
     conversations.value = data.value
+    console.log(data.value)
   } catch (error) {
     // TODO handle error with some snack bars
     alert('Error fetching conversations')
