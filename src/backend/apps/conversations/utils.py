@@ -122,10 +122,13 @@ def init_conversation_util(request):
                 start_vendor_tenant_conversation.delay(conversation.id, vendor_found.id)
 
         elif 'no' in body.lower() and 'yes' not in body.lower():
+            # TODO Test this
             # Vendor is denied
-            response = "Oh sorry about that! You can reach out to your property manager at +1 (925) 998-1664"  # don't include period here (twilio hates it)
+            response = "Oh sorry about that! Either tell me more specifics about your situation, or you can reach out " \
+                       "to your property manager at +1 (925) 998-1664"  # don't include period here (twilio hates it)
 
         else:
+            # TODO Test this
             # Unexpected response
             response = "I'm sorry! I'm a little confused. Please reply YES or NO."
 

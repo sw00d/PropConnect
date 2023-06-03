@@ -79,7 +79,7 @@ def start_vendor_tenant_conversation(conversation_id, vendor_id):
 
     message_to_tenant = "Hey there! I'm a bot for Home Simple property management. " \
                         f"I've informed the {vendor.vocation}, {vendor.name}, of your situation. " \
-                        "You can reply directly to this number to communicate with the them."
+                        "You can reply directly to this number to communicate with them."
     send_message(conversation.tenant.number, conversation_number.number, message_to_tenant)
     Message.objects.create(
         message_content=message_to_tenant,
