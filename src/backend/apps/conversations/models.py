@@ -1,5 +1,8 @@
 from django.db import models
 from django.contrib.postgres.fields import ArrayField
+from django.db.models import Q
+
+import settings.base
 
 
 class Vendor(models.Model):
@@ -30,6 +33,26 @@ class Conversation(models.Model):
 
     def __str__(self):
         return f"Conversation ({self.pk}) between {self.tenant} and vendor {self.vendor}"
+
+    @property
+    def assistant_messages(self):
+        # TODO Test these
+        from .models import Message  # Replace with your actual Message module
+        DEFAULT_TWILIO_NUMBER = settings.base.DEFAULT_TWILIO_NUMBER  # Replace with your actual default twilio number
+        return Message.objects.filter(
+            Q(receiver_number=DEFAULT_TWILIO_NUMBER) | Q(sender_number=DEFAULT_TWILIO_NUMBER),
+            conversation=self
+        )
+
+    @property
+    def vendor_messages(self):
+        # TODO Test these
+        from .models import Message  # Replace with your actual Message module
+        return Message.objects.filter(
+            Q(sender_number=self.vendor.number) |
+            (Q(sender_number=self.tenant.number) & Q(receiver_number=self.vendor.number)),
+            conversation=self
+        )
 
 
 class Message(models.Model):

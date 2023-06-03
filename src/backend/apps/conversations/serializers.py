@@ -21,13 +21,22 @@ class TenantSerializer(serializers.ModelSerializer):
 
 
 class ConversationSerializer(serializers.ModelSerializer):
-    messages = MessageSerializer(many=True, read_only=True)
+    assistant_messages = MessageSerializer(many=True, read_only=True)
+    vendor_messages = MessageSerializer(many=True, read_only=True)
     tenant = TenantSerializer(read_only=True)
     vendor = VendorSerializer(read_only=True)
 
     class Meta:
         model = Conversation
-        fields = ('id', 'tenant', 'vendor', 'date_created', 'is_active', 'messages')
+        fields = (
+            'id',
+            'tenant',
+            'vendor',
+            'date_created',
+            'is_active',
+            'assistant_messages',
+            'vendor_messages',
+        )
 
 
 class PhoneNumberSerializer(serializers.ModelSerializer):
