@@ -42,7 +42,6 @@ export const useAuth = () => {
             setUser(userData.user);
         }
 
-
         return res
     }
 

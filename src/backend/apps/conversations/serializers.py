@@ -1,4 +1,6 @@
 from rest_framework import serializers
+# from rest_framework.relations import PrimaryKeyRelatedField
+
 from .models import Vendor, Tenant, Conversation, Message, PhoneNumber
 
 
@@ -20,11 +22,21 @@ class TenantSerializer(serializers.ModelSerializer):
         fields = '__all__'
 
 
+class PhoneNumberSerializer(serializers.ModelSerializer):
+    # most_recent_conversation = PrimaryKeyRelatedField(read_only=True)
+
+    class Meta:
+        model = PhoneNumber
+        fields = ('id', 'number')
+
+
 class ConversationSerializer(serializers.ModelSerializer):
     assistant_messages = MessageSerializer(many=True, read_only=True)
     vendor_messages = MessageSerializer(many=True, read_only=True)
+    messages = MessageSerializer(many=True, read_only=True)
     tenant = TenantSerializer(read_only=True)
     vendor = VendorSerializer(read_only=True)
+    twilio_number = PhoneNumberSerializer(read_only=True)
 
     class Meta:
         model = Conversation
@@ -36,12 +48,7 @@ class ConversationSerializer(serializers.ModelSerializer):
             'is_active',
             'assistant_messages',
             'vendor_messages',
+            'twilio_number',
+            'messages'
         )
 
-
-class PhoneNumberSerializer(serializers.ModelSerializer):
-    most_recent_conversation = ConversationSerializer(read_only=True)
-
-    class Meta:
-        model = PhoneNumber
-        fields = ('id', 'number', 'most_recent_conversation', 'is_base_number')

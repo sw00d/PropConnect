@@ -59,7 +59,7 @@ async function fetchConversations() {
     const { data, error, execute } = useRequest('/conversations/')
     await execute()
     conversations.value = data.value
-    console.log(data.value)
+
   } catch (error) {
     // TODO handle error with some snack bars
     alert('Error fetching conversations')

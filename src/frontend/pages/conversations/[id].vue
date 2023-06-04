@@ -81,12 +81,12 @@
           >
             Vendor
           </v-chip>
-          <div v-if="activeConversationType === 'assistant'" class="font-12 ml-3">
+          <v-sheet width="200px" v-if="activeConversationType === 'assistant'" class="font-12 ml-3 bg-transparent">
             *The initial conversation with the bot
-          </div>
-          <div v-else class="font-12 ml-3">
+          </v-sheet>
+          <v-sheet width="200px" v-else class="font-12 ml-3 bg-transparent">
             *The conversation between the vendor and the tenant
-          </div>
+          </v-sheet>
         </div>
         <div
           v-if="conversation.vendor?.number === conversation.tenant.number && activeConversationType === 'vendor'"
@@ -95,7 +95,11 @@
           <v-icon>mdi-alert</v-icon>
           Tenant and vendor numbers are the same, so this conversation history may not be accurate
         </div>
-        <v-sheet class="border pa-3 rounded-lg mt-4 overflow-auto bg-background" max-height="80vh">
+        <v-sheet
+          class="border pa-3 rounded-lg mt-4 overflow-auto bg-background"
+          max-height="80vh"
+          ref="conversationContainerRef"
+        >
           <div
             v-for="(message,i) in activeConversationMessages"
             :key="i"
@@ -118,10 +122,20 @@
                 {{ message.message_content }}
               </div>
             </div>
+
+            <div v-else-if="message.role === 'admin'" class="right-msg mt-3">
+              <div class="font-12 text-highContrast text-right">
+                Property Manager
+              </div>
+              <div class="rounded-lg pa-2 bg-blue">
+                {{ message.message_content }}
+              </div>
+            </div>
+
           </div>
         </v-sheet>
         <div v-if="activeConversationType === 'vendor'" class="mt-2">
-          <div>Property manager:</div>
+          <div class="font-12 opacity-8 mb-1">Property manager:</div>
           <div class="d-flex align-center">
 
             <v-textarea
@@ -132,11 +146,14 @@
               hide-details
               auto-grow
               rows="1"
-
             />
+
+            <!--            TODO Disable this if the convo isn't active aka 3 days old I think? -->
             <v-btn
               width="100px"
               height="50px"
+              :loading="sendingMessage"
+              @click="sendMessage"
             >
               Send
             </v-btn>
@@ -153,7 +170,7 @@
 <script setup>
 import { useRoute } from 'vue-router'
 import { useRequest } from "../../composables/useRequest"
-import { onMounted, ref } from 'vue'
+import { onMounted, ref, nextTick } from 'vue'
 import dayjs from "dayjs"
 
 const { $formatPhoneNumber } = useNuxtApp()
@@ -165,24 +182,26 @@ const route = useRoute()
 const { id } = route.params
 
 const conversation = ref({})
+const conversationContainerRef = ref(null);
 const loading = ref(true)
+const sendingMessage = ref(false)
 const activeConversationType = ref('assistant')
-const activeConversationMessages = computed(()=>{
+const message = ref('')
+
+const activeConversationMessages = computed(() => {
   if (activeConversationType.value === 'assistant') {
     return conversation.value.assistant_messages
   } else {
     return conversation.value.vendor_messages
   }
 })
-const runtimeConfig = useRuntimeConfig()
-const message = ref('')
 
-const fetchConversations = async (param_id) => {
+const fetchConversations = async (convoViewType = 'assistant') => {
   try {
-    const { data, error, execute } = useRequest(`/conversations/${ param_id }`)
+    const { data, execute } = useRequest(`/conversations/${ id }`)
     await execute()
     conversation.value = data.value
-    switchConversationView('assistant')
+    switchConversationView(convoViewType)
   } catch (error) {
     console.error(error)
     alert('Error fetching conversation')
@@ -191,12 +210,37 @@ const fetchConversations = async (param_id) => {
     setTimeout(() => loading.value = false, 1000)
   }
 }
+
+
+const sendMessage = async () => {
+  sendingMessage.value = true
+  try {
+    await useRequest(`conversations/${ id }/send_admin_message/`, {
+      method: 'POST',
+      body: {
+        message_body: `[PROPERTY MANAGER]: ${ message.value }`,
+      },
+    })
+    await fetchConversations('vendor')
+    await nextTick()
+    conversationContainerRef.value.scrollTop = conversationContainerRef.value.scrollHeight
+  } catch (e) {
+    console.error(e)
+    alert('Error sending message')
+  } finally {
+    message.value = ''
+    sendingMessage.value = false
+  }
+}
+
+
 const switchConversationView = (view) => {
   activeConversationType.value = view
 }
 
+
 onMounted(() => {
-    fetchConversations(id)
+    fetchConversations()
   }
 )
 

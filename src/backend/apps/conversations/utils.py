@@ -25,7 +25,6 @@ def play_the_middle_man_util(request):
     to_number = request.POST.get('To', None)
     from_number = request.POST.get('From', None)
     body = request.POST.get('Body', None)
-
     conversation = PhoneNumber.objects.filter(number=to_number).first().most_recent_conversation
 
     is_from_tenant = conversation.tenant.number == from_number
@@ -242,7 +241,7 @@ def create_chat_completion(conversation, retry_counter=10):
 
 def send_message(to_number, from_number, message):
     try:
-        # to_number HAS TO BE A TWILIO NUMBER
+        # from_number HAS TO BE A TWILIO NUMBER
         client = Client(twilio_sid, twilio_auth_token)
         client.messages.create(
             body=message,
@@ -250,6 +249,7 @@ def send_message(to_number, from_number, message):
             to=to_number
         )
     except TwilioRestException as e:
+        print(e)
         error_handler(e)
 
 

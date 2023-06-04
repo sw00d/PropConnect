@@ -50,22 +50,26 @@ class Conversation(models.Model):
         from .models import Message  # Replace with your actual Message module
         return Message.objects.filter(
             Q(sender_number=self.vendor.number) |
-            (Q(sender_number=self.tenant.number) & Q(receiver_number=self.vendor.number)),
+            (Q(sender_number=self.tenant.number) & Q(receiver_number=self.vendor.number)) |
+            Q(role='admin'),
             conversation=self
         )
 
 
 class Message(models.Model):
-    sender_number = models.CharField(max_length=20, null=False, blank=False)  # can be used to identify the sender model based off of conversation
+    # TODO add failed field for failed deliveries
+    sender_number = models.CharField(max_length=20, null=False,
+                                     blank=False)  # can be used to identify the sender model based off of conversation
     receiver_number = models.CharField(max_length=20, null=False, blank=False)
     time_sent = models.DateTimeField(auto_now_add=True)
-    role = models.CharField(max_length=200)  # user | assistant | system
+    role = models.CharField(max_length=200)  # user | assistant | system | admin
     message_content = models.TextField()  # renaming 'content' to 'message_content' to avoid confusion
     conversation = models.ForeignKey(
         'Conversation',
         related_name='messages',
         on_delete=models.CASCADE,
     )
+
     #  Eventually refactor to this probably
     # initial_conversation = models.ForeignKey(
     #     'Conversation',
@@ -85,7 +89,13 @@ class Message(models.Model):
 
 class PhoneNumber(models.Model):
     number = models.CharField(max_length=17, blank=True)
-    most_recent_conversation = models.OneToOneField(Conversation, null=True, blank=True, on_delete=models.CASCADE)
+    most_recent_conversation = models.OneToOneField(
+        Conversation,
+        null=True,
+        blank=True,
+        on_delete=models.CASCADE,
+        related_name='twilio_number'
+    )
     # this will be True for the main number that talks to GPT and initializes convo
     is_base_number = models.BooleanField(default=False)
 
