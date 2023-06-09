@@ -56,6 +56,21 @@ class Conversation(models.Model):
         )
 
 
+class MediaMessageContent(models.Model):
+    MEDIA_TYPES = (
+        ('image', 'image'),
+        ('video', 'video'),
+        ('other', 'other'),
+    )
+    message = models.ForeignKey(
+        'Message',
+        related_name='media_message_contents',
+        on_delete=models.CASCADE,
+    )
+    media_url = models.URLField(null=True, blank=True)
+    media_type = models.CharField(max_length=200, null=True, blank=True, choices=MEDIA_TYPES)
+
+
 class Message(models.Model):
     # TODO add failed field for failed deliveries
     sender_number = models.CharField(max_length=20, null=False,
@@ -69,18 +84,6 @@ class Message(models.Model):
         related_name='messages',
         on_delete=models.CASCADE,
     )
-
-    #  Eventually refactor to this probably
-    # initial_conversation = models.ForeignKey(
-    #     'Conversation',
-    #     related_name='initial_messages',
-    #     on_delete=models.CASCADE,
-    # )
-    # vendor_conversation = models.ForeignKey(
-    #     'Conversation',
-    #     related_name='vendor_conversation_messages',
-    #     on_delete=models.CASCADE,
-    # )
 
     def __str__(self):
         # Return first 50 characters of message content

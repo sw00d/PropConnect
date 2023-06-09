@@ -110,7 +110,7 @@
                 {{ conversation.tenant?.name || `Tenant ${ $formatPhoneNumber(conversation.tenant.number) }` }}
               </div>
               <div class="rounded-lg pa-2 bg-surfaceSecondary">
-                {{ message.message_content }}
+                <MessageContent :message="message"/>
               </div>
             </div>
 
@@ -119,7 +119,7 @@
                 {{ activeConversationType === 'assistant' ? 'Bot Assistant' : conversation.vendor?.name }}
               </div>
               <div class="rounded-lg pa-2 bg-primary">
-                {{ message.message_content }}
+                <MessageContent :message="message"/>
               </div>
             </div>
 
@@ -128,7 +128,7 @@
                 Property Manager
               </div>
               <div class="rounded-lg pa-2 bg-blue">
-                {{ message.message_content }}
+                <MessageContent :message="message"/>
               </div>
             </div>
 
@@ -172,6 +172,7 @@ import { useRoute } from 'vue-router'
 import { useRequest } from "../../composables/useRequest"
 import { onMounted, ref, nextTick } from 'vue'
 import dayjs from "dayjs"
+import MessageContent from "../../components/MessageContent"
 
 const { $formatPhoneNumber } = useNuxtApp()
 
@@ -182,7 +183,7 @@ const route = useRoute()
 const { id } = route.params
 
 const conversation = ref({})
-const conversationContainerRef = ref(null);
+const conversationContainerRef = ref(null)
 const loading = ref(true)
 const sendingMessage = ref(false)
 const activeConversationType = ref('assistant')

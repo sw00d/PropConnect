@@ -1,13 +1,32 @@
 from rest_framework import serializers
 # from rest_framework.relations import PrimaryKeyRelatedField
 
-from .models import Vendor, Tenant, Conversation, Message, PhoneNumber
+from .models import Vendor, Tenant, Conversation, Message, PhoneNumber, MediaMessageContent
+
+
+class MediaMessageContentSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = MediaMessageContent
+        fields = (
+            'media_url',
+            'media_type'
+        )
 
 
 class MessageSerializer(serializers.ModelSerializer):
+    media_message_contents = MediaMessageContentSerializer(many=True, read_only=True)
+
     class Meta:
         model = Message
-        fields = '__all__'
+        fields = (
+            'sender_number',
+            'receiver_number',
+            'time_sent',
+            'media_message_contents',
+            'role',
+            'message_content',
+            'conversation',
+        )
 
 
 class VendorSerializer(serializers.ModelSerializer):

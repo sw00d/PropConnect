@@ -283,7 +283,7 @@ CELERY_WORKER_HIJACK_ROOT_LOGGER = False  # let's handle our own logging stuff
 
 CELERY_BEAT_SCHEDULE = {
     # INDIVIDUAL BOOKING TASKS
-    'set-3-day-old-conversations-to-not-active': {
+    'set-2-day-old-conversations-to-not-active': {
         'task': 'conversations.tasks.set_old_conversations_to_not_active',
         'schedule': crontab(minute=0, hour='*/12'),  # Run every 12 hours
     },

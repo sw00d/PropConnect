@@ -44,3 +44,6 @@ openai~=0.27.7
 # Queues
 celery==5.2.7
 watchdog[watchmedo]==2.1.9
+
+# Misc
+requests==2.31.0

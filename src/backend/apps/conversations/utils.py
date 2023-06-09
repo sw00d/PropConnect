@@ -1,5 +1,6 @@
 import logging
 from sys import argv
+import requests
 
 from twilio.base.exceptions import TwilioRestException
 from twilio.rest import Client
@@ -7,7 +8,7 @@ import time
 
 import openai
 
-from conversations.models import Vendor, Conversation, Tenant, Message, PhoneNumber
+from conversations.models import Vendor, Conversation, Tenant, Message, PhoneNumber, MediaMessageContent
 from conversations.serializers import MessageSerializer
 from settings.base import OPEN_API_KEY, TWILIO_AUTH_TOKEN, TWILIO_ACCOUNT_SID, WEBHOOK_URL
 from .tasks import start_vendor_tenant_conversation
@@ -27,33 +28,72 @@ def play_the_middle_man_util(request):
     body = request.POST.get('Body', None)
     conversation = PhoneNumber.objects.filter(number=to_number).first().most_recent_conversation
 
+    # Get media url if available
+    # media_url = request.POST.get('MediaUrl0', None)  # Get the URL of the first media item, if it exists
+
+    # you can handle more media items by looping through 'MediaUrl' parameters
+    media_urls = []
+    i = 0
+    while request.POST.get(f'MediaUrl{i}', None):
+        media_urls.append(request.POST.get(f'MediaUrl{i}'))
+        i += 1
+
     is_from_tenant = conversation.tenant.number == from_number
     is_from_vendor = conversation.vendor.number == from_number
 
     if is_from_tenant:
         logger.info(f'- Forwarding message from tenant to vendor. Conversation: {conversation.id}')
         print(f'- Forwarding message from tenant to vendor. Conversation: {conversation.id}')
-        Message.objects.create(
-            message_content=body,
+        create_message_and_content(
             sender_number=conversation.tenant.number,
             receiver_number=conversation.vendor.number,
             role="user",
-            conversation=conversation
+            conversation=conversation,
+            body=body,
+            media_urls=media_urls
         )
-        send_message(conversation.vendor.number, to_number, body)
+        send_message(conversation.vendor.number, to_number, body, media_urls)
     elif is_from_vendor:
         logger.info(f'- Forwarding message from vendor to tenant. Conversation: {conversation.id}')
         print(f'- Forwarding message from vendor to tenant. Conversation: {conversation.id}')
-        Message.objects.create(
-            message_content=body,
+        create_message_and_content(
             sender_number=conversation.vendor.number,
             receiver_number=conversation.tenant.number,
             role="user",
-            conversation=conversation
+            conversation=conversation,
+            body=body,
+            media_urls=media_urls
         )
-        send_message(conversation.tenant.number, to_number, body)
+        send_message(conversation.tenant.number, to_number, body, media_urls)
+
     # Nothing should be returned because we're just forwarding the message
     return None
+
+
+def create_message_and_content(sender_number, receiver_number, role, conversation, body, media_urls):
+    # Create message
+    message = Message.objects.create(
+        message_content=body,
+        sender_number=sender_number,
+        receiver_number=receiver_number,
+        role=role,
+        conversation=conversation
+    )
+
+    # Create media message content
+    for media_url in media_urls:
+        if len(media_urls) < 2:
+            media_type = get_media_type(media_url)
+        else:
+            media_type = 'other'
+
+        MediaMessageContent.objects.create(
+            media_url=media_url,
+            media_type=media_type,
+            message=message
+        )
+
+    return message
 
 
 def init_conversation_util(request):
@@ -170,7 +210,6 @@ def get_conversation_messages(conversation):
     messages = conversation.messages.all()
     serializer = MessageSerializer(messages, many=True)
 
-    # Customize the data to match your needs
     data = []
     for item in serializer.data:
         data.append({
@@ -181,15 +220,6 @@ def get_conversation_messages(conversation):
 
 
 def get_vendor_from_conversation(conversation):
-    # Manual (dumb) approach
-    # best_vendor = None
-    # vendors = Vendor.objects.all()
-    #
-    # for vendor in vendors:
-    #     if any(keyword in response_text.lower() for keyword in vendor.keywords):
-    #         best_vendor = vendor
-    #         return vendor
-
     # GPT approach (less dumb but slower)
     vocations = ', '.join(list(Vendor.objects.filter(active=True).values_list('vocation', flat=True)))
     user_messages = ', '.join(list(conversation.messages.filter(role="user").values_list('message_content', flat=True)))
@@ -236,18 +266,31 @@ def create_chat_completion(conversation, retry_counter=10):
         error_handler(e)
         # Maybe test alex here as well/instead?
         return "Sorry, we're having some issues over here. Can you reach out directly to " \
-               "your property manager at +1 (925) 998-1664" # don't include period here (twilio hates it)
+               "your property manager at +1 (925) 998-1664"  # don't include period here (twilio hates it)
 
 
-def send_message(to_number, from_number, message):
+def send_message(to_number, from_number, message, media_urls=None):
     try:
         # from_number HAS TO BE A TWILIO NUMBER
         client = Client(twilio_sid, twilio_auth_token)
-        client.messages.create(
-            body=message,
-            from_=from_number,
-            to=to_number
-        )
+
+        message_arguments = {
+            'from_': from_number,
+            'to': to_number
+        }
+
+        if message:
+            message_arguments['body'] = message
+
+        if media_urls:
+            # Twilio expects a list of media URLs
+            if isinstance(media_urls, list):
+                message_arguments['media_url'] = media_urls
+            else:
+                message_arguments['media_url'] = [media_urls]
+
+        client.messages.create(**message_arguments)
+
     except TwilioRestException as e:
         print(e)
         error_handler(e)
@@ -258,4 +301,19 @@ def error_handler(e):
     logger.error('Error: %s', e)  # This is the correct usage
     # TODO set conversation to error state, inactive, and send message to alex?
     return "Sorry, we're having some issues over here. Can you reach out directly to " \
-           "your property manager at +1 (925) 998-1664" # don't include period here (twilio hates it)
+           "your property manager at +1 (925) 998-1664"  # don't include period here (twilio hates it)
+
+
+def get_media_type(url):
+    # Fetch the headers of the URL without downloading the whole file
+    response = requests.head(url)
+    content_type = response.headers['Content-Type']
+    print("CONTENT TYPE: ", content_type)
+
+    # Determine media type based on MIME type
+    if content_type.startswith('image/'):
+        return 'image'
+    elif content_type.startswith('video/'):
+        return 'video'
+    else:
+        return 'other'
