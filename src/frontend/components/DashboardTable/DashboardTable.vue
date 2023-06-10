@@ -6,7 +6,9 @@
       color="primary"
     />
   </v-sheet>
+<!--  TODO: Use server table thing from vuetify-->
   <v-data-table
+    v-else
     :headers="headers"
     :items="conversations"
     item-value="name"
@@ -58,7 +60,7 @@ async function fetchConversations() {
   try {
     const { data, error, execute } = useRequest('/conversations/')
     await execute()
-    conversations.value = data.value
+    conversations.value = data.value.results
 
   } catch (error) {
     // TODO handle error with some snack bars

@@ -6,6 +6,8 @@ import factory
 
 from django.contrib.auth import get_user_model
 
+from conversations.models import Tenant
+
 
 class UserFactory(factory.django.DjangoModelFactory):
     email = factory.Faker('email')
@@ -24,3 +26,12 @@ class UserFactory(factory.django.DjangoModelFactory):
         else:
             self.set_password('factoryuserpass')
         self.save()
+
+
+class TenantFactory(factory.django.DjangoModelFactory):
+    name = factory.Faker('name')
+    number = factory.Faker('numerify', text="+1##########")
+    address = factory.Faker('address')
+
+    class Meta:
+        model = Tenant

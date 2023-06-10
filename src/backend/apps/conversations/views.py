@@ -1,6 +1,7 @@
 import logging
 from rest_framework import status
 from rest_framework.response import Response
+from rest_framework.pagination import PageNumberPagination
 from django.views.decorators.csrf import csrf_exempt
 from django.http import HttpResponse
 from rest_framework.viewsets import ModelViewSet
@@ -11,17 +12,27 @@ from rest_framework.permissions import AllowAny
 
 from conversations.utils import init_conversation_util, play_the_middle_man_util, send_message
 from .models import Conversation, Message
-from .serializers import ConversationSerializer
+from .serializers import ConversationDetailSerializer, ConversationListSerializer
 
 logger = logging.getLogger(__name__)
 
 
+class CustomPageNumberPagination(PageNumberPagination):
+    page_size = 10
+    max_page_size = 100
+    page_size_query_param = "page_size"
+
+
 class ConversationViewSet(ModelViewSet):
-    # TODO: add pagination
-    # TODO: make list serlializer different from detail serializer
-    queryset = Conversation.objects.all()
-    serializer_class = ConversationSerializer
+    pagination_class = CustomPageNumberPagination
+    queryset = Conversation.objects.all().order_by('-date_created')
     permission_classes([IsAdminUser])
+
+    def get_serializer_class(self):
+        if self.action == 'list':
+            return ConversationListSerializer
+        else:
+            return ConversationDetailSerializer
 
     @action(detail=True, methods=['post'])
     def send_admin_message(self, request, *args, **kwargs):

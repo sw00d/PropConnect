@@ -49,7 +49,7 @@ class PhoneNumberSerializer(serializers.ModelSerializer):
         fields = ('id', 'number')
 
 
-class ConversationSerializer(serializers.ModelSerializer):
+class ConversationDetailSerializer(serializers.ModelSerializer):
     assistant_messages = MessageSerializer(many=True, read_only=True)
     vendor_messages = MessageSerializer(many=True, read_only=True)
     messages = MessageSerializer(many=True, read_only=True)
@@ -68,6 +68,22 @@ class ConversationSerializer(serializers.ModelSerializer):
             'assistant_messages',
             'vendor_messages',
             'twilio_number',
-            'messages'
+            'messages',
+        )
+
+
+class ConversationListSerializer(serializers.ModelSerializer):
+    tenant = TenantSerializer(read_only=True)
+    vendor = VendorSerializer(read_only=True)
+
+    class Meta:
+        model = Conversation
+        fields = (
+            'id',
+            'tenant',
+            'vendor',
+            'date_created',
+            'is_active',
+            'has_new_activity',
         )
 

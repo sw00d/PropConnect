@@ -37,9 +37,9 @@
                 Tenant:
               </div>
               <div>
-                {{ conversation.tenant?.name || "No Name" }} ({{
+                {{ conversation.tenant?.name || "No Name" }}: {{
                   $formatPhoneNumber(conversation.tenant.number)
-                }})
+                }}
               </div>
             </div>
 
@@ -47,10 +47,13 @@
               <div>
                 Vendor:
               </div>
-              <div>
-                {{ conversation.vendor?.name || "No Name" }} ({{
+              <div v-if="conversation.vendor?.number">
+                {{ conversation.vendor?.name || "No Name" }}: {{
                   $formatPhoneNumber(conversation.vendor?.number)
-                }})
+                }}
+              </div>
+              <div v-else>
+                No Vendor Assigned
               </div>
             </div>
 
@@ -76,6 +79,7 @@
             Assistant
           </v-chip>
           <v-chip
+            v-if="conversation.vendor?.number"
             @click="switchConversationView('vendor')"
             :variant="activeConversationType === 'assistant' ? 'outlined' : 'flat'"
           >

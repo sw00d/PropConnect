@@ -30,9 +30,15 @@ class Conversation(models.Model):
     vendor = models.ForeignKey(Vendor, null=True, on_delete=models.SET_NULL)
     date_created = models.DateTimeField(auto_now_add=True)
     is_active = models.BooleanField(default=True)  # set to false if no messages in 3 days
+    last_viewed = models.DateTimeField(auto_now=True)  # last time the conversation was viewed by the admin
 
     def __str__(self):
         return f"Conversation ({self.pk}) between {self.tenant} and vendor {self.vendor}"
+
+    @property
+    def has_new_activity(self):
+        # see if there are any messages that have been sent since the last time the conversation was viewed
+        return self.messages.filter(time_sent__gt=self.last_viewed).exists()
 
     @property
     def assistant_messages(self):
