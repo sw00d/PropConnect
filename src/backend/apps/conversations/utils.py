@@ -113,10 +113,10 @@ def init_conversation_util(request):
         vocations_set = set(vocations)
 
         content = "You are a helpful assistant for Home Simple property management " \
-                  "that communicates via text messages with tenants to handle and schedule their maintenance requests. " \
+                  "that communicates via text messages with tenants to handle their maintenance issues. " \
                   "Your primary goal is to collect the tenant's full name, address, and a detailed description of the problem they are experiencing. " \
                   "Once you have gathered this information, you need to suggest the type of profession they might need for their situation (without explicitly naming the profession in your response)." \
-                  f"The profession types available include a specialist for {vocations_set}."
+                  f"The profession types available include {vocations_set}."
 
         Message.objects.create(
             message_content=content,
@@ -148,8 +148,13 @@ def init_conversation_util(request):
     # Check if the last message from assistant was a vendor suggestion or a confusion clarification
     if last_assistant_message and confirmation_message_conditions[0] in last_assistant_message.message_content:
 
+        yes_synonyms = ['yes', 'yep', 'yeah', 'yup', 'sure', 'absolutely', 'definitely', 'certainly', 'yea',
+                        'affirmative', 'uh-huh', 'indeed', 'of course', 'true']
+        no_synonyms = ['no', 'nope', 'nah', 'negative', 'not at all', 'nay', 'absolutely not', 'by no means',
+                       'certainly not', 'definitely not']
+
         # Last step -- detect vendor confirmation
-        if 'yes' in body.lower() and 'no' not in body.lower():
+        if any(word in body.lower() for word in yes_synonyms) and not any(word in body.lower() for word in no_synonyms):
             # Vendor is confirmed
             response = "Thanks for confirming! I'll connect you with the vendor now. You should be receiving a text " \
                        "shortly."
@@ -160,7 +165,7 @@ def init_conversation_util(request):
             else:
                 start_vendor_tenant_conversation.delay(conversation.id, vendor_found.id)
 
-        elif 'no' in body.lower() and 'yes' not in body.lower():
+        elif any(word in body.lower() for word in no_synonyms) and not any(word in body.lower() for word in yes_synonyms):
             # Vendor is denied
             response = "Oh sorry about that! Either tell me more specifics about your situation, or you can reach out " \
                        "to your property manager at +1 (925) 998-1664"  # don't include period here (twilio hates it)
@@ -308,7 +313,6 @@ def get_media_type(url):
     # Fetch the headers of the URL without downloading the whole file
     response = requests.head(url)
     content_type = response.headers['Content-Type']
-    print("CONTENT TYPE: ", content_type)
 
     # Determine media type based on MIME type
     if content_type.startswith('image/'):
