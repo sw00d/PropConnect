@@ -95,11 +95,12 @@ def create_message_and_content(sender_number, receiver_number, role, conversatio
 
 
 def init_conversation_util(request):
-    logger.info('- Message received!'
-                '\n from number: ', request.POST.get('From', None),
-                '\n to number: ', request.POST.get('To', None),
-                '\n body: ', request.POST.get('Body', None)
-                )
+    logger.info(
+        "Message Recieved! \n"
+        f"from number: , {request.POST.get('From', None)} \n"
+        f"to number: , {request.POST.get('To', None)} \n"
+        f"body: , {request.POST.get('Body', None)} \n"
+    )
 
     # Handles the initial conversation with the tenant and sends them to a message with the vendor
     from_number = request.POST.get('From', None)
