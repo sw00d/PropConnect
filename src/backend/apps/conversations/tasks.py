@@ -50,13 +50,11 @@ def start_vendor_tenant_conversation(conversation_id, vendor_id):
     if available_numbers.count() == 0:
         client = Client(twilio_sid, twilio_auth_token)
         number = client.available_phone_numbers("US").local.list(area_code='619')[0]
-        print("Purchasing new number:", number.phone_number)
         logger.info(f"Purchasing new number: {number.phone_number}")
         purchase_phone_number_util(number.phone_number)
         conversation_number = PhoneNumber.objects.create(number=number.phone_number, most_recent_conversation=conversation)
     else:
         conversation_number = available_numbers.first()
-        print("Using existing number:", conversation_number.number)
         logger.info(f"Using existing number: {conversation_number.number}")
         conversation_number.most_recent_conversation = conversation
         conversation_number.save()
@@ -124,6 +122,5 @@ def purchase_phone_number_util(phone_number):
         purchased_number = client.incoming_phone_numbers.create(phone_number=phone_number)
         purchased_number.update(sms_url=webhook_url)
     except TwilioRestException as e:
-        print(f"Failed to purchase phone number. Error: {e}")
-        logger.info(f"Failed to purchase phone number. Error: {e}")
+        logger.error(f"Failed to purchase phone number. Error: {e}")
         error_handler(e)

@@ -43,7 +43,6 @@ def play_the_middle_man_util(request):
 
     if is_from_tenant:
         logger.info(f'- Forwarding message from tenant to vendor. Conversation: {conversation.id}')
-        print(f'- Forwarding message from tenant to vendor. Conversation: {conversation.id}')
         create_message_and_content(
             sender_number=conversation.tenant.number,
             receiver_number=conversation.vendor.number,
@@ -55,7 +54,6 @@ def play_the_middle_man_util(request):
         send_message(conversation.vendor.number, to_number, body, media_urls)
     elif is_from_vendor:
         logger.info(f'- Forwarding message from vendor to tenant. Conversation: {conversation.id}')
-        print(f'- Forwarding message from vendor to tenant. Conversation: {conversation.id}')
         create_message_and_content(
             sender_number=conversation.vendor.number,
             receiver_number=conversation.tenant.number,
@@ -97,7 +95,11 @@ def create_message_and_content(sender_number, receiver_number, role, conversatio
 
 
 def init_conversation_util(request):
-    print('- Message received!')
+    logger.info('- Message received!'
+                '\n from number: ', request.POST.get('From', None),
+                '\n to number: ', request.POST.get('To', None),
+                '\n body: ', request.POST.get('Body', None)
+                )
 
     # Handles the initial conversation with the tenant and sends them to a message with the vendor
     from_number = request.POST.get('From', None)
@@ -165,7 +167,8 @@ def init_conversation_util(request):
             else:
                 start_vendor_tenant_conversation.delay(conversation.id, vendor_found.id)
 
-        elif any(word in body.lower() for word in no_synonyms) and not any(word in body.lower() for word in yes_synonyms):
+        elif any(word in body.lower() for word in no_synonyms) and not any(
+            word in body.lower() for word in yes_synonyms):
             # Vendor is denied
             response = "Oh sorry about that! Either tell me more specifics about your situation, or you can reach out " \
                        "to your property manager at +1 (925) 998-1664"  # don't include period here (twilio hates it)
@@ -259,7 +262,6 @@ def create_chat_completion(conversation, retry_counter=10):
         return response['choices'][0]['message']['content'].strip()
     except openai.error.RateLimitError:
         if retry_counter > 0:
-            print(f'- Rate limit. Making another request in 5s. Retries left: {retry_counter}')
             logger.error(f'- Rate limit. Making another request in 5s. Retries left: {retry_counter}')
             time.sleep(5)
             return create_chat_completion(conversation, retry_counter - 1)
@@ -301,7 +303,6 @@ def send_message(to_number, from_number, message, media_urls=None):
 
 
 def error_handler(e):
-    print("Error:", e)
     logger.error('Error: %s', e)  # This is the correct usage
     # TODO set conversation to error state, inactive, and send message to alex?
     return "Sorry, we're having some issues over here. Can you reach out directly to " \
