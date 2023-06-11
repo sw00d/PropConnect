@@ -14,7 +14,7 @@ export const light: ThemeDefinition = {
         secondary: ckcColors.sky[600],
         error: ckcColors.red[500],
         info: ckcColors.blue[500],
-        success: ckcColors.emerald[500],
+        success: ckcColors.green[900],
         warning: ckcColors.amber[500],
     },
 };
@@ -33,7 +33,7 @@ export const dark: ThemeDefinition = {
         secondary: ckcColors.sky[600],
         error: ckcColors.red[500],
         info: ckcColors.blue[500],
-        success: ckcColors.emerald[500],
+        success: ckcColors.green[900],
         warning: ckcColors.amber[500],
     },
 };

@@ -22,8 +22,8 @@
 
           <v-card-text>
 
-            <div class="py-1 my-4 border-b border-t d-flex justify-space-between">
-              <div>
+            <div class="table-row border-b">
+              <div class="weight-700 font-16">
                 Date started:
               </div>
               <div>
@@ -32,8 +32,8 @@
               </div>
             </div>
 
-            <div class="py-1 my-4 border-b border-t d-flex justify-space-between">
-              <div>
+            <div class="table-row border-b">
+              <div class="weight-700 font-16">
                 Tenant:
               </div>
               <div>
@@ -43,8 +43,8 @@
               </div>
             </div>
 
-            <div class="py-1 my-4 border-b border-t d-flex justify-space-between">
-              <div>
+            <div class="table-row border-b">
+              <div class="weight-700 font-16">
                 Vendor:
               </div>
               <div v-if="conversation.vendor?.number">
@@ -57,13 +57,39 @@
               </div>
             </div>
 
-            <div class="py-1 my-4 border-b border-t d-flex justify-space-between">
-              <div>
+            <div class="table-row border-b">
+              <div class="weight-700 font-16">
                 Status:
               </div>
-              <div>
-                {{ conversation.is_active ? "Active" : "Inactive" }}
-              </div>
+              <v-btn-toggle v-model="activeConversationToggle" density="compact" class="d-flex align-center">
+                <v-btn
+                  color="success"
+                  height="20px"
+                  :loading="updatingActiveStatus && activeConversationToggle === 0"
+                  :class="{ 'no-pointer-events': activeConversationToggle === 0 }"
+                  size="small"
+                  @click="toggleActiveStatus"
+                >
+                  <template #loader>
+                    <v-progress-circular size="14" indeterminate color="white" width="2"/>
+                  </template>
+                  Active
+                </v-btn>
+
+                <v-btn
+                  color="error"
+                  height="20px"
+                  :loading="updatingActiveStatus && activeConversationToggle === 1"
+                  :class="{ 'no-pointer-events': activeConversationToggle === 1 }"
+                  size="small"
+                  @click="toggleActiveStatus"
+                >
+                  <template #loader>
+                    <v-progress-circular size="14" indeterminate color="white" width="2"/>
+                  </template>
+                  Inactive
+                </v-btn>
+              </v-btn-toggle>
             </div>
           </v-card-text>
         </v-card>
@@ -79,7 +105,7 @@
             Assistant
           </v-chip>
           <v-chip
-            v-if="conversation.vendor?.number"
+            :disabled="!conversation.vendor?.number"
             @click="switchConversationView('vendor')"
             :variant="activeConversationType === 'assistant' ? 'outlined' : 'flat'"
           >
@@ -100,7 +126,7 @@
           Tenant and vendor numbers are the same, so this conversation history may not be accurate
         </div>
         <v-sheet
-          class="border pa-3 rounded-lg mt-4 overflow-auto bg-background"
+          class="border pa-3 rounded-lg mt-4 overflow-auto bg-surface"
           max-height="80vh"
           ref="conversationContainerRef"
         >
@@ -150,6 +176,7 @@
               hide-details
               auto-grow
               rows="1"
+              :disabled="!convoIsActive"
             />
 
             <!--            TODO Disable this if the convo isn't active aka 3 days old I think? -->
@@ -158,6 +185,7 @@
               height="50px"
               :loading="sendingMessage"
               @click="sendMessage"
+              :disabled="!convoIsActive"
             >
               Send
             </v-btn>
@@ -189,6 +217,10 @@ const { id } = route.params
 const conversation = ref({})
 const conversationContainerRef = ref(null)
 const loading = ref(true)
+
+const updatingActiveStatus = ref(false)
+const activeConversationToggle = ref(3)
+
 const sendingMessage = ref(false)
 const activeConversationType = ref('assistant')
 const message = ref('')
@@ -201,18 +233,49 @@ const activeConversationMessages = computed(() => {
   }
 })
 
-const fetchConversations = async (convoViewType = 'assistant') => {
+const convoIsActive = computed(() => {
+  return conversation.value.is_active || activeConversationToggle.value === 0
+})
+
+const fetchConversation = async (convoViewType = 'assistant') => {
   try {
     const { data, execute } = useRequest(`/conversations/${ id }`)
     await execute()
     conversation.value = data.value
-    switchConversationView(convoViewType)
+    activeConversationToggle.value = conversation.value.is_active ? 0 : 1
+    activeConversationType.value = conversation.value.vendor_messages?.length ? 'vendor' : 'assistant'
   } catch (error) {
     console.error(error)
     alert('Error fetching conversation')
 
   } finally {
     setTimeout(() => loading.value = false, 1000)
+  }
+}
+
+const setLastViewed = async () => {
+  const { execute } = useRequest(`/conversations/${ id }/set_last_viewed/`, { method: 'POST' })
+  await execute()
+}
+
+const toggleActiveStatus = async () => {
+  try {
+    updatingActiveStatus.value = true
+    const { error } = await useRequest(`/conversations/${ id }/`, {
+      method: 'PATCH',
+      body: {
+        is_active: !conversation.value.is_active
+      }
+    })
+    if (error.value) {
+      throw new Error(error)
+    }
+  } catch (error) {
+    console.error(error)
+    activeConversationToggle.value = conversation.value.is_active ? 0 : 1
+    alert('Error updating. Contact support.')
+  } finally {
+    updatingActiveStatus.value = false
   }
 }
 
@@ -226,7 +289,7 @@ const sendMessage = async () => {
         message_body: `[PROPERTY MANAGER]: ${ message.value }`,
       },
     })
-    await fetchConversations('vendor')
+    await fetchConversation('vendor')
     await nextTick()
     conversationContainerRef.value.scrollTop = conversationContainerRef.value.scrollHeight
   } catch (e) {
@@ -245,13 +308,21 @@ const switchConversationView = (view) => {
 
 
 onMounted(() => {
-    fetchConversations()
+    fetchConversation()
+    setLastViewed()
   }
 )
 
 </script>
 
 <style scoped lang="stylus">
+.table-row {
+  min-height: 48px;
+  display flex
+  justify-content space-between
+  align-items center
+}
+
 .left-msg {
   align-self: start;
   max-width: 66%;
