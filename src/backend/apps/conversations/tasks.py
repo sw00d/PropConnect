@@ -14,12 +14,26 @@ twilio_auth_token = TWILIO_AUTH_TOKEN
 twilio_sid = TWILIO_ACCOUNT_SID
 logger = logging.getLogger(__name__)
 
+# TODO Before monthly billing cycle, go through twilio numbers that aren't active and delete them -- something like this:
+# def delete_inactive_twilio_numbers():
+#     client = Client(settings.TWILIO_ACCOUNT_SID, settings.TWILIO_AUTH_TOKEN)
+#
+#     numbers = client.incoming_phone_numbers.list()
+#
+#     for number in numbers:
+#         # Replace `number.is_active` with actual condition or method to check if number is active
+#         if number has no active conversations tied to it:
+#             client.incoming_phone_numbers(number.sid).delete()
+
 
 @celery_app.task
-def set_old_conversations_to_not_active():
-    forty_eight_hours_ago = timezone.now() - timedelta(hours=48)
-    old_conversations = Message.objects.filter(time_sent__lt=forty_eight_hours_ago).values('conversation').distinct()
-    Conversation.objects.filter(id__in=old_conversations, is_active=True).update(is_active=False)
+def set_old_conversations_to_not_active(hours=48):
+    if hours == 0:
+        Conversation.objects.filter(is_active=True).update(is_active=False)
+    else:
+        time_ago = timezone.now() - timedelta(hours=hours)
+        old_conversations = Message.objects.filter(time_sent__lt=time_ago).values('conversation').distinct()
+        Conversation.objects.filter(id__in=old_conversations, is_active=True).update(is_active=False)
 
 
 @celery_app.task

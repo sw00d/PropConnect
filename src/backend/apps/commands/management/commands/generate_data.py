@@ -1,10 +1,10 @@
 from datetime import datetime, timedelta
+from django.utils.timezone import now
 from random import randint
 
 from django.core.management.base import BaseCommand
 from django.contrib.auth import get_user_model
 from django.db import IntegrityError
-from faker import Faker
 from twilio.rest import Client
 
 from conversations.models import Vendor, PhoneNumber, Tenant, Conversation, Message
@@ -91,10 +91,8 @@ def generate_conversations():
         "tenant_to_vendor",
         "inactive",
         "active",
-        "up_to_date",
-        "new_activity",
     ]
-    days_ago = 0
+    days_ago = 3
     for convo_type in convo_types:
         vendor1 = Vendor.objects.first()
 
@@ -157,23 +155,18 @@ def generate_conversations():
             conversation.is_active = False
             conversation.save()
 
-        if convo_type == 'up_to_date':
-            conversation.last_viewed = datetime.now()
-            conversation.save()
-        elif convo_type == 'new_activity':
-            conversation.last_viewed = datetime.now() - timedelta(days=1)
-            conversation.save()
+        date_created = now() - timedelta(days=days_ago)
+        conversation.date_created = date_created
+        conversation.last_viewed = date_created  # all messages of all convos will be unread
+        conversation.save()
 
         # Create PhoneNumbers
         PhoneNumber.objects.create(number="5555555555", most_recent_conversation=conversation, is_base_number=False)
 
-        date_created = datetime.now() - timedelta(days=days_ago)
-        conversation.date_created = date_created
-        conversation.save()
         # update all dates on messages of conversation
         minutes_ago = 10
         for message in conversation.messages.all():
-            message.date = datetime.now() - timedelta(days=days_ago, minutes=minutes_ago)
+            message.time_sent = now() + timedelta(minutes=minutes_ago)
             message.save()
             # random number between 8 and 30
             minutes_ago += randint(8, 30)
@@ -186,7 +179,6 @@ class Command(BaseCommand):
     def handle(self, *args, **kwargs):
 
         # Create stuff here!
-
         try:
             User.objects.create_superuser('admin@admin.com', 'admin')
             print('Made admin user.')

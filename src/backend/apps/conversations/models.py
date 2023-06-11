@@ -30,7 +30,7 @@ class Conversation(models.Model):
     vendor = models.ForeignKey(Vendor, null=True, on_delete=models.SET_NULL)
     date_created = models.DateTimeField(auto_now_add=True)
     is_active = models.BooleanField(default=True)  # set to false if no messages in 3 days
-    last_viewed = models.DateTimeField(auto_now=True)  # last time the conversation was viewed by the admin
+    last_viewed = models.DateTimeField(auto_now_add=True)  # last time the conversation was viewed by the admin
 
     def __str__(self):
         return f"Conversation ({self.pk}) between {self.tenant} and vendor {self.vendor}"
@@ -43,8 +43,8 @@ class Conversation(models.Model):
     @property
     def assistant_messages(self):
         # TODO Test these
-        from .models import Message  # Replace with your actual Message module
-        DEFAULT_TWILIO_NUMBER = settings.base.DEFAULT_TWILIO_NUMBER  # Replace with your actual default twilio number
+        from .models import Message
+        DEFAULT_TWILIO_NUMBER = settings.base.DEFAULT_TWILIO_NUMBER
         return Message.objects.filter(
             Q(receiver_number=DEFAULT_TWILIO_NUMBER) | Q(sender_number=DEFAULT_TWILIO_NUMBER),
             conversation=self
@@ -53,7 +53,7 @@ class Conversation(models.Model):
     @property
     def vendor_messages(self):
         # TODO Test these
-        from .models import Message  # Replace with your actual Message module
+        from .models import Message
         return Message.objects.filter(
             Q(sender_number=self.vendor.number) |
             (Q(sender_number=self.tenant.number) & Q(receiver_number=self.vendor.number)) |

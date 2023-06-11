@@ -1,4 +1,6 @@
 import logging
+from django.utils.timezone import now
+
 from rest_framework import status
 from rest_framework.response import Response
 from rest_framework.pagination import PageNumberPagination
@@ -35,8 +37,15 @@ class ConversationViewSet(ModelViewSet):
             return ConversationDetailSerializer
 
     @action(detail=True, methods=['post'])
+    def set_last_viewed(self, request, pk=None):
+        conversation = self.get_object()
+        conversation.last_viewed = now()
+        conversation.save()
+
+        return Response({'status': 'last_viewed time updated'})
+
+    @action(detail=True, methods=['post'])
     def send_admin_message(self, request, *args, **kwargs):
-        # TODO TEST THIS
         # This is so admin can inject messages into the conversation
 
         message_body = request.data.get('message_body')
@@ -56,8 +65,7 @@ class ConversationViewSet(ModelViewSet):
         )
 
         try:
-            print(f"Sending admin message to converation ({self.get_object()}) from with body: {message_body}")
-            logger.info(f"Sending admin message to converation ({self.get_object()}) from with body: {message_body}")
+            logger.info(f"Sending admin message to conversation ({self.get_object()}) from with body: {message_body}")
             send_message(tenant_number, from_number, message_body)
             send_message(vendor_number, from_number, message_body)
             return Response({'status': 'Message sent.'})

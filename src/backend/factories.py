@@ -6,7 +6,7 @@ import factory
 
 from django.contrib.auth import get_user_model
 
-from conversations.models import Tenant
+from conversations.models import Tenant, Conversation, PhoneNumber
 
 
 class UserFactory(factory.django.DjangoModelFactory):
@@ -35,3 +35,32 @@ class TenantFactory(factory.django.DjangoModelFactory):
 
     class Meta:
         model = Tenant
+
+
+class VendorFactory(factory.django.DjangoModelFactory):
+    name = factory.Faker('name')
+    number = factory.Faker('numerify', text="+1##########")
+
+    class Meta:
+        model = Tenant
+
+
+class TwilioNumberFactory(factory.django.DjangoModelFactory):
+    # Assuming `number` is a field in TwilioNumber model
+    number = "+12085558828"
+    most_recent_conversation = factory.PostGenerationMethodCall('save')
+
+    class Meta:
+        model = PhoneNumber
+
+
+class ConversationFactory(factory.django.DjangoModelFactory):
+    tenant = factory.SubFactory(TenantFactory)
+    vendor = factory.SubFactory(VendorFactory)
+    is_active = factory.Faker('boolean')
+    last_viewed = factory.Faker('past_datetime', start_date="-30d", tzinfo=None)
+    twilio_number = factory.SubFactory(TwilioNumberFactory)
+
+    class Meta:
+        model = Conversation
+

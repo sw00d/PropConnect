@@ -137,7 +137,7 @@ def init_conversation_util(request):
     conversation_json = get_conversation_messages(conversation)
 
     completion_from_gpt = create_chat_completion(conversation_json)
-    # TODO only do vendor check if we have more than 1 user message in the conversation
+    # TODO only do vendor check if we have more than 1 user message in the conversation?
     vendor_found = get_vendor_from_conversation(conversation)
     last_assistant_message = Message.objects.filter(conversation=conversation, role="assistant").last()
 
@@ -251,7 +251,6 @@ def get_vendor_from_conversation(conversation):
 
 
 def create_chat_completion(conversation, retry_counter=10):
-    # TODO extract this so the returned value from up top waits on the retries
     try:
         response = openai.ChatCompletion.create(
             model="gpt-3.5-turbo",
