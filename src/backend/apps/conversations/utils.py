@@ -141,6 +141,7 @@ def init_conversation_util(request):
 
     completion_from_gpt = create_chat_completion(conversation_json)
     # TODO only do vendor check if we have more than 1 user message in the conversation?
+    # TODO Only do vendor check if proposed vendor isn't populated?
     vendor_found = get_vendor_from_conversation(conversation)
     last_assistant_message = Message.objects.filter(conversation=conversation, role="assistant").last()
 
@@ -164,15 +165,21 @@ def init_conversation_util(request):
 
             if 'pytest' in argv[0]:
                 # Call without delay during pytests
-                start_vendor_tenant_conversation(conversation.id, vendor_found.id)
+                start_vendor_tenant_conversation(conversation.id, conversation.proposed_vendor.id)
             else:
-                start_vendor_tenant_conversation.delay(conversation.id, vendor_found.id)
+                logger.info(f'Starting vendor tenant conversation. Conversation: {conversation.id}')
+                start_vendor_tenant_conversation.delay(conversation.id, conversation.proposed_vendor.id)
 
         elif any(word in body.lower() for word in no_synonyms) and not any(
             word in body.lower() for word in yes_synonyms):
+            logger.info(f'Vendor was denied by user. Conversation: {conversation.id}')
+
             # Vendor is denied
             response = "Oh sorry about that! Either tell me more specifics about your situation, or you can reach out " \
                        "to your property manager at +1 (925) 998-1664"  # don't include period here (twilio hates it)
+
+            conversation.proposed_vendor = None
+            conversation.save()
 
         else:
             # Unexpected response
@@ -201,6 +208,8 @@ def init_conversation_util(request):
             sender_number=to_number,
             receiver_number=from_number
         )
+        conversation.proposed_vendor = vendor_found
+        conversation.save()
 
         return vendor_found_response
     else:
@@ -229,7 +238,7 @@ def get_conversation_messages(conversation):
 
 
 def get_vendor_from_conversation(conversation):
-    # GPT approach (less dumb but slower)
+    # GPT approach (less dumb than keyword but still not perfect)
     vocations = ', '.join(list(Vendor.objects.filter(active=True).values_list('vocation', flat=True)))
     user_messages = ', '.join(list(conversation.messages.filter(role="user").values_list('message_content', flat=True)))
 
@@ -239,9 +248,10 @@ def get_vendor_from_conversation(conversation):
         "Consider this scenario:\n"
         "{user_messages}\n\n"
         "Based on the details provided by the tenant, determine the most applicable profession required to address this issue.\n\n"
-        "If the issue presented is too vague or lacks sufficient detail (such as 'I have a maintenance request' with no further explanation), "
+        "If the issue presented is too vague or lacks sufficient detail, "
         "you should ask for more specific information about the issue. "
-        "In such cases, your response should be 'more information needed'. Remember, your response should still be limited to a single word or phrase."
+        "In such cases, especially when the statement is incomplete or too vague, "
+        "your response should ask for more information."
     ).format(vocations=vocations, user_messages=user_messages)
 
     response = create_chat_completion([{'content': prompt, 'role': 'system'}])
@@ -249,8 +259,11 @@ def get_vendor_from_conversation(conversation):
     if response.lower().replace('.', '') in vocations:
         for vocation in vocations.split(', '):
             if vocation.lower() in response.lower():
-                return Vendor.objects.get(vocation=vocation)
+                vendor = Vendor.objects.get(vocation=vocation)
+                logger.info(f'Vendor found: {vendor}. Convo: {conversation}')
+                return vendor
     else:
+        logger.info(f'No Vendor found. GPT res: {response}. Convo: {conversation}')
         return None
 
 

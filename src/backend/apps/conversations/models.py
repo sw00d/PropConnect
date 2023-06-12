@@ -28,6 +28,7 @@ class Tenant(models.Model):
 class Conversation(models.Model):
     tenant = models.ForeignKey(Tenant, on_delete=models.CASCADE)
     vendor = models.ForeignKey(Vendor, null=True, on_delete=models.SET_NULL)
+    proposed_vendor = models.ForeignKey(Vendor, null=True, on_delete=models.SET_NULL, related_name="proposed_for_conversation")  # vendor that was last proposed by the assistant
     date_created = models.DateTimeField(auto_now_add=True)
     is_active = models.BooleanField(default=True)  # set to false if no messages in 3 days
     last_viewed = models.DateTimeField(auto_now_add=True)  # last time the conversation was viewed by the admin
