@@ -186,7 +186,7 @@ class Command(BaseCommand):
             print('Admin user already exists!')
 
         generate_vendors()
-        generate_conversations() # TODO Extract this to a separate command and remove from gen data
+        # generate_conversations() # TODO Extract this to a separate command and remove from gen data
 
         for number in get_active_twilio_numbers():
             if number == DEFAULT_TWILIO_NUMBER:
