@@ -41,6 +41,19 @@ export default defineNuxtConfig({
             );
         },
     ],
+    vite: {
+        server: {
+            watch: {usePolling: true}
+        },
+
+        // Make styles load properly in production TODO: Fix this!
+        build: {
+            rollupOptions: {
+                treeshake: false,
+            }
+        }
+    },
+
     app: {
         head: {
             title: "SnapRepair",
