@@ -2,7 +2,7 @@
   <v-app class="overflow-hidden">
     <v-main>
       <v-container fluid class="h-100">
-        <div class="z-index-2 d-flex flex-sm-column px-4 pb-4 relative">
+        <div class="z-index-2 d-flex justify-space-between px-4 pb-4 relative">
           <v-btn
             icon
             variant="outlined"
@@ -19,7 +19,7 @@
           <v-btn
             icon
             variant="outlined"
-            class="transition ml-4 ml-sm-0 mt-sm-4"
+            class="transition ml-4 ml-sm-0"
             @click="logout"
           >
             <v-icon

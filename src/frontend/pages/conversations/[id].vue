@@ -135,11 +135,20 @@
             :key="i"
             class="d-flex flex-column"
           >
-            <div v-if="message.role === 'user'" class="left-msg">
+            <div v-if="message.role === 'user' && message.sender_number === tenant?.number" class="left-msg">
               <div class="font-12 text-highContrast">
                 {{ conversation.tenant?.name || `Tenant ${ $formatPhoneNumber(conversation.tenant.number) }` }}
               </div>
               <div class="rounded-lg pa-2 bg-surfaceSecondary">
+                <MessageContent :message="message"/>
+              </div>
+            </div>
+
+            <div v-else-if="vendor?.number === message.sender_number" class="right-msg">
+              <div class="font-12 text-highContrast text-right">
+                {{ conversation.vendor?.name || `Vendor ${ $formatPhoneNumber(conversation.vendor.number) }` }}
+              </div>
+              <div class="rounded-lg pa-2 bg-primary">
                 <MessageContent :message="message"/>
               </div>
             </div>
@@ -216,6 +225,9 @@ const { id } = route.params
 
 const conversation = ref({})
 const conversationContainerRef = ref(null)
+const vendor = computed(() => conversation.value?.vendor)
+const tenant = computed(() => conversation.value?.tenant)
+
 const loading = ref(true)
 
 const updatingActiveStatus = ref(false)
