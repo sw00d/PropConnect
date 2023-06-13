@@ -294,23 +294,24 @@ def send_message(to_number, from_number, message, media_urls=None):
         # from_number HAS TO BE A TWILIO NUMBER
         client = Client(twilio_sid, twilio_auth_token)
 
-        message_arguments = {
-            'from_': from_number,
-            'to': to_number
-        }
+        # Split message into chunks of 1600 characters each
+        message_chunks = [message[i:i + 1600] for i in range(0, len(message), 1600)]
 
-        if message:
-            message_arguments['body'] = message
+        for message_chunk in message_chunks:
+            message_arguments = {
+                'from_': from_number,
+                'to': to_number,
+                'body': message_chunk
+            }
 
-        if media_urls:
-            # Twilio expects a list of media URLs
-            if isinstance(media_urls, list):
-                message_arguments['media_url'] = media_urls
-            else:
-                message_arguments['media_url'] = [media_urls]
+            if media_urls:
+                # Twilio expects a list of media URLs
+                if isinstance(media_urls, list):
+                    message_arguments['media_url'] = media_urls
+                else:
+                    message_arguments['media_url'] = [media_urls]
 
-        client.messages.create(**message_arguments)
-
+            client.messages.create(**message_arguments)
     except TwilioRestException as e:
         print(e)
         error_handler(e)
