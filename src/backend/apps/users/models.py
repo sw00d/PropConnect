@@ -47,6 +47,8 @@ class User(AbstractBaseUser, PermissionsMixin):
     is_staff = models.BooleanField(default=False)
     is_superuser = models.BooleanField(default=False)
 
+    company = models.ForeignKey('companies.Company', on_delete=models.CASCADE, null=True, blank=True)
+
     objects = CustomUserManager()
 
     def __str__(self):

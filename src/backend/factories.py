@@ -6,6 +6,7 @@ import factory
 
 from django.contrib.auth import get_user_model
 
+from companies.models import Company
 from conversations.models import Tenant, Conversation, PhoneNumber
 
 
@@ -64,3 +65,13 @@ class ConversationFactory(factory.django.DjangoModelFactory):
     class Meta:
         model = Conversation
 
+
+class CompanyFactory(factory.django.DjangoModelFactory):
+    number_of_doors = factory.Faker('random_int', min=1, max=100)
+
+    class Meta:
+        model = Company
+
+    @factory.lazy_attribute
+    def name(self):
+        return f"Test Company"

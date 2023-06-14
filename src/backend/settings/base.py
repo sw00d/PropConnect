@@ -50,6 +50,8 @@ THIRD_PARTY_APPS = (
     'django.contrib.staticfiles',
     'django.contrib.postgres',
 
+    'djstripe',
+
     'rest_framework',
     'rest_framework.authtoken',
     'django_extensions',
@@ -61,6 +63,7 @@ THIRD_PARTY_APPS = (
 OUR_APPS = (
     'users',
     'commands',
+    'companies',
     'conversations',
 )
 INSTALLED_APPS = THIRD_PARTY_APPS + OUR_APPS
@@ -113,6 +116,25 @@ AUTH_USER_MODEL = 'users.User'
 DEFAULT_AUTO_FIELD = 'django.db.models.AutoField'
 SESSION_ENGINE = os.environ.get("SESSION_ENGINE", "django.contrib.sessions.backends.cached_db")
 
+
+# =============================================================================
+# Stripe
+# =============================================================================
+# STRIPE_PUBLISH_KEY = os.environ.get('STRIPE_PUBLISH_KEY')
+# STRIPE_SECRET_KEY =
+
+STRIPE_LIVE_SECRET_KEY = os.environ.get("STRIPE_LIVE_SECRET_KEY")
+STRIPE_TEST_SECRET_KEY = os.environ.get("STRIPE_TEST_SECRET_KEY")
+
+assert not (STRIPE_LIVE_SECRET_KEY and STRIPE_TEST_SECRET_KEY), "Choose only STRIPE_LIVE_SECRET_KEY or STRIPE_SECRET_KEY " \
+                                                                "env var, not both!"
+
+# implicitly set live mode based on whether we have a live key
+STRIPE_LIVE_MODE = bool(STRIPE_LIVE_SECRET_KEY)
+STRIPE_SECRET_KEY = STRIPE_LIVE_SECRET_KEY or STRIPE_TEST_SECRET_KEY
+
+DJSTRIPE_FOREIGN_KEY_TO_FIELD = "id"
+DJSTRIPE_WEBHOOK_VALIDATION = 'retrieve_event'
 
 # =============================================================================
 # Database

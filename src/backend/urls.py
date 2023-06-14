@@ -5,6 +5,7 @@ from django.contrib import admin
 from django.urls import path
 from rest_framework import routers
 
+from companies.views import CompanyViewSet
 from conversations.views import init_conversation, play_the_middle_man, ConversationViewSet
 from users.views import LoginView, LogoutView, UserPasswordResetViewSet, UserViewSet
 
@@ -15,6 +16,7 @@ router = routers.DefaultRouter()
 router.register('passwordreset', UserPasswordResetViewSet, basename='passwordreset')
 
 # Custom views
+router.register('companies', CompanyViewSet)
 router.register('users', UserViewSet)
 router.register('conversations', ConversationViewSet)
 
