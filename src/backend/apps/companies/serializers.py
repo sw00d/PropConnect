@@ -64,28 +64,42 @@ class CompanyUpdateSerializer(serializers.ModelSerializer):
         )
 
     def update(self, instance, validated_data):
+        payment_method_id = validated_data.pop('payment_method_id', None)
 
-        payment_method_id = validated_data.pop('payment_method_id')
-        # Create Stripe customer
-        stripe_customer = stripe.Customer.create(
-            payment_method=payment_method_id,  # payment method ID from your frontend
-            email=instance.users.all().first().email,  # company admin's email
-            name=instance.name,  # company's name
-            invoice_settings={
-                'default_payment_method': payment_method_id,
-            },
-        )
+        # call super update
+        instance = super().update(instance, validated_data)
 
-        # Sync customer with dj-stripe
-        customer, created = Customer.get_or_create(subscriber=instance.users.all().first())
-        customer.api_retrieve()  # Sync customer data with Stripe
-        print(stripe.Customer.retrieve(stripe_customer.id))
-        customer.default_payment_method = PaymentMethod.sync_from_stripe_data(
-            stripe.Customer.retrieve(stripe_customer.id).invoice_settings.default_payment_method
-        )
-        customer.save()
-        # Save Stripe customer ID in Company model
-        instance.stripe_customer_id = stripe_customer.id
-        instance.save()
+        if payment_method_id:
+            try:
+                # Create Stripe customer
+                stripe_customer = stripe.Customer.create(
+                    payment_method=payment_method_id,
+                    email=instance.users.first().email,
+                    name=instance.name,
+                    invoice_settings={
+                        'default_payment_method': payment_method_id,
+                    },
+                )
+            except stripe.error.StripeError as e:
+                # Handle Stripe errors here
+                raise serializers.ValidationError(f"Stripe error: {e}")
+
+            try:
+                # Sync customer with dj-stripe
+                customer, created = Customer.get_or_create(subscriber=instance.users.first())
+                customer.api_retrieve()
+
+                # Avoid an unnecessary API call by using the data from stripe_customer
+                customer.default_payment_method = PaymentMethod.sync_from_stripe_data(
+                    stripe_customer.invoice_settings.default_payment_method
+                )
+                customer.save()
+            except Exception as e:  # Replace with a more specific exception if possible
+                # Handle other errors here
+                raise serializers.ValidationError(f"Error updating customer: {e}")
+
+                # Save Stripe customer ID in Company model
+            instance.stripe_customer_id = stripe_customer.id
+            instance.save()
 
         return instance
