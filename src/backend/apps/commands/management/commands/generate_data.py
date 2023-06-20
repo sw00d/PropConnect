@@ -1,4 +1,6 @@
 from datetime import datetime, timedelta
+
+import stripe
 from django.utils.timezone import now
 from random import randint
 
@@ -9,9 +11,12 @@ from twilio.rest import Client
 
 from conversations.models import Vendor, PhoneNumber, Tenant, Conversation, Message
 from factories import TenantFactory
-from settings.base import DEFAULT_TWILIO_NUMBER, TWILIO_ACCOUNT_SID, TWILIO_AUTH_TOKEN
+from settings.base import DEFAULT_TWILIO_NUMBER, TWILIO_ACCOUNT_SID, TWILIO_AUTH_TOKEN, STRIPE_SECRET_KEY
+from stripe_features.models import Product, Price
 
 User = get_user_model()
+
+stripe.api_key = STRIPE_SECRET_KEY
 
 
 def generate_vendors():
@@ -173,6 +178,37 @@ def generate_conversations():
         days_ago += 1
 
 
+def sync_stripe_product():
+    products = stripe.Product.list()
+
+    for product in products:
+        # Check if the product already exists in the DB
+        db_product = Product.objects.filter(stripe_product_id=product.id).first()
+        if not db_product:
+            # If not, create a new product
+            db_product = Product.objects.create(
+                stripe_product_id=product.id,
+                name=product.name,
+                active=product.active
+            )
+
+        # Get the prices associated with this product
+        prices = stripe.Price.list(product=product.id)
+
+        for price in prices:
+            # Check if the price already exists in the DB
+            if not Price.objects.filter(stripe_price_id=price.id).exists():
+                # If not, create a new price
+                Price.objects.create(
+                    stripe_price_id=price.id,
+                    product=db_product,
+                    unit_amount=price.unit_amount,
+                    currency=price.currency,
+                    recurring=price.recurring is not None
+                    # This is a simple way to check if the price is recurring or not
+                )
+
+
 class Command(BaseCommand):
     help = "Generate data"
 
@@ -187,6 +223,9 @@ class Command(BaseCommand):
 
         generate_vendors()
         # generate_conversations() # TODO Extract this to a separate command and remove from gen data
+        sync_stripe_product()  # TODO Extract this to a separate command and remove from gen data
+
+        # Loading products from stripe
 
         for number in get_active_twilio_numbers():
             if number == DEFAULT_TWILIO_NUMBER:

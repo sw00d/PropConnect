@@ -3,6 +3,7 @@
 https://factoryboy.readthedocs.io/en/latest/recipes.html
 """
 import factory
+from djstripe.models import PaymentMethod
 
 from django.contrib.auth import get_user_model
 
@@ -64,6 +65,27 @@ class ConversationFactory(factory.django.DjangoModelFactory):
 
     class Meta:
         model = Conversation
+
+
+# class PaymentMethodFactory(factory.django.DjangoModelFactory):
+#     class Meta:
+#         model = PaymentMethod
+#
+#     # Here, the required fields for PaymentMethod are added.
+#     # Replace with the correct values as per your implementation.
+#     billing_details = factory.Dict({
+#         'name': factory.Faker('name'),
+#         'email': factory.Faker('email'),
+#         'phone': factory.Faker('phone_number'),
+#         'address': factory.Dict({
+#             'line1': factory.Faker('street_name'),
+#             'line2': factory.Faker('secondary_address'),
+#             'city': factory.Faker('city'),
+#             'state': factory.Faker('state_abbr'),
+#             'postal_code': factory.Faker('zipcode'),
+#             'country': factory.Faker('country_code')
+#         })
+#     })
 
 
 class CompanyFactory(factory.django.DjangoModelFactory):

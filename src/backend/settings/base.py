@@ -65,6 +65,7 @@ OUR_APPS = (
     'commands',
     'companies',
     'conversations',
+    'stripe_features',
 )
 INSTALLED_APPS = THIRD_PARTY_APPS + OUR_APPS
 
