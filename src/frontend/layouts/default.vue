@@ -16,7 +16,10 @@
             />
           </v-btn>
 
+          test {{ auth.isLoggedIn }}
+
           <v-btn
+            v-if="auth.isLoggedIn"
             icon
             variant="outlined"
             class="transition ml-4 ml-sm-0"
