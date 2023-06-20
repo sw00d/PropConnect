@@ -305,15 +305,19 @@ def send_message(to_number, from_number, message, media_urls=None):
             }
 
             if media_urls:
+                logger.log('Is media')
                 # Twilio expects a list of media URLs
                 if isinstance(media_urls, list):
+                    logger.log('Is media list')
                     message_arguments['media_url'] = media_urls
                 else:
+                    logger.log('Is single media item')
                     message_arguments['media_url'] = [media_urls]
-
+            logger.log(f"message {message_arguments}")
             client.messages.create(**message_arguments)
     except TwilioRestException as e:
         print(e)
+        logger.error(e)
         error_handler(e)
 
 
