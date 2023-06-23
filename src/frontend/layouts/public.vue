@@ -1,21 +1,8 @@
 <template>
-  <v-app class="overflow-hidden bg-white">
-    <v-app-bar class="bg-transparent">
-      <div class="d-flex justify-center w-100">
-        <div class="content-container d-flex align-center">
-          <v-toolbar-title class="font-30 lh-38 text-primary font-weight-black">PropConnect</v-toolbar-title>
-          <v-spacer></v-spacer>
-          <button
-            class="border-b sign-in font-14 text-primary"
-            @click="logout"
-          >
-            Sign in
-          </button>
-        </div>
-      </div>
-    </v-app-bar>
+  <v-layout class="flex-column">
+
     <v-main>
-      <div class="content-container">
+      <div>
         <!--        <v-btn-->
         <!--          icon-->
         <!--          variant="outlined"-->
@@ -31,7 +18,8 @@
         <slot/>
       </div>
     </v-main>
-  </v-app>
+  </v-layout>
+
 </template>
 
 <script setup lang="ts">
@@ -67,12 +55,7 @@ const logout = async () => {
   border-color: var(--v-theme-primary) !important;
 }
 
-.v-main {
-  .content-container {
-    margin-top: 100px;
-  }
+>>> .v-toolbar {
+  position inline
 }
-//>>> .v-toolbar {
-//  background transparent;
-//}
 </style>
