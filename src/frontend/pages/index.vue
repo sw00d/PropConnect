@@ -1,11 +1,14 @@
 <template>
-  <h1></h1>
+  <HomeHero/>
 </template>
 
 <script setup>
-definePageMeta({
-  layout: "default",
-})
 
+import HomeHero from "../sections/homepage/HomeHero"
+
+definePageMeta({
+  layout: "public",
+  middleware: ["guest"]
+})
 
 </script>
