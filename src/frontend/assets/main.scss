@@ -1,7 +1,7 @@
 $family: 'Inter', sans-serif;
 
 @use "vuetify" with (
-  $heading-font-family: $family,
+  //$heading-font-family: $family,
   $body-font-family:  $family,
 );
 

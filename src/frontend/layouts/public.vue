@@ -15,6 +15,7 @@
         <!--          />-->
         <!--        </v-btn>-->
         <slot/>
+        <Footer />
       </div>
     </v-main>
   </v-layout>
@@ -24,6 +25,7 @@
 <script setup lang="ts">
 import {useAuth} from "~/composables/useAuth";
 import {useThemeSwitcher} from "~/composables/useThemeSwitcher";
+import Footer from "~/sections/homepage/Footer.vue";
 
 const auth = useAuth()
 

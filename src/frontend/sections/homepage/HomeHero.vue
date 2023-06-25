@@ -3,11 +3,11 @@
     <div class="d-flex flex-column">
       <div class="d-flex justify-center w-100">
         <v-container class="d-flex align-center">
-          <v-toolbar-title class="text-h6 lh-38 text-primary font-weight-black">PropConnect</v-toolbar-title>
+          <v-toolbar-title class="lh-38 text-primary font-weight-black">PropConnect</v-toolbar-title>
           <v-spacer class="hidden-sm-and-down"></v-spacer>
           <button
             class="border-b sign-in font-14 text-primary"
-            @click="logout"
+            @click=""
           >
             Sign in
           </button>

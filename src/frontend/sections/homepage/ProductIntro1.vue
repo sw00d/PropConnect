@@ -10,7 +10,7 @@
                 Communication
               </div>
             </div>
-            <div class="font-weight-medium opacity-7 font-24 mt-11">
+            <div class="font-weight-medium opacity-7 text-h6 mt-11">
               Take a step back from the constant juggle between tenants, vendors, and landlords. Our solution brings
               efficiency
               to your role by facilitating direct text-based communication between tenant and vendor. With in depth
