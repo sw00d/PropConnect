@@ -35,8 +35,8 @@
 </template>
 
 <script setup lang="ts">
-import textingGirl from "@/assets/textingGirl.png"
-import blueblob from "@/assets/blueblob.png"
+import textingGirl from "assets/public-site/textingGirl.png"
+import blueblob from "assets/public-site/blueblob.png"
 // Imports
 
 // Data

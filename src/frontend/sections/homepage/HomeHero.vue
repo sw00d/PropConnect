@@ -50,7 +50,7 @@
 
 <script setup lang="ts">
 // Imports
-import robotSVG from "@/assets/robotSVG.svg"
+import robotSVG from "assets/public-site/robotSVG.svg"
 
 // Data
 
