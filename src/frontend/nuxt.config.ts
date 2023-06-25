@@ -56,8 +56,8 @@ export default defineNuxtConfig({
 
     app: {
         head: {
-            title: "SnapRepair",
-            titleTemplate: "%s | SnapRepair",
+            title: "PropConnect",
+            titleTemplate: "%s | PropConnect",
             link: [
                 {rel: "stylesheet", href: "https://rsms.me/inter/inter.css"},
                 {rel: "preconnect", href: "https://rsms.me/"},

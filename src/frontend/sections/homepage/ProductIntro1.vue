@@ -4,13 +4,17 @@
       <v-row>
         <v-col>
           <div class="d-flex flex-column justify-center h-100">
-            <div class="font-weight-bold font-40">
-              Streamlining Tenant Communication
+            <div class="font-weight-bold italic font-40">
+              Straight-forward
+              <div class="pl-16">
+                Communication
+              </div>
             </div>
             <div class="font-weight-medium opacity-7 font-24 mt-11">
               Take a step back from the constant juggle between tenants, vendors, and landlords. Our solution brings
               efficiency
-              to your role by facilitating direct communication between tenant and vendor. With in depth oversight,
+              to your role by facilitating direct text-based communication between tenant and vendor. With in depth
+              oversight,
               you're
               free
               from mundane tasks, empowering you to focus on expanding your portfolio or simply enjoying your

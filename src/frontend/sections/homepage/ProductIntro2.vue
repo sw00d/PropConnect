@@ -12,7 +12,7 @@
             <v-img :src="blueblob"/>
           </v-sheet>
           <div class="d-flex flex-column justify-center h-100">
-            <div class="font-weight-bold font-40 lh-50">
+            <div class="font-weight-bold font-40 lh-50 italic">
               <div>
                 AI Capabilities
               </div>
