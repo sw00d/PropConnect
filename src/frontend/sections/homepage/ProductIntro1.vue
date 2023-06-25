@@ -1,6 +1,6 @@
 <template>
   <div class="bg-primary text-white">
-    <div class="content-container d-flex justify-space-between align-center py-10">
+    <v-container class="d-flex justify-space-between align-center py-10">
       <v-row>
         <v-col>
           <div class="d-flex flex-column justify-center h-100">
@@ -23,8 +23,8 @@
             </div>
           </div>
         </v-col>
-        <v-col cols="3" class="d-flex justify-end">
-          <v-sheet height="415px" width="225px" class="bg-transparent relative">
+        <v-col cols="12" md="3" class="d-flex justify-center justify-md-end mt-10 mt-md-0">
+          <v-sheet height="415px" width="225px" max-width="100%" class="bg-transparent relative">
             <v-img :src="iphoneOutline"/>
 
             <v-img
@@ -50,7 +50,7 @@
           </v-sheet>
         </v-col>
       </v-row>
-    </div>
+    </v-container>
 
   </div>
 </template>
@@ -119,66 +119,5 @@ const runAnimation = () => {
   position: absolute;
   transition: all 1s; /* Adjust this to make the animation faster or slower */
 }
-
-//
-//
-///* Keyframes for the "scroll-up" animation for the first bubble */
-//@keyframes scrollUpOne {
-//  0%, 20% { /* Keep at bottom for the first 20% of the time */
-//    bottom: 0;
-//    opacity: 0;
-//  }
-//  20%, 40% { /* Move up to 50px and fade in between 20% and 40% of the time */
-//    bottom: 50px;
-//    opacity: 1;
-//  }
-//  60%, 80% { /* Move up to 100px between 60% and 80% of the time */
-//    bottom: 100px;
-//  }
-//  100% { /* Move up to 150px at the end of the time */
-//    bottom: 150px;
-//  }
-//}
-//
-///* Keyframes for the "scroll-up" animation for the second bubble */
-//@keyframes scrollUpTwo {
-//  0%, 40% { /* Keep at bottom and hidden for the first 40% of the time */
-//    bottom: 0;
-//    opacity: 0;
-//  }
-//  40%, 60% { /* Move up to 50px and fade in between 40% and 60% of the time */
-//    bottom: 50px;
-//    opacity: 1;
-//  }
-//  80%, 100% { /* Move up to 100px between 80% and 100% of the time */
-//    bottom: 100px;
-//  }
-//}
-//
-///* Keyframes for the "scroll-up" animation for the third bubble */
-//@keyframes scrollUpThree {
-//  0%, 80% { /* Keep at bottom and hidden for the first 80% of the time */
-//    bottom: 0px;
-//    opacity: 0;
-//  }
-//  80%, 100% { /* Move up to 50px and fade in between 80% and 100% of the time */
-//    bottom: 50px;
-//    opacity: 1;
-//  }
-//}
-//
-///* Apply the animations to the text bubbles */
-//.text-bubble.one {
-//  animation: scrollUpOne 10s ease-in-out forwards; /* Total animation time is 10 seconds */
-//}
-//
-//.text-bubble.two {
-//  animation: scrollUpTwo 10s ease-in-out forwards; /* Total animation time is 10 seconds */
-//}
-//
-//.text-bubble.three {
-//  animation: scrollUpThree 10s ease-in-out forwards; /* Total animation time is 10 seconds */
-//}
-
 
 </style>

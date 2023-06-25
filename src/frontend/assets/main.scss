@@ -1,7 +1,8 @@
 $family: 'Inter', sans-serif;
 
 @use "vuetify" with (
-  $body-font-family:  $family
+  $heading-font-family: $family,
+  $body-font-family:  $family,
 );
 
 :root {
@@ -14,10 +15,42 @@ $family: 'Inter', sans-serif;
     }
 }
 
-.content-container, .container {
+h1, h2, h3, h4 {
+    font-weight: 900 !important;
+}
+
+.container {
     width: 1100px !important;
     margin: auto;
 }
+
+/* Extra small devices (portrait phones, less than 600px) */
+@media (max-width: 599px) {
+    .container {
+        max-width: 100%;
+    }
+}
+
+/* Small devices (landscape phones, 600px and up) */
+@media (min-width: 600px) {
+    .container {
+        max-width: 600px;
+    }
+}
+//
+///* Medium devices (tablets, 960px and up) */
+//@media (min-width: 960px) {
+//    .container {
+//        max-width: 960px;
+//    }
+//}
+//
+///* Large devices (desktops, 1264px and up) */
+//@media (min-width: 1264px) {
+//    .container {
+//        max-width: 1100px;
+//    }
+//}
 
 .v-application {
     transition: .2s;
@@ -70,6 +103,7 @@ a {
     display: inline-block;
     cursor: pointer;
 }
+
 //TABLES
 .v-data-table__tr {
     background: rgba(var(--v-theme-background), 1) !important;
@@ -78,10 +112,12 @@ a {
         background: rgba(var(--v-theme-surface), .5) !important;
     }
 }
-.v-data-table__td{
+
+.v-data-table__td {
     transition: all .1s ease-in-out;
     background: rgba(var(--v-theme-surface), 1) !important;
 }
+
 .v-data-table-footer {
     opacity: .7;
     margin: 10px !important;
