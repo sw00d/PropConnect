@@ -52,9 +52,6 @@
 </template>
 
 <script setup lang="ts">
-import AOS from 'aos'
-import 'aos/dist/aos.css'
-
 import iphoneOutline from "assets/public-site/iphoneOutline.png"
 import textBubble1 from "assets/public-site/texting-bubbles/text-bubble1.png"
 import textBubble2 from "assets/public-site/texting-bubbles/text-bubble2.png"
@@ -72,26 +69,7 @@ const showFourth = ref(false)
 
 // Lifecycle
 onMounted(() => {
-  AOS.init({
-    startEvent: 'DOMContentLoaded', // name of the event dispatched on the document, that AOS should initialize on
-    initClassName: false, // class applied after initialization
-    animatedClassName: 'aos-animate', // class applied on animation
-    useClassNames: false, // if true, will add content of `data-aos` as classes on scroll
-  });
-
-  document.addEventListener('aos:in', ({detail}) => {
-    console.log('animated element:', detail);
-    if (detail.getAttribute('data-aos-id') === 'myElement') {
-      // Call your function here
-      alert('firing')
-
-    }
-  });
-
-  onUnmounted(() => {
-    document.removeEventListener('aos:in', runAnimation);
-  })
-
+  runAnimation()
 })
 
 // Methods

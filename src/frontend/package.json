@@ -22,7 +22,6 @@
     },
     "dependencies": {
         "@pinia/nuxt": "^0.4.9",
-        "aos": "^2.3.4",
         "dayjs": "^1.11.7",
         "pinia": "^2.0.35",
         "vite-plugin-vuetify": "^1.0.2"
