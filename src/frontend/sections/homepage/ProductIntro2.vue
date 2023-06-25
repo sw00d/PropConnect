@@ -14,7 +14,7 @@
           class="d-flex flex-column justify-center h-100 bg-transparent align-center align-sm-start"
           :max-width="isTablet ? '100%' : '80%'"
         >
-          <div class="font-weight-bold font-40 lh-50 italic">
+          <div class="font-weight-black font-40 lh-50">
             <div>
               AI Capabilities
             </div>

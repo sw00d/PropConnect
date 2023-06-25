@@ -3,7 +3,7 @@
     <v-container>
       <div class="d-flex justify-center justify-md-space-between">
         <div class="d-flex flex-column align-center text-center align-md-start text-md-left">
-          <div class="text-h4 text-sm-h2 font-weight-black text-no-wrap">
+          <div class="font-40 font-weight-black text-no-wrap">
             Ready to jump in?
           </div>
           <div class="text-h6 mt-5">

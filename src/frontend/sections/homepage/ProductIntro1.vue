@@ -4,7 +4,7 @@
       <v-row>
         <v-col>
           <div class="d-flex flex-column justify-center h-100">
-            <div class="font-weight-bold italic font-40">
+            <div class="font-weight-black font-40">
               Straight-forward
               <div class="pl-16">
                 Communication
