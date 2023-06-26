@@ -21,6 +21,7 @@
             class="font-weight-black bg-primary font-20 mt-10"
             width="288px"
             height="60px"
+            to="/signup/user-info"
           >
             Start my journey
           </v-btn>

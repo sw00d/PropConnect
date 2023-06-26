@@ -1,9 +1,11 @@
 <template>
-  <HomeHero/>
-  <ProductIntro1 />
-  <ProductIntro2 />
-  <BlurbDescriptions />
-  <ReadyToJumpIn />
+  <div class="fade-in">
+    <HomeHero/>
+    <ProductIntro1/>
+    <ProductIntro2/>
+    <BlurbDescriptions/>
+    <ReadyToJumpIn/>
+  </div>
 </template>
 
 <script setup>

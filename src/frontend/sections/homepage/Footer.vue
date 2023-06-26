@@ -11,12 +11,13 @@
           </div>
         </div>
         <v-spacer class=""></v-spacer>
-        <button
-          class="border-b sign-in font-14 text-primary"
-          @click=""
-        >
-          Sign in
-        </button>
+        <a href="/sign-in">
+          <button
+            class="border-b sign-in font-14 text-primary"
+          >
+            Sign in
+          </button>
+        </a>
       </div>
 
       <div class="d-flex justify-space-between mt-10 font-14">

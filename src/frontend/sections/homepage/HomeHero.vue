@@ -5,12 +5,13 @@
         <v-container class="d-flex align-center">
           <v-toolbar-title class="lh-38 text-primary font-weight-black">PropConnect</v-toolbar-title>
           <v-spacer class="hidden-sm-and-down"></v-spacer>
-          <button
-            class="border-b sign-in font-14 text-primary"
-            @click=""
-          >
-            Sign in
-          </button>
+          <a href="/sign-in">
+            <button
+              class="border-b sign-in font-14 text-primary"
+            >
+              Sign in
+            </button>
+          </a>
         </v-container>
       </div>
     </div>
@@ -40,6 +41,7 @@
           width="250px"
           height="50px"
           class="font-weight-black bg-primary font-20 mt-10"
+          to="/signup/user-info"
         >
           Get Started
         </v-btn>

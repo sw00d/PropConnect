@@ -12,8 +12,14 @@ export const defaults: DefaultsInstance = {
 		height: 38,
 		rounded: "lg",
 		size: "small",
+        class: 'font-16'
 	},
 	VTextField: {
+		color: "primary",
+		variant: "outlined",
+		density: "comfortable",
+	},
+    VSelect: {
 		color: "primary",
 		variant: "outlined",
 		density: "comfortable",
