@@ -66,6 +66,7 @@
 import { useAuth } from "../composables/useAuth"
 import apartment from "@/assets/signup/apartment.png"
 import AuthContentContainer from "../components/Signup/AuthContentContainer"
+import { useSnackbarStore } from "../store/snackbarStore"
 
 definePageMeta({
   layout: "signup",
@@ -80,6 +81,7 @@ const password = ref("")
 const isLoading = ref(false)
 const errors = ref({})
 const form = ref(null)
+const snackbarStore = useSnackbarStore()
 
 
 const submit = async () => {
@@ -94,12 +96,11 @@ const submit = async () => {
     if (error.value) {
       isLoading.value = false // Set isLoading to false if there's an error
       errors.value = error.value.data
-      throw new Error(error)
+      snackbarStore.displaySnackbar('error', 'Error signing in')
+    } else {
+      navigateTo("/dashboard")
     }
-
     isLoading.value = false // Set isLoading to false after the request is completed
-    navigateTo("/dashboard")
-    return data.value
   }
 }
 

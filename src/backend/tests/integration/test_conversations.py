@@ -37,7 +37,7 @@ class ConversationViewSetTestCase(CkcAPITestCase):
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         self.assertGreaterEqual(self.conversation.last_viewed, time)
 
-    @pytest.mark.skip("TODO: fix this test")
+    # @pytest.mark.skip("TODO: fix this test")
     @patch('conversations.utils.send_message')
     def test_send_admin_message(self, mock_send_message):
         admin_message_url = f"{self.detail_url}send_admin_message/"

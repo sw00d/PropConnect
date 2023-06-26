@@ -16,8 +16,6 @@
             />
           </v-btn>
 
-          test {{ auth.isLoggedIn }}
-
           <v-btn
             v-if="auth.isLoggedIn"
             icon

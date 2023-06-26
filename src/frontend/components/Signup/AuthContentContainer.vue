@@ -1,5 +1,5 @@
 <template>
-  <div class="wrapper fade-in d-flex align-center">
+  <div class="wrapper fade-in d-flex align-center fade-in">
     <v-container class="mini">
       <v-card>
         <div class="d-flex flex-column px-10 mt-4">
