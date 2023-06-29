@@ -1,5 +1,4 @@
 <template>
-  <v-card>
     <v-layout>
       <v-navigation-drawer
         theme="light"
@@ -25,8 +24,7 @@
 
           <NuxtLink to="/conversations">
             <v-list-item
-                            class="my-3"
-
+              class="my-3"
               prepend-icon="mdi-forum"
               title="Conversations"
               value="conversations"
@@ -44,9 +42,10 @@
           </div>
         </template>
       </v-navigation-drawer>
-      <v-main style="min-height: 100vh"></v-main>
+      <v-main style="min-height: 100vh">
+        <slot />
+      </v-main>
     </v-layout>
-  </v-card>
 
 </template>
 

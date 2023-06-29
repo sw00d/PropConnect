@@ -1,4 +1,3 @@
-import {useAuth} from "~/composables/useAuth";
 import {useUserStore} from "~/store/userStore";
 import {useSnackbarStore} from "~/store/snackbarStore";
 

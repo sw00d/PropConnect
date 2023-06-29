@@ -1,10 +1,10 @@
 <template>
- <Dashboard />
+ <ConversationHome />
 </template>
 
 <script setup>
 import { useDisplay } from 'vuetify'
-import Dashboard from "../sections/portal/dashboard/Dashboard"
+import ConversationHome from "../sections/portal/conversations/home/ConversationHome"
 
 definePageMeta({
   middleware: ["auth"],
