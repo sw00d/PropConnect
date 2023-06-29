@@ -5,11 +5,11 @@
         <v-container class="d-flex align-center">
           <v-toolbar-title class="lh-38 text-primary font-weight-black">PropConnect</v-toolbar-title>
           <v-spacer class="hidden-sm-and-down"></v-spacer>
-          <a href="/sign-in">
+          <a :href="store.authUser ? '/dashboard' : '/sign-in'">
             <button
               class="border-b sign-in font-14 text-primary"
             >
-              Sign in
+              {{ store.authUser ? 'Portal' : 'Sign in' }}
             </button>
           </a>
         </v-container>
@@ -18,7 +18,7 @@
 
     <v-container class="mt-sm-10">
       <div class="d-flex justify-space-between align-center">
-        <div class="text-h2 font-weight-black lh-70">
+        <div class="text-h3 text-sm-h2 font-weight-black lh-70">
           Meet Your New AI <br/>
           Maintenance Coordinator
         </div>
@@ -32,7 +32,7 @@
 
       <div class="d-flex justify-space-between flex-column flex-md-row mt-5">
         <div class="text-h6 opacity-5 font-weight-bold ls-0 mr-10">
-          Harness the power of AI to streamline tenant issue resolution, connecting problems to solutions with seamless
+          Harness the power of AI to streamline tenant issue resolution, connecting problems to solutions with ease and
           precision.
         </div>
 
@@ -53,9 +53,10 @@
 <script setup lang="ts">
 // Imports
 import robotSVG from "assets/public-site/robotSVG.svg"
+import {useUserStore} from "~/store/userStore";
 
 // Data
-
+const store = useUserStore()
 // Lifecycle
 
 // Methods

@@ -208,7 +208,7 @@
 
 </template>
 
-<script setup>
+<script setup lang="ts">
 import { useRoute } from 'vue-router'
 import { useRequest } from "../../composables/useRequest"
 import { onMounted, ref, nextTick } from 'vue'
@@ -258,7 +258,9 @@ const fetchConversation = async (convoViewType = 'assistant') => {
     activeConversationType.value = conversation.value.vendor_messages?.length ? 'vendor' : 'assistant'
   } catch (error) {
     console.error(error)
-    alert('Error fetching conversation')
+    // alert('Error fetching conversation')
+    // errors.value = error.value.data
+    //   snackbarStore.displaySnackbar('error', 'Error signing in')
 
   } finally {
     setTimeout(() => loading.value = false, 1000)

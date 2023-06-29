@@ -7,7 +7,7 @@
           <v-toolbar-title class="lh-38 text-primary font-weight-black">PropConnect</v-toolbar-title>
           <div class="opacity-5">
             Using AI to craft simple solutions to <br>
-            complex problems..
+            complex problems.
           </div>
         </div>
         <v-spacer class=""></v-spacer>

@@ -2,6 +2,7 @@ from django.contrib.auth import login, get_user_model, password_validation
 from rest_framework import serializers
 from rest_framework.exceptions import ValidationError
 
+from companies.serializers import CompanyUpdateSerializer
 from utils import email
 from users.models import OTPVerificationCode
 
@@ -31,6 +32,8 @@ class EmailVerificationSerializer(serializers.Serializer):
 
 
 class UserSelfDetailSerializer(serializers.ModelSerializer):
+    company = CompanyUpdateSerializer()
+
     class Meta:
         model = User
         fields = (
@@ -39,6 +42,7 @@ class UserSelfDetailSerializer(serializers.ModelSerializer):
             'email_verified',
             'first_name',
             'last_name',
+            'company',
         )
         read_only_fields = ('email', 'email_verified')
 
@@ -53,12 +57,14 @@ class UserCreateSerializer(serializers.ModelSerializer):
             'email',
             'first_name',
             'last_name',
+            'password',
             'send_otp_email_verification',
         )
 
     def create(self, validated_data):
         send_otp_email_verification = validated_data.pop('send_otp_email_verification')
-        user = super().create(validated_data)
+        user = User.objects.create_user(**validated_data)
+
         login(self.context['request'], user)
         if send_otp_email_verification:
             email.otp_email_verification(user)
@@ -66,12 +72,15 @@ class UserCreateSerializer(serializers.ModelSerializer):
 
 
 class UserDetailSerializer(serializers.ModelSerializer):
+    company = CompanyUpdateSerializer()
+
     class Meta:
         model = User
         fields = (
             'id',
             'first_name',
             'last_name',
+            'company',
         )
 
 
@@ -84,6 +93,7 @@ class UserListSerializer(serializers.ModelSerializer):
         fields = (
             'id',
             'first_name',
+            'company',
         )
 
 

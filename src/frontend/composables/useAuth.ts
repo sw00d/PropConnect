@@ -62,6 +62,7 @@ export const useAuth = () => {
 
         if (error.value) {
             setUser(null)
+
             throw new Error(error.value as any)
         }
 

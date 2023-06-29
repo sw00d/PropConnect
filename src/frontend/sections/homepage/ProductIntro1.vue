@@ -6,7 +6,7 @@
           <div class="d-flex flex-column justify-center h-100">
             <div class="font-weight-black font-40">
               Straight-forward
-              <div class="pl-16">
+              <div class="pl-md-16">
                 Communication
               </div>
             </div>

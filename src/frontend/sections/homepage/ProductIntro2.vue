@@ -23,9 +23,9 @@
             </div>
           </div>
           <div class="font-weight-medium opacity-7 text-h6 mt-11">
-            We leverage familiar texting for seamless communication, connecting tenants and vendors effortlessly. Skip
-            the hassle of new accounts and passwords. With our accessible help line, tenants can text anytime, and our
-            AI will link them to the ideal vendor for their needs.
+            We leverage familiar <b>texting</b> for seamless communication, connecting tenants and vendors effortlessly. Your tenants can now skip
+            the hassle of new accounts and passwords. With our accessible <b>help line</b>, tenants can text anytime, and our
+            AI will connect them with the vendor that fits their needs.
           </div>
         </v-sheet>
       </v-col>

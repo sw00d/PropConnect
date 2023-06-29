@@ -18,7 +18,7 @@ import ReadyToJumpIn from "../sections/homepage/ReadyToJumpIn"
 
 definePageMeta({
   layout: "public",
-  middleware: ["guest"]
+  // middleware: ["guest"]
 })
 
 </script>

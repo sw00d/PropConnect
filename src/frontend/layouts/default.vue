@@ -41,10 +41,10 @@
 </template>
 
 <script setup lang="ts">
-import {useAuth} from "~/composables/useAuth";
 import {useThemeSwitcher} from "~/composables/useThemeSwitcher";
+import {useUserStore} from "~/store/userStore";
 
-const auth = useAuth()
+const auth = useUserStore()
 
 const {theme, toggle_theme} = useThemeSwitcher()
 

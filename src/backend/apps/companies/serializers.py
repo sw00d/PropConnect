@@ -24,12 +24,7 @@ class CompanyCreateSerializer(serializers.ModelSerializer):
             'name',
             'website',
             'number_of_doors',
-            'street_1',
-            'street_2',
-            'city',
-            'state',
             'zip_code',
-            'country'
         )
 
     def create(self, validated_data):

@@ -107,7 +107,8 @@ async function fetchConversations() {
 
   } catch (error) {
     // TODO handle error with some snack bars
-    alert('Error fetching conversations')
+    errors.value = error.value.data
+    snackbarStore.displaySnackbar('error', 'Error signing in')
     console.error(error)
   } finally {
     loading.value = false

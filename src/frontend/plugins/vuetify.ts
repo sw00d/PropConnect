@@ -1,5 +1,6 @@
 import {createVuetify} from "vuetify";
-import {LIGHT_THEME} from "~/utils/themes";
+import {LIGHT_THEME, light, dark} from "~/utils/themes";
+import {defaults} from "~/utils/defaults";
 
 export default defineNuxtPlugin((app) => {
     const vuetify = createVuetify({
@@ -23,7 +24,6 @@ export default defineNuxtPlugin((app) => {
         // Add the custom iconset
         icons: {
             defaultSet: "custom",
-            aliases,
             sets: {
                 custom,
             },

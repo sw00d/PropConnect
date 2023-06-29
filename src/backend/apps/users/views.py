@@ -98,6 +98,7 @@ class UserViewSet(
         serializer = self.get_serializer(data=request.data)
         serializer.is_valid(raise_exception=True)
         user = serializer.save()
+
         headers = self.get_success_headers(serializer.data)
         token, created = Token.objects.get_or_create(user=user)
         return Response({

@@ -1,25 +1,32 @@
 <template>
-  <div class="d-md-flex text-left flex-column justify-center align-center">
-    <div class="text-h2 font-weight-black text-left fill-width">Welcome, Master Alex</div>
-    <v-row class="fill-width mt-10">
-      <v-col>
-       <DashboardTable />
-      </v-col>
-<!--      <v-col cols="2">-->
-<!--        <div class="bg-blue w-100 h-100 rounded-xl text-center">-->
-<!--          Click on a row to see the details-->
-<!--        </div>-->
-<!--      </v-col>-->
-    </v-row>
-  </div>
+  <DashboardContentContainer>
+    <v-container>
+      <div class="d-md-flex text-left flex-column justify-center align-center">
+        <div class="text-h2 font-weight-black text-left fill-width">Welcome, Master Alex</div>
+        <v-row class="fill-width mt-10">
+          <v-col>
+            <DashboardTable/>
+          </v-col>
+          <!--      <v-col cols="2">-->
+          <!--        <div class="bg-blue w-100 h-100 rounded-xl text-center">-->
+          <!--          Click on a row to see the details-->
+          <!--        </div>-->
+          <!--      </v-col>-->
+        </v-row>
+      </div>
+    </v-container>
+  </DashboardContentContainer>
+
 </template>
 
 <script setup>
 import { useDisplay } from 'vuetify'
 import DashboardTable from "../components/DashboardTable/DashboardTable"
+import DashboardContentContainer from "../components/Containers/DashboardContentContainer"
 
 definePageMeta({
-  middleware: ["auth"]
+  middleware: ["auth"],
+  layout: 'protected'
 })
 
 const display = ref(useDisplay())

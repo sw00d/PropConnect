@@ -1,5 +1,4 @@
 import {ref, onMounted} from 'vue'
-import {useAuth} from "~/composables/useAuth";
 import {useTheme} from "vuetify";
 
 export function useThemeSwitcher() {

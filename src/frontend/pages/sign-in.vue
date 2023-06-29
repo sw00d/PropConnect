@@ -33,6 +33,7 @@
           ></v-text-field>
         </div>
         <div class="mt-5">
+
           <v-btn
             type="submit"
             color="primary"
@@ -63,10 +64,10 @@
 </template>
 
 <script setup>
-import { useAuth } from "../composables/useAuth"
 import apartment from "@/assets/signup/apartment.png"
-import AuthContentContainer from "../components/Signup/AuthContentContainer"
+import AuthContentContainer from "../components/Containers/AuthContentContainer"
 import { useSnackbarStore } from "../store/snackbarStore"
+import { useUserStore } from "../store/userStore"
 
 definePageMeta({
   layout: "signup",
@@ -74,7 +75,7 @@ definePageMeta({
 })
 
 const { ruleEmail, rulePassLen, ruleRequired } = useFormRules()
-const { login } = useAuth()
+const { login } = useUserStore()
 
 const email = ref("")
 const password = ref("")
@@ -96,7 +97,8 @@ const submit = async () => {
     if (error.value) {
       isLoading.value = false // Set isLoading to false if there's an error
       errors.value = error.value.data
-      snackbarStore.displaySnackbar('error', 'Error signing in')
+      const display_error = error.value.data.non_field_errors?.[0]
+      snackbarStore.displaySnackbar('error', display_error || 'Error Occurred')
     } else {
       navigateTo("/dashboard")
     }

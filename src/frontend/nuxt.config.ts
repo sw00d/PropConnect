@@ -1,3 +1,4 @@
+// @ts-nocheck
 import vuetify from "vite-plugin-vuetify";
 
 // PWA Config
@@ -29,9 +30,13 @@ export default defineNuxtConfig({
             ['defineStore', 'definePiniaStore'], // import { defineStore as definePiniaStore } from 'pinia'
         ],
     },
+    piniaPersistedstate: {
+        storage: 'cookies'
+    },
     modules: [
         '@pinia/nuxt',
         '@vueuse/nuxt',
+        '@pinia-plugin-persistedstate/nuxt',
 
         // Vuetify
         async (options, nuxt) => {
@@ -65,7 +70,10 @@ export default defineNuxtConfig({
                 {rel: "canonical", href: url},
                 {rel: "preconnect", href: "https://fonts.googleapis.com"},
                 {rel: "preconnect", href: "https://fonts.gstatic.com", crossorigin: true},
-                {rel: "stylesheet", href: "https://fonts.googleapis.com/css2?family=Inter:wght@100;200;300;400;500;600;700;800;900&display=swap"},
+                {
+                    rel: "stylesheet",
+                    href: "https://fonts.googleapis.com/css2?family=Inter:wght@100;200;300;400;500;600;700;800;900&display=swap"
+                },
             ],
             meta: [
                 {
