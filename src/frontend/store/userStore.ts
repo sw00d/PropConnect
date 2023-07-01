@@ -13,7 +13,6 @@ export const useUserStore = defineStore('user', {
     }),
     actions: {
         setUser(user: UserT | UserWithoutPasswordT | null) {
-            console.log('setting user', user)
             this.$patch({
                 authUser: user,
                 isLoggedIn: Boolean(user)

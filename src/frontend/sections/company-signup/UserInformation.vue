@@ -47,10 +47,10 @@
           class="mt-1"
         />
         <v-btn
-          :disabled="!valid"
-          :color="valid ? 'primary' : null"
           type="submit"
-          size="medium"
+          color="primary"
+          min-height="44px"
+          :color="valid ? 'primary' : null"
           width="100%"
           :loading="submitting"
         >
@@ -58,8 +58,9 @@
         </v-btn>
         <div class="mt-4 opacity-7 font-12">
 
-        * By signing up, you agree to our <a href="/terms-of-service" target="_blank" class="text-decoration-underline">Terms of Service</a> and <a
-        href="/privacy-policy" target="_blank" class="text-decoration-underline">Privacy Policy</a>
+          * By signing up, you agree to our <a href="/terms-of-service" target="_blank"
+                                               class="text-decoration-underline">Terms of Service</a> and <a
+          href="/privacy-policy" target="_blank" class="text-decoration-underline">Privacy Policy</a>
         </div>
       </v-form>
     </template>

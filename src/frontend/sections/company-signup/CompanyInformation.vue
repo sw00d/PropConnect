@@ -71,10 +71,9 @@
             </v-alert>
           </v-slide-y-transition>
           <v-btn
-            :color="valid ? 'primary' : null"
             type="submit"
+            :color="valid ? 'primary' : null"
             class="mt-3"
-            size="medium"
             width="100%"
             :disabled="!valid"
             :loading="submitting"
@@ -184,7 +183,9 @@ const onSubmit = async () => {
     }
     submitting.value = false
   } else {
-    router.push('/dashboard')
+    setTimeout(() => {
+      router.push('/dashboard')
+    }, 1000)
   }
 }
 

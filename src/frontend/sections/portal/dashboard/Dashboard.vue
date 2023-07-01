@@ -41,6 +41,9 @@
           variant="tonal"
           class="mt-3"
         >
+          <v-chip color="success" class="font-weight-bold absolute top right mt-2 mr-2" variant="flat" size="small">
+            ✨ Beta
+          </v-chip>
           <div class="font-28">
             Welcome to
             <span class="font-weight-black">PropConnect</span>
@@ -50,7 +53,8 @@
           How it works:
           <br>
           <br>
-          <b>1)</b> You now have a dedicated AI hotline, <b>+1 (208) 283-2039</b>. This is the number your tenants will text when wanting to submit a maintenance request
+          <b>1)</b> You now have a dedicated AI hotline, <b>+1 (208) 283-2039</b>. This is the number your tenants will
+          text when wanting to submit a maintenance request
           <br>
           <br>
           <b>2)</b> Once our AI has gotten enough information from the tenant, the tenant and vendor will be connected
@@ -62,7 +66,11 @@
           <b>3)</b> From there, both the tenant and vendor can directly text each other using this secondary number.
           <br>
           <br>
-          <b>4)</b> You can view all conversations in the <b class="text-decoration-underline">Conversations</b> tab.
+          <b>4)</b> You can view all conversations in the
+          <nuxt-link to="/conversations">
+            <b class="text-decoration-underline">Conversations</b>
+          </nuxt-link>
+          tab.
           <br>
           <br>
           <b>Pro tip:</b> Before adding any vendors, you should text your hotline just to get a feel for
@@ -79,9 +87,9 @@
                 <div>
                   Conversations
                 </div>
-<!--                <v-btn class="d-flex align-center bg-primary font-14" width="80px" height="40px">-->
-<!--                  New-->
-<!--                </v-btn>-->
+                <!--                <v-btn class="d-flex align-center bg-primary font-14" width="80px" height="40px">-->
+                <!--                  New-->
+                <!--                </v-btn>-->
               </v-card-title>
               <v-card-text class="d-flex align-center justify-center mt-16 flex-column flex-1 relative">
                 <div class="text-body-1 font-weight-bold">
@@ -136,7 +144,7 @@
                 </v-row>
               </div>
 
-              <v-card-text class="d-flex align-center justify-space-between flex-1 pt-0">
+              <v-card-text class="d-flex align-center justify-space-between flex-1 flex-wrap pt-0">
                 <div class="text-center flex-1">
                   <div class="text-h3 text-primary font-weight-black">
                     $40.20
@@ -175,7 +183,7 @@
                     </v-col>
                     <v-col class="d-flex justify-space-between font-weight-bold">
                       <v-divider class="divider" vertical></v-divider>
-                      $4.99
+                      ${{ subscriptionPrice }}
                     </v-col>
                   </v-row>
 
@@ -191,7 +199,6 @@
                       $44.99
                     </v-col>
                   </v-row>
-
                 </div>
               </v-card-text>
             </v-card>
@@ -212,6 +219,7 @@ import vendorImg from "~/assets/portal/vendors.png"
 
 // Data
 const user = useUserStore()
+console.log(user.authUser?.company?.current_subscription)
 const mounted = ref({
   header: false,
   leftCard: false,
@@ -219,6 +227,10 @@ const mounted = ref({
   rightBottomCard: false,
 })
 const showInfo = ref(false)
+
+const subscriptionPrice = computed(() => {
+  return (parseInt(user.authUser?.company?.current_subscription?.plan?.amount_decimal) / 100).toFixed(2)
+})
 
 // Lifecycle
 onMounted(() => {

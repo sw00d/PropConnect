@@ -1,5 +1,5 @@
 # serializers.py
-
+from openai.error import InvalidRequestError
 from rest_framework import serializers
 
 from settings.base import STRIPE_SECRET_KEY
@@ -21,6 +21,7 @@ class CompanyCreateSerializer(serializers.ModelSerializer):
     class Meta:
         model = Company
         fields = (
+            'id',
             'name',
             'website',
             'number_of_doors',
@@ -47,6 +48,8 @@ class CompanyUpdateSerializer(serializers.ModelSerializer):
     class Meta:
         model = Company
         fields = (
+            'id',
+            'current_subscription',
             'name',
             'number_of_doors',
             'street_1',
@@ -62,38 +65,46 @@ class CompanyUpdateSerializer(serializers.ModelSerializer):
         payment_method_id = validated_data.pop('payment_method_id', None)
 
         # call super update
-        instance = super().update(instance, validated_data)
+        if validated_data:
+            instance = super().update(instance, validated_data)
 
         if payment_method_id:
+
+            # TODO Test this
             try:
-                # Create Stripe customer
-                stripe_customer = stripe.Customer.create(
-                    payment_method=payment_method_id,
-                    email=instance.users.first().email,
-                    name=instance.name,
-                    invoice_settings={
-                        'default_payment_method': payment_method_id,
-                    },
-                )
+                if instance.stripe_customer_id:
+                    # Attempt to retrieve Stripe customer
+                    stripe_customer = stripe.Customer.retrieve(instance.stripe_customer_id)
+                else:
+                    # If customer retrieval fails, create Stripe customer
+                    stripe_customer = stripe.Customer.create(
+                        payment_method=payment_method_id,
+                        email=instance.users.first().email,
+                        name=instance.name,
+                        invoice_settings={
+                            'default_payment_method': payment_method_id,
+                        },
+                    )
             except stripe.error.StripeError as e:
                 # Handle Stripe errors here
                 raise serializers.ValidationError(f"Stripe error: {e}")
 
-            try:
-                # Sync customer with dj-stripe
-                customer, created = Customer.get_or_create(subscriber=instance.users.first())
-                customer.api_retrieve()
-
-                # Avoid an unnecessary API call by using the data from stripe_customer
-                customer.default_payment_method = PaymentMethod.sync_from_stripe_data(
-                    stripe_customer.invoice_settings.default_payment_method
-                )
-                customer.save()
-            except Exception as e:  # Replace with a more specific exception if possible
-                # Handle other errors here
-                raise serializers.ValidationError(f"Error updating customer: {e}")
-
-                # Save Stripe customer ID in Company model
+            #  TODO Ask somebody if I need to do this
+            # try:
+            #     # Sync customer with dj-stripe
+            #     customer, created = Customer.get_or_create(subscriber=instance.users.first())
+            #     customer.api_retrieve()
+            #
+            #     # Avoid an unnecessary API call by using the data from stripe_customer
+            #     customer.default_payment_method = PaymentMethod.sync_from_stripe_data(
+            #         // set the default payment method here
+            #     )
+            #     customer.save()
+            # except Exception as e:  # Replace with a more specific exception if possible
+            #     # Handle other errors here
+            #     raise serializers.ValidationError(f"Error updating customer: {e}")
+            #
+            #     # Save Stripe customer ID in Company model
             instance.stripe_customer_id = stripe_customer.id
             instance.save()
 

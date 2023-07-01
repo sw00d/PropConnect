@@ -71,7 +71,6 @@ import { useUserStore } from "../store/userStore"
 
 definePageMeta({
   layout: "signup",
-  middleware: ["guest"]
 })
 
 const { ruleEmail, rulePassLen, ruleRequired } = useFormRules()

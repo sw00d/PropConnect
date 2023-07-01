@@ -26,8 +26,8 @@ class Company(models.Model):
     country = models.CharField(max_length=100)
 
     @property
-    def check_subscription(self):
+    def current_subscription(self):
         if self.stripe_subscription_id:
             subscription = stripe.Subscription.retrieve(self.stripe_subscription_id)
-            return subscription.status == 'active'
-        return False
+            return subscription
+        return None

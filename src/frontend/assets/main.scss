@@ -206,6 +206,13 @@ a {
     }
 }
 
+// Dialogs
+.v-overlay__scrim {
+  background: rgba(0, 0, 0, .3) !important;
+  opacity: 1 !important;
+  backdrop-filter: blur(10px);
+}
+
 // Removing arrows from number inputs
 /* Chrome, Safari, Edge, Opera */
 input::-webkit-outer-spin-button,

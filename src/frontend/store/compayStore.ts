@@ -8,7 +8,7 @@ export const useCompanyStore = defineStore('company', {
     }),
     actions: {
         async createCompany(body: any) {
-            const res = await useRequest<any>("/api/companies/", {
+            const res = await useRequest<any>("/companies/", {
                 method: "POST",
                 body,
             });
@@ -22,7 +22,7 @@ export const useCompanyStore = defineStore('company', {
         },
 
         async getCompany(id: number) {
-            const res = await useRequest<any>(`/api/companies/${id}`);
+            const res = await useRequest<any>(`/companies/${id}`);
 
             if (res.data?.value) {
                 this.company = res.data.value
@@ -31,7 +31,7 @@ export const useCompanyStore = defineStore('company', {
             return res;
         },
         async updateCompany(id: number, body: any) {
-            const res = await useRequest<any>(`/api/companies/${id}`, {
+            const res = await useRequest<any>(`/companies/${id}`, {
                 method: "PATCH",
                 body,
             });
@@ -43,7 +43,7 @@ export const useCompanyStore = defineStore('company', {
             return res;
         },
         async deleteCompany(id: number) {
-            const res = await useRequest<any>(`/api/companies/${id}`, {
+            const res = await useRequest<any>(`/companies/${id}`, {
                 method: "DELETE",
             });
 
