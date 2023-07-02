@@ -26,13 +26,8 @@ class TestCompanies(CkcAPITestCase):
         data = {
             'name': 'Updated Company',
             'website': 'www.updatedcompany.com',
-            'number_of_doors': 2,
-            'street_1': '456 Updated St',
-            'street_2': 'Apt 1',
-            'city': 'Updated City',
-            'state': 'US',
+            'number_of_doors': '50-200',
             'zip_code': '67890',
-            'country': 'Updatedland',
         }
         response = self.client.patch(url, data, format='json')
         assert response.status_code == status.HTTP_401_UNAUTHORIZED
@@ -70,19 +65,15 @@ class TestCompanies(CkcAPITestCase):
         data = {
             'name': 'New Company',
             'website': 'www.newcompany.com',
-            'number_of_doors': 2,
-            'street_1': '456 New St',
-            'city': 'New City',
-            'state': 'NS',
+            'number_of_doors': '1-50',
             'zip_code': '67890',
-            'country': 'Newland',
-            # 'payment_method': test_payment_method.id,
         }
         response = self.client.post(url, data, format='json')
         assert response.status_code == status.HTTP_401_UNAUTHORIZED
 
         self.client.force_authenticate(self.admin_user)
         response = self.client.post(url, data, format='json')
+        print(response.data)
         assert response.status_code == status.HTTP_201_CREATED
         assert Company.objects.count() == 2
         assert Company.objects.get(name='New Company')
