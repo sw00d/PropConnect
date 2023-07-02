@@ -6,7 +6,7 @@ from django.urls import path
 from rest_framework import routers
 
 from companies.views import CompanyViewSet
-from conversations.views import init_conversation, play_the_middle_man, ConversationViewSet
+from conversations.views import init_conversation, play_the_middle_man, ConversationViewSet, VendorViewSet
 from users.views import LoginView, LogoutView, UserPasswordResetViewSet, UserViewSet
 
 
@@ -17,6 +17,7 @@ router.register('passwordreset', UserPasswordResetViewSet, basename='passwordres
 
 # Custom views
 router.register('companies', CompanyViewSet)
+router.register('vendors', VendorViewSet, basename='vendors')
 router.register('users', UserViewSet)
 router.register('conversations', ConversationViewSet)
 

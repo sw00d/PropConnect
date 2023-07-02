@@ -3,14 +3,16 @@ from django.contrib.postgres.fields import ArrayField
 from django.db.models import Q
 
 import settings.base
+from companies.models import Company
 
 
 class Vendor(models.Model):
     name = models.CharField(max_length=200)
     vocation = models.CharField(max_length=200, blank=True, null=True)  # plumber | electrician | etc.
     number = models.CharField(max_length=20)
-    keywords = ArrayField(models.CharField(max_length=200))
+    keywords = ArrayField(models.CharField(max_length=200))  # currently unused
     active = models.BooleanField(default=True)
+    company = models.ForeignKey(Company, null=True, on_delete=models.SET_NULL)
 
     def __str__(self):
         return self.name

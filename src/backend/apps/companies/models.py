@@ -12,7 +12,7 @@ class Company(models.Model):
         ('10,000+', '10,000+'),
     ]
     name = models.CharField(max_length=200)
-    website = models.CharField(max_length=200, blank=True)  # Validation can be done on FE and serializer.
+    website = models.CharField(max_length=200, blank=True)  # Validation can be done on FE and serializer instead of urlfield
     number_of_doors = models.CharField(max_length=16, choices=DOOR_CHOICES)
 
     stripe_customer_id = models.CharField(max_length=255, blank=True, null=True)
@@ -24,6 +24,8 @@ class Company(models.Model):
     state = models.CharField(max_length=100)
     zip_code = models.CharField(max_length=20)
     country = models.CharField(max_length=100)
+
+    assistant_phone_number = models.CharField(max_length=20, blank=True, null=True)
 
     @property
     def current_subscription(self):

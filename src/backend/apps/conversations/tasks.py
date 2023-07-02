@@ -59,7 +59,6 @@ def start_vendor_tenant_conversation(conversation_id, vendor_id):
         conversation_number.most_recent_conversation = conversation
         conversation_number.save()
 
-
     vendor = Vendor.objects.get(id=vendor_id)
     conversation.vendor = vendor
     conversation.save()

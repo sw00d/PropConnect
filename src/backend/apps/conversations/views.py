@@ -13,8 +13,9 @@ from rest_framework.decorators import api_view, permission_classes, action
 from rest_framework.permissions import AllowAny
 
 from conversations.utils import init_conversation_util, play_the_middle_man_util, send_message
-from .models import Conversation, Message
-from .serializers import ConversationDetailSerializer, ConversationListSerializer
+from users import permissions
+from .models import Conversation, Message, Vendor
+from .serializers import ConversationDetailSerializer, ConversationListSerializer, VendorSerializer
 
 logger = logging.getLogger(__name__)
 
@@ -23,6 +24,41 @@ class CustomPageNumberPagination(PageNumberPagination):
     page_size = 10
     max_page_size = 100
     page_size_query_param = "page_size"
+
+
+class IsCompanyMember(permissions.BasePermission):
+    """
+    Custom permission to check if the user is part of the company.
+    """
+
+    def has_object_permission(self, request, view, obj):
+        return request.user.company == obj.company
+
+
+class VendorViewSet(ModelViewSet):
+    pagination_class = CustomPageNumberPagination
+    serializer_class = VendorSerializer
+    permission_classes = [IsCompanyMember]
+
+    def get_queryset(self):
+        return Vendor.objects.filter(company=self.request.user.company).order_by('active')
+
+    def create(self, request, *args, **kwargs):
+        serializer = self.get_serializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        if request.user.company.id == serializer.validated_data['company'].id:
+            serializer.save()
+            return Response(serializer.data, status=status.HTTP_201_CREATED)
+        return Response({"detail": "Not authorized"}, status=status.HTTP_403_FORBIDDEN)
+
+    def update(self, request, *args, **kwargs):
+        instance = self.get_object()
+        serializer = self.get_serializer(instance, data=request.data, partial=True)
+        serializer.is_valid(raise_exception=True)
+        if request.user.company.id == serializer.validated_data['company'].id:
+            serializer.save()
+            return Response(serializer.data)
+        return Response({"detail": "Not authorized"}, status=status.HTTP_403_FORBIDDEN)
 
 
 class ConversationViewSet(ModelViewSet):

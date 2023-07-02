@@ -8,6 +8,7 @@ import time
 
 import openai
 
+from companies.models import Company
 from conversations.models import Vendor, Conversation, Tenant, Message, PhoneNumber, MediaMessageContent
 from conversations.serializers import MessageSerializer
 from settings.base import OPEN_API_KEY, TWILIO_AUTH_TOKEN, TWILIO_ACCOUNT_SID, WEBHOOK_URL
@@ -102,10 +103,11 @@ def init_conversation_util(request):
         f"body: , {request.POST.get('Body', None)} \n"
     )
 
-    # Handles the initial conversation with the tenant and sends them to a message with the vendor
+    # Handles the initial conversation between the tenant and the bot
     from_number = request.POST.get('From', None)
     to_number = request.POST.get('To', None)
     body = request.POST.get('Body', None)
+    # company = Company.objects.filter(phone_number=to_number).first() TODO this is a start
     tenant, _ = Tenant.objects.get_or_create(number=from_number)
 
     # TODO filter this by time as well. Should be a new convo after a few days maybe?

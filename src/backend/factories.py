@@ -61,7 +61,6 @@ class ConversationFactory(factory.django.DjangoModelFactory):
     vendor = factory.SubFactory(VendorFactory)
     is_active = factory.Faker('boolean')
     last_viewed = factory.Faker('past_datetime', start_date="-30d", tzinfo=None)
-    twilio_number = factory.SubFactory(TwilioNumberFactory)
 
     class Meta:
         model = Conversation
