@@ -3,13 +3,13 @@
     <div>
       <v-slide-y-transition>
         <v-card v-if="mounted.header" class="py-4">
-          <v-card-title class="d-flex justify-space-between align-center h-100 font-20">
+          <v-card-title class="d-flex justify-space-between align-center h-100 font-20 flex-wrap">
             <div class="text-capitalize">
               {{ user.authUser?.company?.name }} Property Management
             </div>
             <div>
               <div>
-                <div class="font-12 lh-12">
+                <div class="font-12 lh-12 mt-10 mt-md-0">
                   Your hotline
                   <v-btn
                     @click="showInfo = !showInfo"
@@ -79,7 +79,7 @@
         </v-alert>
       </v-slide-y-transition>
 
-      <v-row class="mt-4">
+      <v-row class="mt-4 flex-column flex-md-row">
         <v-col>
           <v-slide-x-transition>
             <v-card v-if="mounted.leftCard" height="620px">
@@ -110,9 +110,12 @@
                 <div>
                   Vendors
                 </div>
-                <v-btn class="d-flex align-center bg-primary font-14" width="80px" height="40px">
-                  New
-                </v-btn>
+                <nuxt-link to="/vendors">
+
+                  <v-btn class="d-flex align-center bg-primary font-14" width="80px" height="40px">
+                    New
+                  </v-btn>
+                </nuxt-link>
               </v-card-title>
               <v-card-text class="d-flex align-center">
                 <v-sheet width="50%" max-height="300px">
@@ -129,78 +132,81 @@
             <v-card v-if="mounted.rightBottomCard" class="mt-4 d-flex flex-column" height="302px">
               <v-card-title class="d-flex justify-space-between align-center">
                 <div>
-                  Usage
+                  Costs and Usage
                 </div>
-                <div class="text-green text-body-2 font-weight-medium">
-                  -2.5% change
+                <div class="text-body-2 font-weight-medium">
+                  Coming soon
                 </div>
               </v-card-title>
-              <div class="d-flex align-end pb-4">
-                <v-row>
-                  <v-spacer/>
-                  <v-col class="pl-8">
-                    <div class="font-weight-bold">Breakdown</div>
-                  </v-col>
-                </v-row>
-              </div>
+              <v-sheet height="80%">
+                <v-img :src="openingSoon"/>
+              </v-sheet>
+              <!--              <div class="d-flex align-end pb-4">-->
+              <!--                <v-row>-->
+              <!--                  <v-spacer/>-->
+              <!--                  <v-col class="pl-8 hidden-sm-and-down">-->
+              <!--                    <div class="font-weight-bold">Breakdown</div>-->
+              <!--                  </v-col>-->
+              <!--                </v-row>-->
+              <!--              </div>-->
 
-              <v-card-text class="d-flex align-center justify-space-between flex-1 flex-wrap pt-0">
-                <div class="text-center flex-1">
-                  <div class="text-h3 text-primary font-weight-black">
-                    $40.20
-                  </div>
-                  <span class="font-12 font-weight-medium">Next billing date 12/5/2023</span>
-                </div>
+              <!--              <v-card-text class="d-flex align-md-center justify-space-between flex-1 flex-wrap pt-0 flex-column flex-md-row">-->
+              <!--                <div class="text-center flex-1">-->
+              <!--                  <div class="text-h3 text-primary font-weight-black">-->
+              <!--                    $40.20-->
+              <!--                  </div>-->
+              <!--                  <span class="font-12 font-weight-medium">Next billing date 12/5/2023</span>-->
+              <!--                </div>-->
 
-                <v-divider vertical/>
+              <!--                <v-divider vertical class="hidden-sm-and-down"/>-->
 
-                <div class="flex-1 ml-6 d-flex flex-column align-start justify-start h-100">
-                  <v-row class="w-100" no-gutters="">
+              <!--                <div class="flex-1 ml-6 d-flex flex-column align-start justify-start h-100 mt-6 mt-md-0">-->
+              <!--                  <v-row class="w-100" no-gutters="">-->
 
-                    <v-col cols="7" class="font-12">
-                      Conversations
-                    </v-col>
-                    <v-col class="d-flex justify-space-between font-weight-bold">
-                      <v-divider class="divider" vertical></v-divider>
-                      45
-                    </v-col>
-                  </v-row>
+              <!--                    <v-col cols="7" class="font-12">-->
+              <!--                      Conversations-->
+              <!--                    </v-col>-->
+              <!--                    <v-col class="d-flex justify-space-between font-weight-bold">-->
+              <!--                      <v-divider class="divider" vertical></v-divider>-->
+              <!--                      45-->
+              <!--                    </v-col>-->
+              <!--                  </v-row>-->
 
-                  <v-row class="w-100" no-gutters="">
-                    <v-col cols="7" class="font-12">
-                      Cost/Conversation
-                    </v-col>
-                    <v-col class="d-flex justify-space-between font-weight-bold">
-                      <v-divider class="divider" vertical></v-divider>
-                      $0.45
-                    </v-col>
-                  </v-row>
+              <!--                  <v-row class="w-100" no-gutters="">-->
+              <!--                    <v-col cols="7" class="font-12">-->
+              <!--                      Cost/Conversation-->
+              <!--                    </v-col>-->
+              <!--                    <v-col class="d-flex justify-space-between font-weight-bold">-->
+              <!--                      <v-divider class="divider" vertical></v-divider>-->
+              <!--                      $0.45-->
+              <!--                    </v-col>-->
+              <!--                  </v-row>-->
 
-                  <v-row class="w-100" no-gutters="">
+              <!--                  <v-row class="w-100" no-gutters="">-->
 
-                    <v-col cols="7" class="font-12">
-                      Base subscription
-                    </v-col>
-                    <v-col class="d-flex justify-space-between font-weight-bold">
-                      <v-divider class="divider" vertical></v-divider>
-                      ${{ subscriptionPrice }}
-                    </v-col>
-                  </v-row>
+              <!--                    <v-col cols="7" class="font-12">-->
+              <!--                      Base subscription-->
+              <!--                    </v-col>-->
+              <!--                    <v-col class="d-flex justify-space-between font-weight-bold">-->
+              <!--                      <v-divider class="divider" vertical></v-divider>-->
+              <!--                      ${{ subscriptionPrice }}-->
+              <!--                    </v-col>-->
+              <!--                  </v-row>-->
 
-                  <v-row class="w-100" no-gutters="">
+              <!--                  <v-row class="w-100" no-gutters="">-->
 
-                    <v-col cols="7" class="font-14 font-weight-bold">
-                      Total
-                    </v-col>
-                    <v-col class="d-flex justify-space-between font-weight-bold">
+              <!--                    <v-col cols="7" class="font-14 font-weight-bold">-->
+              <!--                      Total-->
+              <!--                    </v-col>-->
+              <!--                    <v-col class="d-flex justify-space-between font-weight-bold">-->
 
-                      <v-divider class="divider" vertical></v-divider>
+              <!--                      <v-divider class="divider" vertical></v-divider>-->
 
-                      $44.99
-                    </v-col>
-                  </v-row>
-                </div>
-              </v-card-text>
+              <!--                      $44.99-->
+              <!--                    </v-col>-->
+              <!--                  </v-row>-->
+              <!--                </div>-->
+              <!--              </v-card-text>-->
             </v-card>
           </v-slide-x-reverse-transition>
         </v-col>
@@ -216,6 +222,7 @@ import {useUserStore} from "~/store/userStore";
 import {onMounted} from "vue";
 import convoImg from "~/assets/portal/convo.png"
 import vendorImg from "~/assets/portal/vendors.png"
+import openingSoon from "~/assets/portal/opening-soon.png"
 
 // Data
 const user = useUserStore()
