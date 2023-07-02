@@ -11,6 +11,11 @@ export const useUserStore = defineStore('user', {
         authUser: null,
         isLoggedIn: false
     }),
+    getters:{
+        hasActiveSubscription(): boolean {
+            return this.authUser?.company?.current_subscription?.status === 'active'
+        }
+    },
     actions: {
         setUser(user: UserT | UserWithoutPasswordT | null) {
             this.$patch({

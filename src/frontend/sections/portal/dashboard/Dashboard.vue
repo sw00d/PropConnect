@@ -219,7 +219,6 @@ import vendorImg from "~/assets/portal/vendors.png"
 
 // Data
 const user = useUserStore()
-console.log(user.authUser?.company?.current_subscription)
 const mounted = ref({
   header: false,
   leftCard: false,

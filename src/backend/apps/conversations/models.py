@@ -10,7 +10,7 @@ class Vendor(models.Model):
     name = models.CharField(max_length=200)
     vocation = models.CharField(max_length=200, blank=True, null=True)  # plumber | electrician | etc.
     number = models.CharField(max_length=20)
-    keywords = ArrayField(models.CharField(max_length=200))  # currently unused
+    keywords = ArrayField(models.CharField(max_length=200), null=True, blank=True)  # currently unused
     active = models.BooleanField(default=True)
     company = models.ForeignKey(Company, null=True, on_delete=models.SET_NULL)
 

@@ -37,7 +37,18 @@
 
           ></v-list-item>
         </NuxtLink>
-        <v-list-item prepend-icon="mdi-account-hard-hat" title="Vendors" value="vendors"></v-list-item>
+
+        <NuxtLink to="/vendors">
+          <v-list-item
+            class="my-3"
+            prepend-icon="mdi-account-hard-hat"
+            title="Vendors"
+            value="vendors"
+            :active="route.path === '/vendors'"
+          >
+          </v-list-item>
+        </NuxtLink>
+
       </v-list>
 
       <template v-slot:append>
@@ -51,7 +62,8 @@
     </v-navigation-drawer>
     <v-main style="min-height: 100vh">
       <SubscriptionDialog
-        v-model="showSubscriptionDialog"
+        :model-value="showSubscriptionDialog"
+        @input="showSubscriptionDialog=$event"
       />
       <slot/>
     </v-main>
@@ -67,6 +79,7 @@ import SubscriptionDialog from "~/sections/portal/subscription-dialog/Subscripti
 
 const route = useRoute()
 const user = useUserStore()
+
 useThemeSwitcher()
 const showSubscriptionDialog = ref(false)
 
@@ -75,12 +88,10 @@ watch(() => route.path, () => {
 })
 onMounted(() => {
   handleSubscriptionCheck()
-  user.fetchUser()
 })
-
 const handleSubscriptionCheck = () => {
   setTimeout(() => {
-    if (user.authUser?.company?.current_subscription?.status !== 'active') {
+    if (!user.hasActiveSubscription) {
       showSubscriptionDialog.value = true
     }
   }, 1500)

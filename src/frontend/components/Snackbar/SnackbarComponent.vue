@@ -4,7 +4,6 @@
     {{ snackbarStore.message }}
     <template v-slot:actions>
       <v-btn
-        color="red"
         variant="text"
         @click="snackbarStore.closeSnackbar"
       >

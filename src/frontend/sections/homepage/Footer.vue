@@ -11,13 +11,13 @@
           </div>
         </div>
         <v-spacer class=""></v-spacer>
-        <a href="/sign-in">
+        <nuxt-link to="/sign-in">
           <button
             class="border-b sign-in font-14 text-primary"
           >
             Sign in
           </button>
-        </a>
+        </nuxt-link>
       </div>
 
       <div class="d-flex justify-space-between mt-10 font-14">

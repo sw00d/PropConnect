@@ -5,13 +5,13 @@
         <v-container class="d-flex align-center">
           <v-toolbar-title class="lh-38 text-primary font-weight-black">PropConnect</v-toolbar-title>
           <v-spacer class="hidden-sm-and-down"></v-spacer>
-          <a :href="store.authUser ? '/dashboard' : '/sign-in'">
+          <nuxt-link to="store.authUser ? '/dashboard' : '/sign-in'">
             <button
               class="border-b sign-in font-14 text-primary"
             >
               {{ store.authUser ? 'Portal' : 'Sign in' }}
             </button>
-          </a>
+          </nuxt-link>
         </v-container>
       </div>
     </div>

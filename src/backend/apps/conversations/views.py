@@ -41,24 +41,8 @@ class VendorViewSet(ModelViewSet):
     permission_classes = [IsCompanyMember]
 
     def get_queryset(self):
-        return Vendor.objects.filter(company=self.request.user.company).order_by('active')
+        return Vendor.objects.filter(company=self.request.user.company).order_by('id')
 
-    def create(self, request, *args, **kwargs):
-        serializer = self.get_serializer(data=request.data)
-        serializer.is_valid(raise_exception=True)
-        if request.user.company.id == serializer.validated_data['company'].id:
-            serializer.save()
-            return Response(serializer.data, status=status.HTTP_201_CREATED)
-        return Response({"detail": "Not authorized"}, status=status.HTTP_403_FORBIDDEN)
-
-    def update(self, request, *args, **kwargs):
-        instance = self.get_object()
-        serializer = self.get_serializer(instance, data=request.data, partial=True)
-        serializer.is_valid(raise_exception=True)
-        if request.user.company.id == serializer.validated_data['company'].id:
-            serializer.save()
-            return Response(serializer.data)
-        return Response({"detail": "Not authorized"}, status=status.HTTP_403_FORBIDDEN)
 
 
 class ConversationViewSet(ModelViewSet):

@@ -10,14 +10,13 @@ export default defineNuxtRouteMiddleware(async (_to, _from) => {
 
     const auth = useUserStore()
     if (!auth.authUser || !auth.isLoggedIn) {
-        return navigateTo('/')
-    }
-    else if (_from.path === '/signup/company-info' && _to.path === '/dashboard' && !auth.authUser.company){
+        // await auth.fetchUser()
+        // return navigateTo('/')
+    } else if (_from.path === '/signup/company-info' && _to.path === '/dashboard' && !auth.authUser.company) {
         // allows user to go back from signing up
         // await auth.logout()
         return navigateTo('/')
-    }
-    else if (
+    } else if (
         auth.authUser && !auth.authUser.company && _to.path !== '/signup/company-info' && _from.path !== '/signup/company-info'
     ) {
         const snackbar = useSnackbarStore()

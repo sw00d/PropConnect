@@ -4,7 +4,7 @@
       :modelValue="modelValue"
       width="400px"
       max-width="90%"
-      persistent
+      :persistent="!user.hasActiveSubscription"
     >
       <v-card>
         <v-card-text>
@@ -89,7 +89,6 @@
           >
             Continue
           </v-btn>
-
         </v-card-text>
 
       </v-card>
@@ -112,6 +111,7 @@ import { useCompanyStore } from "~/store/compayStore"
 import { useSnackbarStore } from "~/store/snackbarStore"
 
 const config = useRuntimeConfig()
+const auth = useUserStore()
 
 // Define props and emits
 const props = defineProps({
@@ -121,7 +121,7 @@ const props = defineProps({
   }
 })
 
-defineEmits(['input'])
+const emit = defineEmits(['input'])
 
 const loading = ref(false)
 const cardNumRef = ref(null)
@@ -155,6 +155,16 @@ const elementClasses = {
   empty: 'empty',
   invalid: 'invalid',
 }
+
+watch(
+  () => user.hasActiveSubscription,
+  (val) => {
+    // This handles a slow server response and just closes the dialog if the user does indeed have a subscription
+    if (val) {
+      emit('input', false)
+    }
+  }
+)
 
 const init = async () => {
   stripe.value = await loadStripe(config.public.STRIPE_PUBLISHABLE_KEY)
@@ -214,7 +224,6 @@ const submit = async () => {
     })
     if (updateRes.error?.value) {
       cardError.value = 'Error Occurred. Please clear cache and try again.'
-      console.log(updateRes.error)
       throw new Error(updateRes.error)
     }
 
@@ -225,14 +234,12 @@ const submit = async () => {
 
     if (finalizeSignupRes.error?.value) {
       cardError.value = 'Error Occurred. Please try cache and try again.'
-      console.log(finalizeSignupRes.error)
       throw new Error(finalizeSignupRes.error)
     }
 
     window.location.reload()
   } catch (e) {
     console.error(e)
-    console.log(e)
     if (e.message) {
       const snackbar = useSnackbarStore()
       snackbar.displaySnackbar('error', "Error occurred")
