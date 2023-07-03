@@ -24,26 +24,26 @@
                 <!--                </v-col>-->
 
                 <v-col md="6">
-                  <v-text-field
+                  <v-select
                     v-model="newVendor.vocation"
                     label="Vocation/Profession"
-                    placeholder="Plubmer, Electrician, etc."
-                    persistent-hint
-                    hint="This will help match vendors with the right jobs."
-                    required
+                    :items="vendorOptions"
                     :error="errors.vocation"
                     :error-messages="errors.vocation"
-                  ></v-text-field>
+                  ></v-select>
                 </v-col>
                 <v-col md="6">
-
-                  <v-text-field
-                    v-model="newVendor.number"
-                    label="Number"
-                    required
-                    :error="errors.number"
-                    :error-messages="errors.number"
-                  ></v-text-field>
+                  <PhoneNumberField
+                    :value="newVendor.number"
+                    @input="newVendor.number = $event"
+                  />
+                  <!--                  <v-text-field-->
+                  <!--                    v-model="newVendor.number"-->
+                  <!--                    label="Number"-->
+                  <!--                    required-->
+                  <!--                    :error="errors.number"-->
+                  <!--                    :error-messages="errors.number"-->
+                  <!--                  ></v-text-field>-->
                 </v-col>
               </v-row>
 
@@ -55,6 +55,7 @@
                   size="large"
                   class="mt-4"
                   :loading="creating"
+                  :disabled="!newVendor.number || !newVendor.name || !newVendor.vocation"
                 >
                   Add vendor
                 </v-btn>
@@ -100,6 +101,7 @@ import { ref, onMounted } from 'vue'
 import { useRequest } from "../../../composables/useRequest"
 import { useSnackbarStore } from "../../../store/snackbarStore"
 import { useUserStore } from "../../../store/userStore"
+import PhoneNumberField from "../../../components/PhoneNumberField/PhoneNumberField.vue"
 
 const vendors = ref([])
 const newVendor = ref({ name: '', number: '' })
@@ -108,6 +110,21 @@ const errors = ref({})
 const auth = useUserStore()
 const creating = ref(false)
 
+const vendorOptions = [
+  'Plumber',
+  'Electrician',
+  'Handyman',
+  'Appliance Specialist',
+  'Air-condition specialist',
+  'Locksmith',
+  'Flooring Specialist',
+  'Painter',
+  'Drywall Specialist',
+  'Carpenter',
+  'Roofer',
+  'Landscaper',
+]
+
 const createVendor = async () => {
   try {
     creating.value = true
@@ -115,7 +132,11 @@ const createVendor = async () => {
 
     const res = await useRequest('/vendors/', {
       method: "POST",
-      body: { ...newVendor.value, company: auth.authUser.company.id }
+      body: {
+        ...newVendor.value,
+        number: `+1${newVendor.value.number}`,
+        company: auth.authUser.company.id
+      }
     })
     if (res.error?.value) {
       throw(res.error.value)
@@ -149,7 +170,7 @@ const fetchVendors = async () => {
 
 const toggleActive = async (vendor) => {
   try {
-    const response = await useRequest(`/vendors/${ vendor.id }/`, {method: "PATCH", body: { active: vendor.active }})
+    const response = await useRequest(`/vendors/${ vendor.id }/`, { method: "PATCH", body: { active: vendor.active } })
 
     if (response.error?.value) {
       vendor.active = !vendor.active
@@ -163,11 +184,6 @@ const toggleActive = async (vendor) => {
     const snackbar = useSnackbarStore()
     snackbar.displaySnackbar('error', 'Something went wrong. Please try again.')
   }
-}
-
-const goToVendor = (vendorId) => {
-  const router = useRouter()
-  router.push({ name: 'Vendor', params: { id: vendorId } })
 }
 
 onMounted(() => {

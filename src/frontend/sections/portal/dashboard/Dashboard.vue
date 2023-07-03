@@ -93,7 +93,7 @@
               </v-card-title>
               <v-card-text class="d-flex align-center justify-center mt-16 flex-column flex-1 relative">
                 <div class="text-body-1 font-weight-bold">
-                  No conversations yet
+                  Coming soon
                 </div>
                 <v-sheet width="80%">
                   <v-img :src="convoImg"/>
@@ -122,7 +122,7 @@
                   <v-img :src="vendorImg"/>
                 </v-sheet>
                 <div class="text-body-1 font-weight-bold d-flex justify-center ml-10">
-                  No vendors yet
+                  Coming soon
                 </div>
               </v-card-text>
             </v-card>
@@ -246,7 +246,6 @@ onMounted(() => {
 
   setTimeout(() => {
     mounted.value.leftCard = true
-    // showInfo.value = true
   }, 700)
 
   setTimeout(() => {
@@ -256,6 +255,13 @@ onMounted(() => {
   setTimeout(() => {
     mounted.value.rightBottomCard = true
   }, 1100)
+
+  setTimeout(() => {
+    mounted.value.rightBottomCard = true
+    if (user.hasActiveSubscription) {
+      showInfo.value = true
+    }
+  }, 1300)
 
 })
 
