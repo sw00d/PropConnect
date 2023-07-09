@@ -18,8 +18,9 @@ User = get_user_model()
 
 stripe.api_key = STRIPE_SECRET_KEY
 
+# make generate_vendors have an optional arugment
 
-def generate_vendors():
+def generate_vendors(company=None):
     vendor_data = {
         "plumber": {
             'name': 'Plumber Sam',
@@ -69,8 +70,13 @@ def generate_vendors():
     }
 
     for vendor, info in vendor_data.items():
-        Vendor.objects.get_or_create(name=info['name'], number=info['number'], keywords=info['keywords'],
-                                     vocation=vendor)
+        Vendor.objects.get_or_create(
+            name=info['name'],
+            number=info['number'],
+            keywords=info['keywords'],
+            vocation=vendor,
+            company=company
+        )
         print('Made vendor.', vendor)
 
 

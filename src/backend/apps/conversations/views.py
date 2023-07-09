@@ -12,7 +12,7 @@ from twilio.twiml.messaging_response import MessagingResponse
 from rest_framework.decorators import api_view, permission_classes, action
 from rest_framework.permissions import AllowAny
 
-from conversations.utils import init_conversation_util, play_the_middle_man_util, send_message
+from conversations.utils import handle_assistant_conversation, play_the_middle_man_util, send_message
 from users import permissions
 from .models import Conversation, Message, Vendor
 from .serializers import ConversationDetailSerializer, ConversationListSerializer, VendorSerializer
@@ -106,7 +106,7 @@ def play_the_middle_man(request):
 @api_view(['POST'])
 @permission_classes([AllowAny])
 def init_conversation(request):
-    message = init_conversation_util(request)
+    message = handle_assistant_conversation(request)
 
     if not message:
         # If we hit GPT, we manually send message instead of returning from this view

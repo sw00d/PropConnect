@@ -72,9 +72,9 @@ class CompanyUpdateSerializer(serializers.ModelSerializer):
 
             # TODO Test this
             try:
-                if instance.stripe_customer_id:
+                if instance.stripe_customer:
                     # Attempt to retrieve Stripe customer
-                    stripe_customer = stripe.Customer.retrieve(instance.stripe_customer_id)
+                    stripe_customer = instance.stripe_customer
                 else:
                     # If customer retrieval fails, create Stripe customer
                     stripe_customer = stripe.Customer.create(
@@ -105,7 +105,7 @@ class CompanyUpdateSerializer(serializers.ModelSerializer):
             #     raise serializers.ValidationError(f"Error updating customer: {e}")
             #
             #     # Save Stripe customer ID in Company model
-            instance.stripe_customer_id = stripe_customer.id
+            instance.stripe_customer = stripe_customer
             instance.save()
 
         return instance

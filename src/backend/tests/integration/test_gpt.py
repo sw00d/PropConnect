@@ -3,7 +3,7 @@ from django.http import HttpRequest
 
 from commands.management.commands.generate_data import generate_vendors
 from conversations.models import Vendor, Tenant, Conversation, Message
-from conversations.utils import init_conversation_util, get_vendor_from_conversation, create_chat_completion
+from conversations.utils import handle_assistant_conversation, get_vendor_from_conversation, create_chat_completion
 from tests.utils import CkcAPITestCase
 from unittest.mock import patch
 

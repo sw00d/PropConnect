@@ -3,12 +3,14 @@
 https://factoryboy.readthedocs.io/en/latest/recipes.html
 """
 import factory
-from djstripe.models import PaymentMethod
 
 from django.contrib.auth import get_user_model
 
 from companies.models import Company
 from conversations.models import Tenant, Conversation, PhoneNumber
+from djstripe.models import Subscription, Customer
+from datetime import timedelta
+from django.utils import timezone
 
 
 class UserFactory(factory.django.DjangoModelFactory):
@@ -87,8 +89,30 @@ class ConversationFactory(factory.django.DjangoModelFactory):
 #     })
 
 
+class CustomerFactory(factory.django.DjangoModelFactory):
+    class Meta:
+        model = Customer
+
+    id = factory.Sequence(lambda n: f"fake-customer-{n}")
+    # ... add any other needed fields ...
+
+
+class SubscriptionFactory(factory.django.DjangoModelFactory):
+    class Meta:
+        model = Subscription
+
+    id = factory.Sequence(lambda n: f"fake-subscription-{n}")
+    current_period_end = (timezone.now() + timedelta(days=30)).isoformat()  # 30 days from now, in UNIX timestamp format
+    current_period_start = timezone.now().isoformat()
+    customer = factory.SubFactory(CustomerFactory)
+
+
 class CompanyFactory(factory.django.DjangoModelFactory):
     number_of_doors = factory.Faker('random_int', min=1, max=100)
+
+    # by default, set the stripe IDs to some fake IDs
+    stripe_customer = factory.SubFactory(CustomerFactory)
+    current_subscription = factory.SubFactory(SubscriptionFactory)
 
     class Meta:
         model = Company

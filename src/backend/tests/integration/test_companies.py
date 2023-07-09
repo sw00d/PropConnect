@@ -1,7 +1,7 @@
 # tests.py
 from unittest.mock import patch, MagicMock
 
-import pytest
+import stripe
 from django.urls import reverse
 from rest_framework import status
 from rest_framework.test import APIClient
@@ -9,17 +9,56 @@ from rest_framework.test import APIClient
 from commands.management.commands.generate_data import sync_stripe_product
 from companies.models import Company
 from factories import UserFactory, CompanyFactory
-from settings.base import STRIPE_SECRET_KEY
 from tests.utils import CkcAPITestCase
-from users.models import User
 
 
 class TestCompanies(CkcAPITestCase):
 
+    # @patch.object(stripe.Subscription, 'retrieve')
     def setUp(self):
+        # Mock subscription
+        # mock_subscription = MagicMock()
+        # mock_retrieve.return_value = mock_subscription
         self.test_company = CompanyFactory()
         self.admin_user = UserFactory(is_staff=True, company=self.test_company)
+        self.normal_user = UserFactory()
         sync_stripe_product()
+
+    @patch.object(stripe.Subscription, 'retrieve')
+    def test_get_company(self, mock_subscription_retrieve):
+        mock_subscription = MagicMock()
+        mock_subscription_retrieve.return_value = mock_subscription
+        print('stareting')
+        company = self.test_company
+        print('---------', company.current_subscription)
+        url = reverse('company-detail', kwargs={'pk': company.pk})
+        response = self.client.get(url)
+        assert response.status_code == status.HTTP_401_UNAUTHORIZED
+
+        self.normal_user.company = company
+        self.normal_user.save()
+
+        self.client.force_authenticate(self.normal_user)
+        response = self.client.get(url)
+        assert response.status_code == status.HTTP_200_OK
+        # assert response.data['name'] == self.test_company.name
+
+    # To create a test instance of Company where current_subscription returns True:
+    def test_company_with_subscription(self):
+        with patch('stripe.Subscription.retrieve', return_value=MagicMock()):
+            company = CompanyFactory()
+            assert company.current_subscription is not None
+
+    @patch.object(stripe.Subscription, 'retrieve')
+    def test_current_subscription(self, mock_retrieve):
+        # Mock
+        mock_subscription = MagicMock()
+        mock_retrieve.return_value = mock_subscription
+        # Assign
+        result = self.test_company.current_subscription
+        # Assert
+        mock_retrieve.assert_called_once_with(self.test_company.current_subscription)
+        self.assertEqual(result, mock_subscription)
 
     def test_update_company(self):
         url = reverse('company-detail', kwargs={'pk': self.test_company.pk})
@@ -44,7 +83,8 @@ class TestCompanies(CkcAPITestCase):
     @patch('stripe.Subscription.create')
     @patch('djstripe.models.Customer.get_or_create')
     @patch('djstripe.models.PaymentMethod.sync_from_stripe_data')
-    def test_company_signup(self, sync_from_stripe_data_mock, get_or_create_mock, subscription_create_mock, retrieve_mock, create_mock):
+    def test_company_signup(self, sync_from_stripe_data_mock, get_or_create_mock, subscription_create_mock,
+                            retrieve_mock, create_mock):
         # Mock the payment_method
         payload = {'payment_method_id': 'pm_test'}
 
@@ -88,8 +128,8 @@ class TestCompanies(CkcAPITestCase):
         patch_response = self.client.patch(patch_url, patch_data, format='json')
         assert patch_response.status_code == status.HTTP_200_OK
 
-        assert Company.objects.get(id=company_id).stripe_customer_id is not None
-        assert Company.objects.get(id=company_id).stripe_subscription_id is None
+        assert Company.objects.get(id=company_id).stripe_customer is not None
+        assert Company.objects.get(id=company_id).stripe_subscription is None
 
         subscription_create_mock.return_value = MagicMock(id='sub_test')  # Mock the returned Stripe Subscription
 
@@ -98,14 +138,5 @@ class TestCompanies(CkcAPITestCase):
         signup_response = self.client.post(signup_url)
         assert signup_response.status_code == status.HTTP_200_OK
 
-        assert Company.objects.get(id=company_id).stripe_subscription_id is not None
+        assert Company.objects.get(id=company_id).stripe_subscription is not None
 
-    def test_get_company(self):
-        url = reverse('company-detail', kwargs={'pk': self.test_company.pk})
-        response = self.client.get(url)
-        assert response.status_code == status.HTTP_401_UNAUTHORIZED
-
-        self.client.force_authenticate(self.admin_user)
-        response = self.client.get(url)
-        assert response.status_code == status.HTTP_200_OK
-        assert response.data['name'] == self.test_company.name

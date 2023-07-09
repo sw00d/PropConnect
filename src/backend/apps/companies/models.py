@@ -1,5 +1,6 @@
 import stripe
 from django.db import models
+from djstripe.models import Subscription, Customer
 
 
 class Company(models.Model):
@@ -15,8 +16,8 @@ class Company(models.Model):
     website = models.CharField(max_length=200, blank=True)  # Validation can be done on FE and serializer instead of urlfield
     number_of_doors = models.CharField(max_length=16, choices=DOOR_CHOICES)
 
-    stripe_customer_id = models.CharField(max_length=255, blank=True, null=True)
-    stripe_subscription_id = models.CharField(max_length=255, blank=True, null=True)
+    stripe_customer = models.ForeignKey(Customer, on_delete=models.SET_NULL, null=True, blank=True)
+    current_subscription = models.ForeignKey(Subscription, on_delete=models.SET_NULL, null=True, blank=True)
 
     street_1 = models.CharField(max_length=200)
     street_2 = models.CharField(max_length=200, null=True, blank=True)
@@ -28,8 +29,14 @@ class Company(models.Model):
     assistant_phone_number = models.CharField(max_length=20, blank=True, null=True)
 
     @property
-    def current_subscription(self):
-        if self.stripe_subscription_id:
-            subscription = stripe.Subscription.retrieve(self.stripe_subscription_id)
-            return subscription
-        return None
+    def has_active_subscription(self):
+        if self.current_subscription:
+            return self.current_subscription['status'] == 'active'
+        return False
+
+    # @property
+    # def current_subscription(self):
+    #     if self.current_subscription_id:
+    #         subscription = stripe.Subscription.retrieve(self.current_subscription_id)
+    #         return subscription
+    #     return None

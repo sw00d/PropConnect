@@ -22,6 +22,7 @@ class Tenant(models.Model):
     name = models.CharField(max_length=200, null=True)
     number = models.CharField(max_length=20)
     address = models.CharField(max_length=200, null=True)
+    company = models.ForeignKey(Company, null=True, on_delete=models.SET_NULL)
 
     def __str__(self):
         return self.name if self.name else self.number
@@ -34,6 +35,7 @@ class Conversation(models.Model):
     date_created = models.DateTimeField(auto_now_add=True)
     is_active = models.BooleanField(default=True)  # set to false if no messages in 3 days
     last_viewed = models.DateTimeField(auto_now_add=True)  # last time the conversation was viewed by the admin
+    company = models.ForeignKey(Company, null=True, on_delete=models.SET_NULL)
 
     def __str__(self):
         return f"Conversation ({self.pk}) between {self.tenant} and vendor {self.vendor}"

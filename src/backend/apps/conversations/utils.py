@@ -29,6 +29,9 @@ def play_the_middle_man_util(request):
     body = request.POST.get('Body', None)
     conversation = PhoneNumber.objects.filter(number=to_number).first().most_recent_conversation
 
+    if not conversation.is_active:
+        return f"This conversation is no longer active. Please text {conversation.assistant_phone_number} to start a new conversation."
+
     # Get media url if available
     # media_url = request.POST.get('MediaUrl0', None)  # Get the URL of the first media item, if it exists
 
@@ -95,9 +98,9 @@ def create_message_and_content(sender_number, receiver_number, role, conversatio
     return message
 
 
-def init_conversation_util(request):
+def handle_assistant_conversation(request):
     logger.info(
-        "Message Recieved! \n"
+        "Message Received! \n"
         f"from number: , {request.POST.get('From', None)} \n"
         f"to number: , {request.POST.get('To', None)} \n"
         f"body: , {request.POST.get('Body', None)} \n"
@@ -107,22 +110,32 @@ def init_conversation_util(request):
     from_number = request.POST.get('From', None)
     to_number = request.POST.get('To', None)
     body = request.POST.get('Body', None)
-    # company = Company.objects.filter(phone_number=to_number).first() TODO this is a start
+    company = Company.objects.filter(assistant_phone_number=to_number).first()
     tenant, _ = Tenant.objects.get_or_create(number=from_number)
+    tenant.company = company
+
+    tenant.save()
 
     # TODO filter this by time as well. Should be a new convo after a few days maybe?
     conversation, _ = Conversation.objects.get_or_create(tenant=tenant, vendor=None)
+    conversation.company = company
+
+    conversation.save()
+
+    logger.info(company)
+
+    if company.current_subscription is None:
+        return f"This assistant is not active. Please contact your property manager directly."
 
     if conversation.messages.count() == 0:
-        vocations = Vendor.objects.filter(active=True).values_list('vocation', flat=True)
+        vocations = Vendor.objects.filter(active=True, company=company).values_list('vocation', flat=True)
         vocations_set = set(vocations)
 
-        content = "You are a helpful assistant for Home Simple property management " \
+        content = f"You are a helpful assistant for {conversation.company.name} Property Management" \
                   "that communicates via text messages with tenants to handle their maintenance issues. " \
                   "Your primary goal is to collect the tenant's full name, address, and a detailed description of the problem they are experiencing. " \
                   "Once you have gathered this information, you need to suggest the type of profession they might need for their situation (without explicitly naming the profession in your response)." \
                   f"The profession types available include {vocations_set}."
-
         Message.objects.create(
             message_content=content,
             role="system",
@@ -139,7 +152,7 @@ def init_conversation_util(request):
         receiver_number=to_number,
     )
 
-    conversation_json = get_conversation_messages(conversation)
+    conversation_json = get_message_history_for_gpt(conversation)
 
     completion_from_gpt = create_chat_completion(conversation_json)
     # TODO only do vendor check if we have more than 1 user message in the conversation?
@@ -226,7 +239,7 @@ def init_conversation_util(request):
         return None
 
 
-def get_conversation_messages(conversation):
+def get_message_history_for_gpt(conversation):
     messages = conversation.messages.all()
     serializer = MessageSerializer(messages, many=True)
 
@@ -241,7 +254,7 @@ def get_conversation_messages(conversation):
 
 def get_vendor_from_conversation(conversation):
     # GPT approach (less dumb than keyword but still not perfect)
-    vocations = ', '.join(list(Vendor.objects.filter(active=True).values_list('vocation', flat=True)))
+    vocations = ', '.join(list(Vendor.objects.filter(active=True, company=conversation.company).values_list('vocation', flat=True)))
     user_messages = ', '.join(list(conversation.messages.filter(role="user").values_list('message_content', flat=True)))
 
     prompt = (
@@ -261,7 +274,7 @@ def get_vendor_from_conversation(conversation):
     if response.lower().replace('.', '') in vocations:
         for vocation in vocations.split(', '):
             if vocation.lower() in response.lower():
-                vendor = Vendor.objects.get(vocation=vocation)
+                vendor = Vendor.objects.get(vocation=vocation, company=conversation.company)
                 logger.info(f'Vendor found: {vendor}. Convo: {conversation}')
                 return vendor
     else:
@@ -321,7 +334,7 @@ def send_message(to_number, from_number, message, media_urls=None):
 
 def error_handler(e):
     logger.error('Error: %s', e)  # This is the correct usage
-    # TODO set conversation to error state, inactive, and send message to alex?
+    # TODO set conversation to error state, inactive, and send message to prop manager?
     return "Sorry, we're having some issues over here. Can you reach out directly to " \
            "your property manager at +1 (925) 998-1664"  # don't include period here (twilio hates it)
 

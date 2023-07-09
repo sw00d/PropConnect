@@ -8,6 +8,7 @@ from rest_framework import routers
 from companies.views import CompanyViewSet
 from conversations.views import init_conversation, play_the_middle_man, ConversationViewSet, VendorViewSet
 from users.views import LoginView, LogoutView, UserPasswordResetViewSet, UserViewSet
+from djstripe import webhooks
 
 
 router = routers.DefaultRouter()
@@ -25,6 +26,9 @@ urlpatterns = [
     # Twilio webhook
     path('init_conversation', init_conversation, name='init_conversation'),
     path('play_the_middle_man', play_the_middle_man, name='play_the_middle_man'),
+
+    # Stripe webhook
+    path('stripe/webhook/', webhooks.handler_all, name="djstripe-webhook"),
 
     # Our URLS
     path('api/', include(router.urls)),
