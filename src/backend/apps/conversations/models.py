@@ -48,6 +48,7 @@ class Conversation(models.Model):
     @property
     def assistant_messages(self):
         # TODO Test these
+        # TODO Convert to company number
         from .models import Message
         DEFAULT_TWILIO_NUMBER = settings.base.DEFAULT_TWILIO_NUMBER
         return Message.objects.filter(

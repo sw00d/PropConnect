@@ -17,7 +17,7 @@ router = routers.DefaultRouter()
 router.register('passwordreset', UserPasswordResetViewSet, basename='passwordreset')
 
 # Custom views
-router.register('companies', CompanyViewSet)
+router.register('companies', CompanyViewSet, basename='companies')
 router.register('vendors', VendorViewSet, basename='vendors')
 router.register('users', UserViewSet)
 router.register('conversations', ConversationViewSet)

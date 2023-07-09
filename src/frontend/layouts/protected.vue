@@ -2,10 +2,10 @@
   <v-layout>
     <ScreenSwitcher>
       <template #forDesktop>
-        <PortalNavigationDrawer />
+        <PortalNavigationDrawer/>
       </template>
       <template #forMobile>
-<PortalMobileHeader />
+        <PortalMobileHeader/>
       </template>
     </ScreenSwitcher>
     <v-main style="min-height: 100vh">

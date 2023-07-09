@@ -52,7 +52,7 @@ class VendorFactory(factory.django.DjangoModelFactory):
 class TwilioNumberFactory(factory.django.DjangoModelFactory):
     # Assuming `number` is a field in TwilioNumber model
     number = "+12085558828"
-    most_recent_conversation = factory.PostGenerationMethodCall('save')
+    # most_recent_conversation = ConversationFactory()
 
     class Meta:
         model = PhoneNumber
@@ -111,7 +111,6 @@ class CompanyFactory(factory.django.DjangoModelFactory):
     number_of_doors = factory.Faker('random_int', min=1, max=100)
 
     # by default, set the stripe IDs to some fake IDs
-    stripe_customer = factory.SubFactory(CustomerFactory)
     current_subscription = factory.SubFactory(SubscriptionFactory)
 
     class Meta:

@@ -41,6 +41,8 @@ class ConversationViewSetTestCase(CkcAPITestCase):
     @patch('conversations.utils.send_message')
     def test_send_admin_message(self, mock_send_message):
         admin_message_url = f"{self.detail_url}send_admin_message/"
+        TwilioNumberFactory(most_recent_conversation=self.conversation)
+        self.conversation.refresh_from_db()
 
         response = self.client.post(admin_message_url, data={"message_body": "test message"})
         self.assertEqual(response.status_code, status.HTTP_401_UNAUTHORIZED)

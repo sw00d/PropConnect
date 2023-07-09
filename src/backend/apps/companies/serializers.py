@@ -5,7 +5,7 @@ from rest_framework import serializers
 from settings.base import STRIPE_SECRET_KEY
 from .models import Company
 
-from djstripe.models import Customer, PaymentMethod
+from djstripe.models import Customer, PaymentMethod, Subscription
 import stripe
 
 stripe.api_key = STRIPE_SECRET_KEY
@@ -42,8 +42,26 @@ class CompanyCreateSerializer(serializers.ModelSerializer):
         return company
 
 
+class SubscriptionSerializer(serializers.ModelSerializer):
+    price = serializers.SerializerMethodField()
+
+    class Meta:
+        model = Subscription
+        fields = (
+            'id',
+            'status',
+            'price',
+        )
+
+    def get_price(self, obj):
+        if obj.plan:
+            return obj.plan.amount_decimal / 100
+        return None
+
+
 class CompanyUpdateSerializer(serializers.ModelSerializer):
     payment_method_id = serializers.CharField(write_only=True)
+    current_subscription = SubscriptionSerializer(read_only=True)
 
     class Meta:
         model = Company
@@ -69,14 +87,10 @@ class CompanyUpdateSerializer(serializers.ModelSerializer):
             instance = super().update(instance, validated_data)
 
         if payment_method_id:
-
             # TODO Test this
             try:
-                if instance.stripe_customer:
-                    # Attempt to retrieve Stripe customer
-                    stripe_customer = instance.stripe_customer
-                else:
-                    # If customer retrieval fails, create Stripe customer
+                if not instance.customer_stripe_id:
+                    # If no customer exists fails, create Stripe customer
                     stripe_customer = stripe.Customer.create(
                         payment_method=payment_method_id,
                         email=instance.users.first().email,
@@ -85,9 +99,14 @@ class CompanyUpdateSerializer(serializers.ModelSerializer):
                             'default_payment_method': payment_method_id,
                         },
                     )
+                    # Update the customer_stripe_id field with the Stripe customer's id
+                    instance.customer_stripe_id = stripe_customer.id
+
             except stripe.error.StripeError as e:
                 # Handle Stripe errors here
                 raise serializers.ValidationError(f"Stripe error: {e}")
+
+            instance.save()
 
             #  TODO Ask somebody if I need to do this
             # try:
@@ -105,7 +124,6 @@ class CompanyUpdateSerializer(serializers.ModelSerializer):
             #     raise serializers.ValidationError(f"Error updating customer: {e}")
             #
             #     # Save Stripe customer ID in Company model
-            instance.stripe_customer = stripe_customer
-            instance.save()
+            # instance.save()
 
         return instance

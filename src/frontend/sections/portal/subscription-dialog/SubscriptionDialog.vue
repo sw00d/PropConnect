@@ -237,7 +237,7 @@ const submit = async () => {
       throw new Error(finalizeSignupRes.error)
     }
 
-    window.location.reload()
+    // window.location.reload()
   } catch (e) {
     console.error(e)
     if (e.message) {
@@ -246,6 +246,8 @@ const submit = async () => {
     }
     loading.value = false
   }
+      loading.value = false
+
 }
 
 </script>

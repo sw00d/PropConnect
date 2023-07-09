@@ -13,15 +13,15 @@ from .models import Company
 from .serializers import CompanyCreateSerializer, CompanyUpdateSerializer
 from djstripe import webhooks
 from djstripe.models import Subscription
-
+from djstripe.models import Subscription as DjStripeSubscription
 
 
 class CompanyViewSet(viewsets.ModelViewSet):
-    queryset = Company.objects.all()
+    # queryset = Company.objects.all()
 
     def get_queryset(self):
         if self.request.user.is_authenticated:
-            return self.request.user.company
+            return Company.objects.filter(id=self.request.user.company.id)
         return Company.objects.none()  # Return an empty queryset for anonymous users
 
     def get_permissions(self):
@@ -44,15 +44,19 @@ class CompanyViewSet(viewsets.ModelViewSet):
         plan = Product.objects.get(name='Basic Plan')
         price = plan.prices.first()  # Fetch the first price of the basic plan product
 
-        subscription = stripe.Subscription.create(
-            customer=company.stripe_customer.id,
+        customer = stripe.Customer.retrieve(company.customer_stripe_id)
+
+        stripe_subscription = stripe.Subscription.create(
+            customer=customer,
             items=[
                 {
                     "price": price.stripe_price_id,
                 },
             ]
         )
-        company.current_subscription = subscription
+
+        djstripe_subscription = DjStripeSubscription.sync_from_stripe_data(stripe_subscription)
+        company.current_subscription = djstripe_subscription
         company.save()
 
         return Response({"message": "Signup finalized."}, status=status.HTTP_200_OK)

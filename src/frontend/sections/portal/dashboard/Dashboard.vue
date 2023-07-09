@@ -22,8 +22,8 @@
                   </v-btn>
                 </div>
                 <div class="font-20">
-                  +1 (208) 283-2039
-                  <v-btn @click="$copyTextToClipboard('+1 (208) 283-2039')" icon>
+                  +asdfasdf
+                  <v-btn @click="$copyTextToClipboard('+asdfasdf')" icon>
                     <v-icon size="18">mdi-content-copy</v-icon>
                   </v-btn>
                 </div>
@@ -53,7 +53,7 @@
           How it works:
           <br>
           <br>
-          <b>1)</b> You now have a dedicated AI hotline, <b>+1 (208) 283-2039</b>. This is the number your tenants will
+          <b>1)</b> You now have a dedicated AI hotline, <b>+asdfasdf</b>. This is the number your tenants will
           text when wanting to submit a maintenance request
           <br>
           <br>

@@ -1,6 +1,6 @@
 import stripe
 from django.db import models
-from djstripe.models import Subscription, Customer
+from djstripe.models import Subscription
 
 
 class Company(models.Model):
@@ -16,8 +16,8 @@ class Company(models.Model):
     website = models.CharField(max_length=200, blank=True)  # Validation can be done on FE and serializer instead of urlfield
     number_of_doors = models.CharField(max_length=16, choices=DOOR_CHOICES)
 
-    stripe_customer = models.ForeignKey(Customer, on_delete=models.SET_NULL, null=True, blank=True)
     current_subscription = models.ForeignKey(Subscription, on_delete=models.SET_NULL, null=True, blank=True)
+    customer_stripe_id = models.CharField(max_length=50, blank=True, null=True, unique=True)
 
     street_1 = models.CharField(max_length=200)
     street_2 = models.CharField(max_length=200, null=True, blank=True)
