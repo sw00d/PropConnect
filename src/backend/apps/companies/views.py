@@ -77,17 +77,23 @@ def handle_subscription_deleted(event, **kwargs):
 @webhooks.handler('customer.subscription.updated')
 def handle_subscription_updated(event, **kwargs):
     print('fire===============================================')
-    print(event.data)
-    return Response({"message": "Signup finalized."}, status=status.HTTP_200_OK)
+    print('event.data', event.data)
+    # return Response({"message": "Signup finalized."}, status=status.HTTP_200_OK)
 
-    # # Process the event
-    # subscription = event.data["object"]
-    #
-    # # Get the associated company
-    # company = Company.objects.filter(current_subscription__id=subscription['id']).first()
-    # if company:
-    #     # With dj-stripe, the object data can be converted to the local model instance using .api_retrieve()
-    #     local_subscription = Subscription.sync_from_stripe_data(subscription)
-    #     company.current_subscription = local_subscription
-    #     company.save()
+    # Process the event
+    subscription = event.data["object"]
+
+    print('event.data', )
+    print('companies', Company.objects.filter(current_subscription__id=subscription['id']))
+    print('subscription', subscription)
+    print('subscription_id', subscription['id'])
+    # Get the associated company
+    company = Company.objects.filter(current_subscription__id=subscription['id']).first()
+
+    if company:
+        # With dj-stripe, the object data can be converted to the local model instance using .api_retrieve()
+        local_subscription = Subscription.sync_from_stripe_data(subscription)
+        print('local_subscription', local_subscription)
+        company.current_subscription = local_subscription
+        company.save()
 

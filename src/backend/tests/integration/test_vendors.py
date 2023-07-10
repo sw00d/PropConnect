@@ -45,14 +45,14 @@ class VendorTests(CkcAPITestCase):
         self.client.force_authenticate(self.user)
         response = self.client.post(reverse('vendors-list'), data)
         self.assertEqual(response.status_code, status.HTTP_201_CREATED)
-        self.assertEqual(Vendor.objects.count(), 2)
+        self.assertEqual(Vendor.objects.filter(company=self.company).count(), 2)
         self.assertEqual(Vendor.objects.get(id=response.data['id']).name, 'New Vendor')
 
     def test_read_vendor(self):
         # Try to read vendor details as a user from a different company
         self.client.force_authenticate(self.other_user)
         response = self.client.get(self.url)
-        self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
+        self.assertEqual(response.status_code, status.HTTP_404_NOT_FOUND)
 
         # Re-authenticate as a user from the correct company and try again
         self.client.force_authenticate(self.user)
@@ -65,7 +65,7 @@ class VendorTests(CkcAPITestCase):
         self.client.force_authenticate(self.other_user)
         data = {"name": "Updated Vendor"}
         response = self.client.patch(self.url, data)
-        self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
+        self.assertEqual(response.status_code, status.HTTP_404_NOT_FOUND)
 
         # Re-authenticate as a user from the correct company and try again
         self.client.force_authenticate(self.user)

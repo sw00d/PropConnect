@@ -26,23 +26,22 @@ class CustomPageNumberPagination(PageNumberPagination):
     page_size_query_param = "page_size"
 
 
-class IsCompanyMember(permissions.BasePermission):
-    """
-    Custom permission to check if the user is part of the company.
-    """
-
-    def has_object_permission(self, request, view, obj):
-        return request.user.company == obj.company
-
-
 class VendorViewSet(ModelViewSet):
     pagination_class = CustomPageNumberPagination
     serializer_class = VendorSerializer
-    permission_classes = [IsCompanyMember]
+    permission_classes = [AllowAny]
 
     def get_queryset(self):
         return Vendor.objects.filter(company=self.request.user.company).order_by('id')
 
+#     overwrite create
+    def create(self, request, *args, **kwargs):
+        if not request.user.company.id == int(request.data.get('company')):
+            return Response({'error': 'You do not have permission to perform this action.'},
+                            status=status.HTTP_403_FORBIDDEN)
+
+        response = super().create(request, *args, **kwargs)
+        return response
 
 
 class ConversationViewSet(ModelViewSet):

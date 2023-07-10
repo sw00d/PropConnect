@@ -112,7 +112,6 @@ class CompanyFactory(factory.django.DjangoModelFactory):
 
     # by default, set the stripe IDs to some fake IDs
     current_subscription = factory.SubFactory(SubscriptionFactory)
-    stripe_customer_id = factory.Faker('uuid4')
 
     class Meta:
         model = Company
