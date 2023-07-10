@@ -264,8 +264,8 @@ class TestFullConversationFlow(CkcAPITestCase):
         response = create_chat_completion(conversation)
 
         # Check that the error handling code was run and the expected message is returned
-        assert response == "Sorry, we're having some issues over here. Can you reach out directly to " \
-                           "your property manager at +1 (925) 998-1664"
+        assert response == "Sorry, we're having some issues over here. Please reach out directly to " \
+                           "your property manager."
 
         # Ensure the create method was called
         mock_create.assert_called_once_with(model="gpt-3.5-turbo", messages=conversation)

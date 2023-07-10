@@ -155,7 +155,6 @@ def handle_assistant_conversation(request):
     conversation_json = get_message_history_for_gpt(conversation)
 
     completion_from_gpt = create_chat_completion(conversation_json)
-    # TODO only do vendor check if we have more than 1 user message in the conversation?
     # TODO Only do vendor check if proposed vendor isn't populated?
     vendor_found = get_vendor_from_conversation(conversation)
     last_assistant_message = Message.objects.filter(conversation=conversation, role="assistant").last()
@@ -191,7 +190,7 @@ def handle_assistant_conversation(request):
 
             # Vendor is denied
             response = "Oh sorry about that! Either tell me more specifics about your situation, or you can reach out " \
-                       "to your property manager at +1 (925) 998-1664"  # don't include period here (twilio hates it)
+                       "to your property manager."  # don't include period here (twilio hates it)
 
             conversation.proposed_vendor = None
             conversation.save()
@@ -258,15 +257,8 @@ def get_vendor_from_conversation(conversation):
     user_messages = ', '.join(list(conversation.messages.filter(role="user").values_list('message_content', flat=True)))
 
     prompt = (
-        "Your task is to identify the most suitable professional required for a given situation "
-        "in a residential setting. You must respond with only a single word chosen from the following list of professions: {vocations}.\n\n"
-        "Consider this scenario:\n"
-        "{user_messages}\n\n"
-        "Based on the details provided by the tenant, determine the most applicable profession required to address this issue.\n\n"
-        "If the issue presented is too vague or lacks sufficient detail, "
-        "you should ask for more specific information about the issue. "
-        "In such cases, especially when the statement is incomplete or too vague, "
-        "your response should ask for more information."
+        "Pretend you are only allowed to answer with the following words or phrases: {vocations}, need more information. If you don't enough information, say 'need more information'. \n\n"
+        "The only information you have is: {user_messages}\n\n"
     ).format(vocations=vocations, user_messages=user_messages)
 
     response = create_chat_completion([{'content': prompt, 'role': 'system'}])
@@ -292,7 +284,7 @@ def create_chat_completion(conversation, retry_counter=10):
     except openai.error.RateLimitError:
         if retry_counter > 0:
             logger.error(f'- Rate limit. Making another request in 5s. Retries left: {retry_counter}')
-            time.sleep(5)
+            time.sleep(10)
             return create_chat_completion(conversation, retry_counter - 1)
         else:
             raise "Max retries exceeded."
@@ -300,8 +292,8 @@ def create_chat_completion(conversation, retry_counter=10):
     except Exception as e:
         error_handler(e)
         # Maybe test alex here as well/instead?
-        return "Sorry, we're having some issues over here. Can you reach out directly to " \
-               "your property manager at +1 (925) 998-1664"  # don't include period here (twilio hates it)
+        return "Sorry, we're having some issues over here. Please reach out directly to " \
+               "your property manager."  # don't include period here (twilio hates it)
 
 
 def send_message(to_number, from_number, message, media_urls=None):
@@ -335,8 +327,8 @@ def send_message(to_number, from_number, message, media_urls=None):
 def error_handler(e):
     logger.error('Error: %s', e)  # This is the correct usage
     # TODO set conversation to error state, inactive, and send message to prop manager?
-    return "Sorry, we're having some issues over here. Can you reach out directly to " \
-           "your property manager at +1 (925) 998-1664"  # don't include period here (twilio hates it)
+    return "Sorry, we're having some issues over here. Please reach out directly to " \
+           "your property manager."  # if ending with phone number here, don't include period (twilio hates it)
 
 
 def get_media_type(url):
