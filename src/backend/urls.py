@@ -28,7 +28,8 @@ urlpatterns = [
     path('play_the_middle_man', play_the_middle_man, name='play_the_middle_man'),
 
     # Stripe webhook
-    path('stripe/webhook/', webhooks.handler_all, name="djstripe-webhook"),
+    # path('stripe/webhook/', webhooks.handler_all, name="djstripe-webhook"),
+    path("stripe/", include("djstripe.urls", namespace="djstripe")),
 
     # Our URLS
     path('api/', include(router.urls)),

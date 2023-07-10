@@ -61,7 +61,7 @@ class CompanyViewSet(viewsets.ModelViewSet):
 
         return Response({"message": "Signup finalized."}, status=status.HTTP_200_OK)
 
-@csrf_exempt
+
 @webhooks.handler('customer.subscription.deleted')
 def handle_subscription_deleted(event, **kwargs):
     # Process the event
@@ -73,7 +73,7 @@ def handle_subscription_deleted(event, **kwargs):
         company.current_subscription = None  # Or set it to "cancelled" or a similar status
         company.save()
 
-@csrf_exempt
+
 @webhooks.handler('customer.subscription.updated')
 def handle_subscription_updated(event, **kwargs):
     print('fire===============================================')

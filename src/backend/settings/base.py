@@ -132,10 +132,10 @@ assert not (
 STRIPE_LIVE_MODE = bool(STRIPE_LIVE_SECRET_KEY)
 STRIPE_SECRET_KEY = STRIPE_LIVE_SECRET_KEY or STRIPE_TEST_SECRET_KEY
 
-DJSTRIPE_FOREIGN_KEY_TO_FIELD = "id"
-
 # Get it from the section in the Stripe dashboard where you added the webhook endpoint. (reveal secret)
 DJSTRIPE_WEBHOOK_SECRET = os.environ.get('DJSTRIPE_WEBHOOK_SECRET')
+DJSTRIPE_USE_NATIVE_JSONFIELD = True
+DJSTRIPE_FOREIGN_KEY_TO_FIELD = "id"
 
 # =============================================================================
 # Database
