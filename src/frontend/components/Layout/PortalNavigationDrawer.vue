@@ -48,6 +48,17 @@
         </v-list-item>
       </NuxtLink>
 
+       <NuxtLink to="/settings">
+        <v-list-item
+          class="my-3"
+          prepend-icon="mdi-cog"
+          title="Settings"
+          value="settings"
+          :active="route.path === '/settings'"
+        >
+        </v-list-item>
+      </NuxtLink>
+
     </v-list>
 
     <template v-slot:append>

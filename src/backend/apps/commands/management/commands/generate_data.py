@@ -227,9 +227,10 @@ class Command(BaseCommand):
         except IntegrityError:
             print('Admin user already exists!')
 
-        generate_vendors()
-        # generate_conversations() # TODO Extract this to a separate command and remove from gen data
-        sync_stripe_product()  # TODO Extract this to a separate command and remove from gen data
+        # TODO Extract these to a separate command so we can run from heroku and whatnot
+        # generate_vendors()
+        # generate_conversations()
+        sync_stripe_product()
 
         # Loading products from stripe
 

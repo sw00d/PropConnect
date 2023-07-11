@@ -1,4 +1,53 @@
 <template>
+
+  <v-slide-y-transition>
+    <v-container v-if="showIntro">
+      <v-alert
+        color="primary"
+        border="start"
+        variant="tonal"
+        class="mt-3"
+      >
+        <v-chip color="success" class="font-weight-bold absolute top right mt-2 mr-2" variant="flat" size="small">
+          ✨ Beta
+        </v-chip>
+        <div class="font-28">
+          <span class="font-weight-black">PropConnect:</span>
+          Onboarding Vendors
+        </div>
+        <br>
+        <br>
+        Onboarding your vendors can be scary, we get it! But don't worry, our system is simple and seamless to interact
+        with. All your vendors need is a number they can text from and they're ready to go! Here's what you should know:
+        <br>
+        <br>
+        <b>1)</b> You can add vendors by clicking the <i>Add Vendor</i> button below.
+        <br>
+        <br>
+        <b>2)</b> Once you add a vendor, they'll be in our system and ready to take on your tenants issues.
+        <br>
+        <br>
+        <b>3)</b> When a vendor gets assigned to a tenant issue, they'll receive a text message that is a direct line of
+        communication between them and the tenant.
+        They can use this to ask questions, get more information, schedule a visit, or even send pictures/videos of the
+        issue.
+        <br>
+        <br>
+        <b>4)</b> You can view all conversations in the
+        <nuxt-link to="/conversations">
+          <b class="text-decoration-underline">Conversations</b>
+        </nuxt-link>
+        tab.
+        <br>
+        <br>
+        <b>Pro tip:</b> Before you start onboarding vendors/tenants, add yourself as a vendor and have a friend text
+        your hotline just so you can understand the experience your vendors will be having.
+
+      </v-alert>
+    </v-container>
+
+  </v-slide-y-transition>
+
   <v-slide-y-transition>
     <v-container v-if="animate">
       <v-card>
@@ -109,6 +158,7 @@ const animate = ref(false)
 const errors = ref({})
 const auth = useUserStore()
 const creating = ref(false)
+const showIntro = ref(false)
 
 const vendorOptions = [
   'Plumber',
@@ -134,7 +184,7 @@ const createVendor = async () => {
       method: "POST",
       body: {
         ...newVendor.value,
-        number: `+1${newVendor.value.number}`,
+        number: `+1${ newVendor.value.number }`,
         company: auth.authUser.company.id
       }
     })
@@ -189,6 +239,9 @@ const toggleActive = async (vendor) => {
 onMounted(() => {
   fetchVendors()
   animate.value = true
+  setTimeout(() => {
+    showIntro.value = true
+  }, 500)
 })
 
 </script>

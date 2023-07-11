@@ -9,11 +9,10 @@ export default defineNuxtRouteMiddleware(async (_to, _from) => {
     }
 
     const auth = useUserStore()
-    console.log(auth.authUser)
+
     if (!auth.authUser || !auth.isLoggedIn) {
         // await auth.fetchUser()
-        // If you uncomment this, figure out test sign up flow lots
-        // return navigateTo('/')
+        return navigateTo('/')
     } else if (_from.path === '/signup/company-info' && _to.path === '/dashboard' && !auth.authUser.company) {
         // allows user to go back from signing up
         // await auth.logout()

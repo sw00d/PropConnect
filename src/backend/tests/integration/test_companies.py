@@ -140,6 +140,7 @@ class TestCompanies(CkcAPITestCase):
 
         # TODO FIX THIS TEST
         # Call the finalize_signup action
+        # TODO     @patch('conversations.tasks.purchase_phone_number_util') cause we don't wanna buy a number every test run
         # signup_url = reverse('companies-finalize-signup', kwargs={'pk': company_id})
 
         # signup_response = self.client.post(signup_url)

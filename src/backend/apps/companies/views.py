@@ -1,19 +1,24 @@
 import stripe
-from django.http import HttpResponse
-from django.views.decorators.csrf import csrf_exempt
+from twilio.rest import Client
 from rest_framework import viewsets, status
 from rest_framework.decorators import action, api_view
 from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework.response import Response
 from stripe import Webhook
 
-from settings.base import STRIPE_SECRET_KEY
+from conversations.tasks import purchase_phone_number_util
 from stripe_features.models import Product
 from .models import Company
 from .serializers import CompanyCreateSerializer, CompanyUpdateSerializer
 from djstripe import webhooks
 from djstripe.models import Subscription
-from djstripe.models import Subscription as DjStripeSubscription
+
+from settings.base import TWILIO_AUTH_TOKEN, TWILIO_ACCOUNT_SID, WEBHOOK_URL
+import logging
+
+twilio_auth_token = TWILIO_AUTH_TOKEN
+twilio_sid = TWILIO_ACCOUNT_SID
+logger = logging.getLogger(__name__)
 
 
 class CompanyViewSet(viewsets.ModelViewSet):
@@ -55,10 +60,16 @@ class CompanyViewSet(viewsets.ModelViewSet):
             ]
         )
 
-        djstripe_subscription = DjStripeSubscription.sync_from_stripe_data(stripe_subscription)
+        djstripe_subscription = Subscription.sync_from_stripe_data(stripe_subscription)
         company.current_subscription = djstripe_subscription
-        company.save()
 
+        client = Client(twilio_sid, twilio_auth_token)
+        number = client.available_phone_numbers("US").local.list()[0]
+        logger.info(f"Purchasing new number: {number.phone_number}")
+        purchase_phone_number_util(number.phone_number, "init_conversation/")
+        company.assistant_phone_number = number.phone_number
+
+        company.save()
         return Response({"message": "Signup finalized."}, status=status.HTTP_200_OK)
 
 

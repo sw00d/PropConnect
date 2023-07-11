@@ -22,8 +22,8 @@
                   </v-btn>
                 </div>
                 <div class="font-20">
-                  +asdfasdf
-                  <v-btn @click="$copyTextToClipboard('+asdfasdf')" icon>
+                  {{ company.assistant_phone_number }}
+                  <v-btn @click="$copyTextToClipboard(company.assistant_phone_number)" icon>
                     <v-icon size="18">mdi-content-copy</v-icon>
                   </v-btn>
                 </div>
@@ -53,7 +53,8 @@
           How it works:
           <br>
           <br>
-          <b>1)</b> You now have a dedicated AI hotline, <b>+asdfasdf</b>. This is the number your tenants will
+          <b>1)</b> You now have a dedicated AI hotline, <b>{{ company.assistant_phone_number }}</b>. This is the number
+          your tenants will
           text when wanting to submit a maintenance request
           <br>
           <br>
@@ -74,7 +75,7 @@
           <br>
           <br>
           <b>Pro tip:</b> Before adding any vendors, you should text your hotline just to get a feel for
-          things and know what your tenants will experience.
+          things and know what your tenants and vendors will experience.
 
         </v-alert>
       </v-slide-y-transition>
@@ -233,10 +234,7 @@ const mounted = ref({
   rightBottomCard: false,
 })
 const showInfo = ref(false)
-
-const subscriptionPrice = computed(() => {
-  return (parseInt(user.authUser?.company?.current_subscription?.plan?.amount_decimal) / 100).toFixed(2)
-})
+const company = computed(() => user.authUser.company)
 
 // Lifecycle
 onMounted(() => {

@@ -17,7 +17,8 @@ logger = logging.getLogger(__name__)
 # TODO Before monthly billing cycle, go through twilio numbers that aren't active and delete them -- something like this:
 # def delete_inactive_twilio_numbers():
 #     client = Client(settings.TWILIO_ACCOUNT_SID, settings.TWILIO_AUTH_TOKEN)
-#
+#     TODO When companys cancel their subscription:
+#     TODO 1. Delete the twilio number from the twilio account but keep it in our database so we can buy it later
 #     numbers = client.incoming_phone_numbers.list()
 #
 #     for number in numbers:
@@ -113,10 +114,10 @@ def get_conversation_recap_util(conversation):
     return string
 
 
-def purchase_phone_number_util(phone_number):
+def purchase_phone_number_util(phone_number, api_endpoint="play_the_middle_man/"):
     from .utils import error_handler
     try:
-        webhook_url = WEBHOOK_URL + "play_the_middle_man/"
+        webhook_url = WEBHOOK_URL + api_endpoint
         client = Client(twilio_sid, twilio_auth_token)
         purchased_number = client.incoming_phone_numbers.create(phone_number=phone_number)
         purchased_number.update(sms_url=webhook_url)

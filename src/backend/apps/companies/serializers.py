@@ -76,7 +76,8 @@ class CompanyUpdateSerializer(serializers.ModelSerializer):
             'state',
             'zip_code',
             'country',
-            'payment_method_id'  # stripe payment method id
+            'assistant_phone_number',
+            'payment_method_id',  # stripe payment method id
         )
 
     def update(self, instance, validated_data):

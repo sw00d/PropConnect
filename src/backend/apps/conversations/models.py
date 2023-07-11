@@ -50,9 +50,9 @@ class Conversation(models.Model):
         # TODO Test these
         # TODO Convert to company number
         from .models import Message
-        DEFAULT_TWILIO_NUMBER = settings.base.DEFAULT_TWILIO_NUMBER
+        number = self.company.assistant_phone_number
         return Message.objects.filter(
-            Q(receiver_number=DEFAULT_TWILIO_NUMBER) | Q(sender_number=DEFAULT_TWILIO_NUMBER),
+            Q(receiver_number=number) | Q(sender_number=number),
             conversation=self
         )
 
