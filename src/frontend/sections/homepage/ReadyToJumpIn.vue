@@ -25,7 +25,7 @@
           >
             Start my journey
           </v-btn>
-          <div class="opacity-5 mt-2">Starting at $4.99/month</div>
+          <div class="opacity-5 mt-2">Starting at $12/month</div>
         </div>
 
         <v-sheet height="250px" class="bg-transparent d-md-flex hidden-sm-and-down">

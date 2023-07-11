@@ -16,7 +16,7 @@
           <div class="subscription-box mt-5 relative">
             <div class="d-flex">
               <v-toolbar-title class="text-primary font-30 font-weight-black">
-                $5
+                $12
                 <span class="font-14 opacity-5 text-black font-weight-medium">/month</span>
               </v-toolbar-title>
               <v-chip color="success" class="font-weight-bold absolute top right mt-1 mr-1" variant="flat" size="small">
@@ -25,7 +25,7 @@
             </div>
 
             <div class="font-12 opacity-5 text-black ls-0 mt-3 font-weight-medium pr-10">
-              $5.00 + $0.40 for every conversation that's managed by our system.
+              $12.00 + $0.40 for every conversation that's managed by our system.
             </div>
           </div>
 
@@ -237,7 +237,7 @@ const submit = async () => {
       throw new Error(finalizeSignupRes.error)
     }
 
-    // window.location.reload()
+    window.location.reload()
   } catch (e) {
     console.error(e)
     if (e.message) {
