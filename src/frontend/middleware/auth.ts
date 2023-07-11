@@ -12,6 +12,7 @@ export default defineNuxtRouteMiddleware(async (_to, _from) => {
 
     if (!auth.authUser || !auth.isLoggedIn) {
         // await auth.fetchUser()
+
         return navigateTo('/')
     } else if (_from.path === '/signup/company-info' && _to.path === '/dashboard' && !auth.authUser.company) {
         // allows user to go back from signing up
