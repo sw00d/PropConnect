@@ -242,7 +242,7 @@ SERVER_EMAIL = os.environ.get('SERVER_EMAIL', DEFAULT_FROM_EMAIL)
 
 ANYMAIL = {
     # To use this we want to set EMAIL_BACKEND = "anymail.backends.sendgrid.EmailBackend"
-    'SENDGRID_API_KEY': os.environ.get('SENDGRID_API_KEY', '123456'),
+    'SENDGRID_API_KEY': os.environ.get('SENDGRID_API_KEY', ''),
 }
 
 DEFAULT_EMAIL_CONTEXT = {
