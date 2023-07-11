@@ -1,7 +1,7 @@
 <template>
   <v-container class="d-flex flex-column relative">
 
-    <v-sheet class="absolute left opacity-1 mt-16 bg-transparent" width="680" height="600">
+    <v-sheet class="absolute left opacity-1 mt-16 bg-transparent" width="680" height="600" max-width="100%">
       <v-img :src="orangeblob"/>
     </v-sheet>
 
