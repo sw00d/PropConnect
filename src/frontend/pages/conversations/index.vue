@@ -3,7 +3,7 @@
 </template>
 
 <script setup>
-import ConversationHome from "../sections/portal/conversations/home/ConversationHome"
+import ConversationHome from "../../sections/portal/conversations/home/ConversationHome"
 
 definePageMeta({
   middleware: ["auth"],
