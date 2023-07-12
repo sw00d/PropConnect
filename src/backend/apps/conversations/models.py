@@ -96,6 +96,7 @@ class Message(models.Model):
         related_name='messages',
         on_delete=models.CASCADE,
     )
+    date_sent = models.DateTimeField(auto_now_add=True)
 
     def __str__(self):
         # Return first 50 characters of message content
