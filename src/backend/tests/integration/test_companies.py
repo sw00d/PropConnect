@@ -58,7 +58,7 @@ class TestCompanies(CkcAPITestCase):
         response = self.client.patch(url, data, format='json')
         assert response.status_code == status.HTTP_401_UNAUTHORIZED
 
-        assert self.test_company.name is not 'Updated Company'
+        assert self.test_company.name != 'Updated Company'
         self.client.force_authenticate(self.admin_user)
         response = self.client.patch(url, data, format='json')
         assert response.status_code == status.HTTP_200_OK

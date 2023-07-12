@@ -8,7 +8,6 @@ from rest_framework import routers
 from companies.views import CompanyViewSet
 from conversations.views import init_conversation, play_the_middle_man, ConversationViewSet, VendorViewSet
 from users.views import LoginView, LogoutView, UserPasswordResetViewSet, UserViewSet
-from djstripe import webhooks
 
 
 router = routers.DefaultRouter()
@@ -20,7 +19,7 @@ router.register('passwordreset', UserPasswordResetViewSet, basename='passwordres
 router.register('companies', CompanyViewSet, basename='companies')
 router.register('vendors', VendorViewSet, basename='vendors')
 router.register('users', UserViewSet)
-router.register('conversations', ConversationViewSet)
+router.register('conversations', ConversationViewSet, basename="conversations")
 
 urlpatterns = [
     # Twilio webhook

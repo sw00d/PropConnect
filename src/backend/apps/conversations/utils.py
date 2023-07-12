@@ -299,6 +299,7 @@ def create_chat_completion(conversation, retry_counter=10):
 
 
 def send_message(to_number, from_number, message, media_urls=None):
+    print('dont get ehere======================================')
     try:
         # from_number HAS TO BE A TWILIO NUMBER
         client = Client(twilio_sid, twilio_auth_token)

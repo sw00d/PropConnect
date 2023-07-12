@@ -14,7 +14,7 @@ from rest_framework.permissions import AllowAny
 
 from conversations.utils import handle_assistant_conversation, play_the_middle_man_util, send_message
 from users import permissions
-from .models import Conversation, Message, Vendor
+from .models import Conversation, Message, Vendor, PhoneNumber
 from .serializers import ConversationDetailSerializer, ConversationListSerializer, VendorSerializer
 
 logger = logging.getLogger(__name__)
@@ -46,8 +46,10 @@ class VendorViewSet(ModelViewSet):
 
 class ConversationViewSet(ModelViewSet):
     pagination_class = CustomPageNumberPagination
-    queryset = Conversation.objects.all().order_by('-date_created')
-    permission_classes([IsAdminUser])
+    permission_classes([AllowAny])
+
+    def get_queryset(self):
+        return Conversation.objects.filter(company=self.request.user.company, company__isnull=False).order_by('-date_created')
 
     def get_serializer_class(self):
         if self.action == 'list':
@@ -66,14 +68,14 @@ class ConversationViewSet(ModelViewSet):
     @action(detail=True, methods=['post'])
     def send_admin_message(self, request, *args, **kwargs):
         # This is so admin can inject messages into the conversation
-
         message_body = request.data.get('message_body')
 
         if not message_body:
             return Response({'error': 'Message_body must be provided.'},
                             status=status.HTTP_400_BAD_REQUEST)
 
-        from_number = self.get_object().twilio_number.number
+        # from_number = self.get_object().twilio_number.number
+        from_number = PhoneNumber.objects.get(most_recent_conversation=self.get_object())
         tenant_number = self.get_object().tenant.number
         vendor_number = self.get_object().vendor.number
         Message.objects.create(
