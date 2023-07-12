@@ -41,7 +41,7 @@ class TestVendorDetection(CkcAPITestCase):
         self.conversation.refresh_from_db()
         response = get_vendor_from_conversation(self.conversation)
 
-        assert response == None
+        assert response is None
 
     def test_vendor_detection_plumber(self):
         Message.objects.create(message_content='My toilet is broken.', role="user", conversation=self.conversation)
@@ -50,15 +50,16 @@ class TestVendorDetection(CkcAPITestCase):
         self.conversation.refresh_from_db()
 
         response = get_vendor_from_conversation(self.conversation)
-        assert response == Vendor.objects.get(vocation='plumber') or response is None
+        assert response == Vendor.objects.get(vocation='plumber')
 
     def test_vendor_detection_too_vague(self):
-        Message.objects.create(message_content='Something broke in my house.', role="user", conversation=self.conversation)
+        Message.objects.create(message_content='Something broke in my house.', role="user",
+                               conversation=self.conversation)
 
         self.conversation.refresh_from_db()
 
         response = get_vendor_from_conversation(self.conversation)
-        assert response == None
+        assert response is None
 
     def test_vendor_detection_electrician(self):
         # Electrician
@@ -70,7 +71,7 @@ class TestVendorDetection(CkcAPITestCase):
         self.conversation.refresh_from_db()
 
         response = get_vendor_from_conversation(self.conversation)
-        assert response == Vendor.objects.get(vocation='electrician') or response is None
+        assert response == Vendor.objects.get(vocation='electrician')
 
     def test_vendor_detection_handyman(self):
         # Handyman
@@ -80,7 +81,7 @@ class TestVendorDetection(CkcAPITestCase):
         self.conversation.refresh_from_db()
 
         response = get_vendor_from_conversation(self.conversation)
-        assert response == Vendor.objects.get(vocation='handyman') or response is None
+        assert response == Vendor.objects.get(vocation='handyman')
 
     def test_vendor_detection_appliance_specialist(self):
         # Appliance Specialist
@@ -90,7 +91,7 @@ class TestVendorDetection(CkcAPITestCase):
         self.conversation.refresh_from_db()
 
         response = get_vendor_from_conversation(self.conversation)
-        assert response == Vendor.objects.get(vocation='appliance specialist') or response is None
+        assert response == Vendor.objects.get(vocation='appliance specialist')
 
     def test_vendor_detection_hvac(self):
         # HVAC Professional
@@ -100,7 +101,7 @@ class TestVendorDetection(CkcAPITestCase):
         self.conversation.refresh_from_db()
 
         response = get_vendor_from_conversation(self.conversation)
-        assert response == Vendor.objects.get(vocation='air-condition specialist') or response is None
+        assert response == Vendor.objects.get(vocation='air-condition specialist')
 
     def test_vendor_detection_locksmith(self):
         # Locksmith
@@ -110,7 +111,7 @@ class TestVendorDetection(CkcAPITestCase):
         self.conversation.refresh_from_db()
 
         response = get_vendor_from_conversation(self.conversation)
-        assert response == Vendor.objects.get(vocation='locksmith') or response is None
+        assert response == Vendor.objects.get(vocation='locksmith')
 
     def test_vendor_detection_flooring_specialist(self):
         # Flooring Specialist
@@ -123,7 +124,7 @@ class TestVendorDetection(CkcAPITestCase):
         self.conversation.refresh_from_db()
 
         response = get_vendor_from_conversation(self.conversation)
-        assert response == Vendor.objects.get(vocation='flooring specialist') or response is None
+        assert response == Vendor.objects.get(vocation='flooring specialist')
 
     def test_vendor_detection_painter(self):
         # Painter
@@ -136,7 +137,7 @@ class TestVendorDetection(CkcAPITestCase):
         self.conversation.refresh_from_db()
 
         response = get_vendor_from_conversation(self.conversation)
-        assert response == Vendor.objects.get(vocation='painter') or response is None
+        assert response == Vendor.objects.get(vocation='painter')
 
     def test_vendor_detection_drywall_specialist(self):
         # Drywall Specialist
@@ -149,4 +150,30 @@ class TestVendorDetection(CkcAPITestCase):
         self.conversation.refresh_from_db()
 
         response = get_vendor_from_conversation(self.conversation)
+        # Doing this None check here because sometimes gpt doesn't return it correctly
         assert response == Vendor.objects.get(vocation='drywall specialist') or response is None
+
+    def test_complex_plumber_selection(self):
+        # delete all vendors
+        Vendor.objects.all().delete()
+
+        Vendor.objects.create(name="Plumber Sam", vocation="Plumber", company=self.conversation.company)
+
+        conversation_data = [
+            {'role': 'user', 'content': 'Hello'},
+            {'role': 'user', 'content': 'My toilet is messed up.'},
+            {'role': 'user',
+             'content': 'Sam Wood, and the toilet is leaking everywhere cause somebody pooped too big in it'},
+            {'role': 'user', 'content': "It's causing my bathroom to flood and there is crack in the toilet"},
+        ]
+
+        for i, data in enumerate(conversation_data):
+            Message.objects.create(
+                message_content=data['content'],
+                role=data['role'],
+                conversation=self.conversation
+            )
+
+        self.conversation.refresh_from_db()
+        response = get_vendor_from_conversation(self.conversation)
+        assert response == Vendor.objects.get(vocation='Plumber')

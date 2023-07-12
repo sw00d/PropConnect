@@ -257,17 +257,19 @@ def get_vendor_from_conversation(conversation):
     user_messages = ', '.join(list(conversation.messages.filter(role="user").values_list('message_content', flat=True)))
 
     prompt = (
-        "Pretend you are only allowed to answer with the following words or phrases: {vocations}, need more information. If you don't enough information, say 'need more information'. \n\n"
-        "The only information you have is: {user_messages}\n\n"
+        "Pretend you are only allowed to answer with one of the following: {vocations}, need more information. \n\n"
+        "If you don't have enough information, say 'need more information'. \n\n"
+        "The only information you have is: '{user_messages}'\n\n"
     ).format(vocations=vocations, user_messages=user_messages)
 
     response = create_chat_completion([{'content': prompt, 'role': 'system'}])
 
-    if response.lower().replace('.', '') in vocations:
+    if response.lower().replace('.', '') in vocations.lower():
+        logger.info(f'Vendor exists within response. GPT res: {response}. Convo: {conversation}.')
         for vocation in vocations.split(', '):
             if vocation.lower() in response.lower():
                 vendor = Vendor.objects.get(vocation=vocation, company=conversation.company)
-                logger.info(f'Vendor found: {vendor}. Convo: {conversation}')
+                logger.info(f'Vendor found: {vendor}.')
                 return vendor
     else:
         logger.info(f'No Vendor found. GPT res: {response}. Convo: {conversation}')
