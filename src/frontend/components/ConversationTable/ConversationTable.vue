@@ -44,14 +44,14 @@
       </div>
     </template>
     <template #item.vendor="{item}">
-      <div v-if="!item.value.vendor">
+      <div v-if="!item.value?.vendor">
         Not yet assigned
       </div>
       <div v-else>
-        <div class="text-capitalize weight-700 font-18">{{ item.value.vendor.vocation }}</div>
-        <div class="font-14 opacity-8">{{ item.value.vendor.name }}</div>
-        <div class="font-12 opacity-8" v-if="item.value.vendor">
-          {{ $formatPhoneNumber(item.value.vendor.number) }}
+        <div class="text-capitalize weight-700 font-18">{{ item.value?.vendor?.vocation }}</div>
+        <div class="font-14 opacity-8">{{ item.value?.vendor?.name }}</div>
+        <div class="font-12 opacity-8" v-if="item.value?.vendor">
+          {{ $formatPhoneNumber(item.value?.vendor?.number) }}
           <v-btn
             @click.stop="$copyTextToClipboard($formatPhoneNumber(item.value.vendor?.number));"
             size="x-small"
