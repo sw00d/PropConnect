@@ -15,7 +15,7 @@ class VendorTests(CkcAPITestCase):
         self.other_user = User.objects.create(email='other@example.com', company=self.other_company)
         self.vendor = Vendor.objects.create(
             name="Test Vendor",
-            vocation="Plumber",
+            vocation="plumber",
             number="1234567890",
             keywords=["test1", "test2"],
             active=True,

@@ -308,7 +308,7 @@ class TestFullConversationFlow(CkcAPITestCase):
 
         self.company.assistant_phone_number = '+0987654321'
         test_company = self.company
-        Vendor.objects.create(name="Painter Sam", vocation="Painter", company=self.company)
+        Vendor.objects.create(name="Painter Sam", vocation="painter", company=self.company)
         test_company.save()
 
         request = HttpRequest()

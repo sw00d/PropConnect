@@ -134,7 +134,7 @@ def handle_assistant_conversation(request):
         vocations = Vendor.objects.filter(active=True, company=company).values_list('vocation', flat=True)
         vocations_set = set(vocations)
 
-        content = f"You are a helpful assistant for {conversation.company.name} Property Management" \
+        content = f"You are a helpful assistant for a property management company, {conversation.company.name}," \
                   "that communicates via text messages with tenants to handle their maintenance issues. " \
                   "Your primary goal is to collect the tenant's full name, address, and a detailed description of the problem they are experiencing. " \
                   "Once you have gathered this information, you need to suggest the type of profession they might need for their situation (without explicitly naming the profession in your response)." \
@@ -256,7 +256,7 @@ def get_message_history_for_gpt(conversation):
 
 def get_vendor_from_conversation(conversation):
     # GPT approach (less dumb than keyword but still not perfect)
-    vocations = "`, `".join(list(Vendor.objects.filter(active=True, company=conversation.company).values_list('vocation', flat=True)))
+    vocations = "`, `".join(list(Vendor.objects.filter(active=True, company=conversation.company, company__isnull=False).values_list('vocation', flat=True)))
     user_messages = '. '.join(list(conversation.messages.filter(role="user").values_list('message_content', flat=True)))
 
     prompt = (
@@ -266,15 +266,14 @@ def get_vendor_from_conversation(conversation):
         "The only information you have is: '{user_messages}'\n\n"
     ).format(vocations=vocations, user_messages=user_messages)
 
-    print(prompt)
-
     response = create_chat_completion([{'content': prompt, 'role': 'system'}])
 
     if response.lower().replace('.', '') in vocations.lower():
         logger.info(f'Vendor exists within response. GPT res: {response}. Convo: {conversation}.')
         for vocation in vocations.split(', '):
-            if vocation.lower() in response.lower():
-                vendor = Vendor.objects.get(vocation=vocation, company=conversation.company)
+            formatted_vocation = vocation.replace('`', '').lower()
+            if formatted_vocation in response.lower():
+                vendor = Vendor.objects.get(vocation=formatted_vocation, company=conversation.company)
                 logger.info(f'Vendor found: {vendor}.')
                 return vendor
     else:
