@@ -124,6 +124,9 @@ def handle_assistant_conversation(request):
 
     logger.info(company)
 
+    if conversation.vendor_detection_attempts > 5:
+        return "Sorry, it looks like your issue is out of the scope of what this bot handles. Please contact your property manager directly."
+
     if company.current_subscription is None:
         return f"This assistant is not active. Please contact your property manager directly."
 
@@ -253,14 +256,17 @@ def get_message_history_for_gpt(conversation):
 
 def get_vendor_from_conversation(conversation):
     # GPT approach (less dumb than keyword but still not perfect)
-    vocations = ', '.join(list(Vendor.objects.filter(active=True, company=conversation.company).values_list('vocation', flat=True)))
-    user_messages = ', '.join(list(conversation.messages.filter(role="user").values_list('message_content', flat=True)))
+    vocations = "`, `".join(list(Vendor.objects.filter(active=True, company=conversation.company).values_list('vocation', flat=True)))
+    user_messages = '. '.join(list(conversation.messages.filter(role="user").values_list('message_content', flat=True)))
 
     prompt = (
-        "Pretend you are only allowed to answer with one of the following: {vocations}, need more information. \n\n"
+        "Pretend you are only allowed to answer with one of the following: {vocations}, 'need more information', and 'no applicable vendor'. \n\n"
         "If you don't have enough information, say 'need more information'. \n\n"
+        "If the type of vendor doesn't exist in the list above say, say 'need more no applicable vendor'. \n\n"
         "The only information you have is: '{user_messages}'\n\n"
     ).format(vocations=vocations, user_messages=user_messages)
+
+    print(prompt)
 
     response = create_chat_completion([{'content': prompt, 'role': 'system'}])
 
@@ -272,7 +278,9 @@ def get_vendor_from_conversation(conversation):
                 logger.info(f'Vendor found: {vendor}.')
                 return vendor
     else:
-        logger.info(f'No Vendor found. GPT res: {response}. Convo: {conversation}')
+        conversation.vendor_detection_attempts = conversation.vendor_detection_attempts + 1
+        conversation.save()
+        logger.info(f'No Vendor found. GPT res: {response}. \n\n Convo: {conversation}. \n\n Attempts: {conversation.vendor_detection_attempts}')
         return None
 
 
@@ -299,7 +307,6 @@ def create_chat_completion(conversation, retry_counter=10):
 
 
 def send_message(to_number, from_number, message, media_urls=None):
-    print('dont get ehere======================================')
     try:
         # from_number HAS TO BE A TWILIO NUMBER
         client = Client(twilio_sid, twilio_auth_token)

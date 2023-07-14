@@ -14,6 +14,11 @@ twilio_auth_token = TWILIO_AUTH_TOKEN
 twilio_sid = TWILIO_ACCOUNT_SID
 logger = logging.getLogger(__name__)
 
+# TODO Add a task to check how many convos have been started this month and charge 40 cents for conversation. \
+#  Task should run on the 1st of every month OR on the renewal date of the company's subscription
+# def bill_for_conversations():
+#     from companies.models import Company
+
 # TODO Before monthly billing cycle, go through twilio numbers that aren't active and delete them -- something like this:
 # def delete_inactive_twilio_numbers():
 #     client = Client(settings.TWILIO_ACCOUNT_SID, settings.TWILIO_AUTH_TOKEN)
@@ -37,6 +42,7 @@ def set_old_conversations_to_not_active(hours=48):
         Conversation.objects.filter(id__in=old_conversations, is_active=True).update(is_active=False)
 
 
+# This is used for the main convo-flow
 @celery_app.task
 def start_vendor_tenant_conversation(conversation_id, vendor_id):
     from .utils import send_message
@@ -102,6 +108,7 @@ def start_vendor_tenant_conversation(conversation_id, vendor_id):
     )
 
 
+# This is used for the main convo-flow
 def get_conversation_recap_util(conversation):
     string = ''
     messages = conversation.messages.all().order_by('time_sent')
@@ -114,6 +121,7 @@ def get_conversation_recap_util(conversation):
     return string
 
 
+# This is used for the main convo-flow
 def purchase_phone_number_util(phone_number, api_endpoint="play_the_middle_man/"):
     from .utils import error_handler
     try:

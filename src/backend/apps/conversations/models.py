@@ -36,6 +36,7 @@ class Conversation(models.Model):
     is_active = models.BooleanField(default=True)  # set to false if no messages in 3 days
     last_viewed = models.DateTimeField(auto_now_add=True)  # last time the conversation was viewed by the admin
     company = models.ForeignKey(Company, null=True, on_delete=models.SET_NULL)
+    vendor_detection_attempts = models.IntegerField(default=0)
 
     def __str__(self):
         return f"Conversation ({self.pk}) between {self.tenant} and vendor {self.vendor}"

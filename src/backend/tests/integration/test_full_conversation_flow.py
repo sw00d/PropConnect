@@ -124,7 +124,7 @@ class TestFullConversationFlow(CkcAPITestCase):
 
         # Second/follow up message(s)
         request.POST = {'Body': "Sam Wood, 4861 conrad ave, it isn't flushing and I assume it's just clogged.",
-                        'From': '+1234567890', "To": '+0987654321'}
+                        'From': '+1234567890', "To": self.company.assistant_phone_number}
 
         # # This is a mock message from GPT, so we can grab the "plumber" vendor.
         # # user won't receive this message
@@ -138,25 +138,24 @@ class TestFullConversationFlow(CkcAPITestCase):
         mock_res = "Can you please tell me more about the situation? Is the wall wet due to a leak?"
         mock_create_chat_completion.return_value = mock_res
         request.POST = {'Body': "Idk",
-                        'From': '+1234567890', "To": '+0987654321'}
+                        'From': '+1234567890', "To": self.company.assistant_phone_number}
         handle_assistant_conversation(request)
         third_response = conversation.messages.last().message_content
         assert mock_res == third_response
 
-        print("HISTORY: ===============> ", get_message_history_for_gpt(conversation))
         print(third_response)
         # This is a mock message from GPT, so we can grab the "plumber" vendor.
         # user won't receive this message
         mock_create_chat_completion.return_value = "Plumber."
 
         request.POST = {'Body': "It's leaking everywhere. Seems like a plumber would be better",
-                        'From': '+1234567890', "To": '+0987654321'}
+                        'From': '+1234567890', "To": self.company.assistant_phone_number}
         handle_assistant_conversation(request)
         fourth_respsonse = conversation.messages.last().message_content
         assert "Thanks! Sounds good, I think our plumber" in fourth_respsonse
 
         request.POST = {'Body': "NO",
-                        'From': '+1234567890', "To": '+0987654321'}
+                        'From': '+1234567890', "To": self.company.assistant_phone_number}
         handle_assistant_conversation(request)
         fifth_response = conversation.messages.last().message_content
         assert "Oh sorry about that! Either tell me more specifics about your situation" in fifth_response
@@ -166,13 +165,13 @@ class TestFullConversationFlow(CkcAPITestCase):
         mock_create_chat_completion.return_value = "Appliance Specialist"
 
         request.POST = {'Body': "It's leaking everywhere. Seems like an appliance specialist would be better",
-                        'From': '+1234567890', "To": '+0987654321'}
+                        'From': '+1234567890', "To": self.company.assistant_phone_number}
         handle_assistant_conversation(request)
         sixth_response = conversation.messages.last().message_content
         assert "Thanks! Sounds good, I think our appliance" in sixth_response
 
         request.POST = {'Body': "YES",
-                        'From': '+1234567890', "To": '+0987654321'}
+                        'From': '+1234567890', "To": self.company.assistant_phone_number}
         handle_assistant_conversation(request)
         seventh_response = conversation.messages.last().message_content
         assert "Thanks for confirming! I'll connect you with the vendor now. You should be receiving a text shortly." == seventh_response
@@ -294,3 +293,88 @@ class TestFullConversationFlow(CkcAPITestCase):
             call(from_=from_number, to=to_number, body=message[1600:]),
         ]
         client_instance.messages.create.assert_has_calls(expected_calls, any_order=False)  # Check the call arguments
+
+    @patch.object(stripe.Subscription, 'retrieve')
+    @patch('conversations.utils.send_message')
+    @patch('conversations.tasks.purchase_phone_number_util')
+    def test_conversation_that_doesnt_match_any_vendor(
+        self,
+        mock_purchase_phone_number_util,
+        mock_send_message,
+        mock_retrieve,
+    ):
+        # delete all vendors
+        Vendor.objects.all().delete()
+
+        self.company.assistant_phone_number = '+0987654321'
+        test_company = self.company
+        Vendor.objects.create(name="Painter Sam", vocation="Painter", company=self.company)
+        test_company.save()
+
+        request = HttpRequest()
+        request.POST = {'Body': 'My toilet is broken', 'From': '+1234567890', "To": self.company.assistant_phone_number}
+        handle_assistant_conversation(request)
+        conversation = Conversation.objects.filter(company=test_company).first()
+
+        assert Conversation.objects.count() == 1
+        assert conversation.company == test_company
+        assert conversation.vendor_detection_attempts == 1
+
+        messages = Message.objects.filter(conversation=conversation)
+        assert conversation.company == test_company
+
+        response_from_gpt = messages.last().message_content
+
+        assert type(response_from_gpt) == str
+        assert Conversation.objects.count() == 1
+        assert conversation.messages.count() == 3
+
+        request.POST = {'Body': "Sam Wood, 4861 conrad ave, it isn't flushing and I assume it's just clogged.",
+                        'From': '+1234567890', "To": self.company.assistant_phone_number}
+        handle_assistant_conversation(request)
+        conversation.refresh_from_db()
+        response = conversation.messages.last().message_content
+        assert "Thanks! Sounds good" not in response  # standard response when vendor is found
+        assert conversation.vendor_detection_attempts == 2
+
+        request.POST = {'Body': "There is water everywhere and I don't know what to do.",
+                        'From': '+1234567890', "To": self.company.assistant_phone_number}
+        handle_assistant_conversation(request)
+        conversation.refresh_from_db()
+        response = conversation.messages.last().message_content
+        assert "Thanks! Sounds good" not in response
+        assert conversation.vendor_detection_attempts == 3
+
+        request.POST = {'Body': "I just feel like a plumber would be a good idea here",
+                        'From': '+1234567890', "To": self.company.assistant_phone_number}
+        handle_assistant_conversation(request)
+        conversation.refresh_from_db()
+        response = conversation.messages.last().message_content
+        assert "Thanks! Sounds good" not in response
+        assert conversation.vendor_detection_attempts == 4
+
+        request.POST = {'Body': "It seems like it's gonna ruin my bathroom floor",
+                        'From': '+1234567890', "To": self.company.assistant_phone_number}
+        handle_assistant_conversation(request)
+        conversation.refresh_from_db()
+        response = conversation.messages.last().message_content
+        assert "Thanks! Sounds good" not in response
+        assert conversation.vendor_detection_attempts == 5
+
+        request.POST = {'Body': "Should I plunge it?",
+                        'From': '+1234567890', "To": self.company.assistant_phone_number}
+        handle_assistant_conversation(request)
+        conversation.refresh_from_db()
+        response = conversation.messages.last().message_content
+        assert "Thanks! Sounds good" not in response
+        assert conversation.vendor_detection_attempts == 6
+
+        request.POST = {'Body': "Thanks for your help but i'm lost.",
+                        'From': '+1234567890', "To": self.company.assistant_phone_number}
+        res = handle_assistant_conversation(request)
+        assert res == "Sorry, it looks like your issue is out of the scope of what this bot handles. Please contact your property manager directly."
+
+        conversation.refresh_from_db()
+        response = conversation.messages.last().message_content
+        assert "Thanks! Sounds good" not in response
+
