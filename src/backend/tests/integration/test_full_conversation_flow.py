@@ -143,7 +143,6 @@ class TestFullConversationFlow(CkcAPITestCase):
         third_response = conversation.messages.last().message_content
         assert mock_res == third_response
 
-        print(third_response)
         # This is a mock message from GPT, so we can grab the "plumber" vendor.
         # user won't receive this message
         mock_create_chat_completion.return_value = "Plumber."

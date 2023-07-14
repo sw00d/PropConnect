@@ -13,7 +13,7 @@ from .serializers import CompanyCreateSerializer, CompanyUpdateSerializer
 from djstripe import webhooks
 from djstripe.models import Subscription
 
-from settings.base import TWILIO_AUTH_TOKEN, TWILIO_ACCOUNT_SID, WEBHOOK_URL
+from settings.base import TWILIO_AUTH_TOKEN, TWILIO_ACCOUNT_SID, WEBHOOK_URL, DEFAULT_TWILIO_NUMBER
 import logging
 
 twilio_auth_token = TWILIO_AUTH_TOKEN
@@ -63,11 +63,17 @@ class CompanyViewSet(viewsets.ModelViewSet):
         djstripe_subscription = Subscription.sync_from_stripe_data(stripe_subscription)
         company.current_subscription = djstripe_subscription
 
+
         client = Client(twilio_sid, twilio_auth_token)
         number = client.available_phone_numbers("US").local.list()[0]
-        logger.info(f"Purchasing new number: {number.phone_number}")
-        purchase_phone_number_util(number.phone_number, "init_conversation/")
-        company.assistant_phone_number = number.phone_number
+        if 'samote.wood' in self.request.user.email:
+            logger.info(f"Using admin number: {DEFAULT_TWILIO_NUMBER}")
+            print(f"Using admin number: {DEFAULT_TWILIO_NUMBER}")
+            company.assistant_phone_number = DEFAULT_TWILIO_NUMBER
+        else:
+            logger.info(f"Purchasing new number: {number.phone_number}")
+            # purchase_phone_number_util(number.phone_number, "init_conversation/")
+            company.assistant_phone_number = number.phone_number
 
         company.save()
         return Response({"message": "Signup finalized."}, status=status.HTTP_200_OK)
@@ -87,24 +93,17 @@ def handle_subscription_deleted(event, **kwargs):
 
 @webhooks.handler('customer.subscription.updated')
 def handle_subscription_updated(event, **kwargs):
-    print('fire===============================================')
-    print('event.data', event.data)
-    # return Response({"message": "Signup finalized."}, status=status.HTTP_200_OK)
+    # TODO test this. Does it work?
 
     # Process the event
     subscription = event.data["object"]
 
-    print('event.data', )
-    print('companies', Company.objects.filter(current_subscription__id=subscription['id']))
-    print('subscription', subscription)
-    print('subscription_id', subscription['id'])
     # Get the associated company
     company = Company.objects.filter(current_subscription__id=subscription['id']).first()
 
     if company:
         # With dj-stripe, the object data can be converted to the local model instance using .api_retrieve()
         local_subscription = Subscription.sync_from_stripe_data(subscription)
-        print('local_subscription', local_subscription)
         company.current_subscription = local_subscription
         company.save()
 
