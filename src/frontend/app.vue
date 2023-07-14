@@ -4,6 +4,8 @@
       <NuxtPage/>
     </NuxtLayout>
     <SnackbarComponent />
+        <CookieConsent/>
+
   </div>
 </template>
 <script setup lang="ts">

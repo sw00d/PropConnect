@@ -77,6 +77,8 @@
                     v-model="newVendor.vocation"
                     label="Vocation/Profession"
                     :items="vendorOptions"
+                    item-title="label"
+                    item-value="value"
                     :error="errors.vocation"
                     :error-messages="errors.vocation"
                   ></v-select>
@@ -161,18 +163,20 @@ const creating = ref(false)
 const showIntro = ref(false)
 
 const vendorOptions = [
-  'Plumber',
-  'Electrician',
-  'Handyman',
-  'Appliance Specialist',
-  'Air-condition specialist',
-  'Locksmith',
-  'Flooring Specialist',
-  'Painter',
-  'Drywall Specialist',
-  'Carpenter',
-  'Roofer',
-  'Landscaper',
+  // These values have to be very specific because they are used to filter vendors via GPT
+  // When adding more, thoroughly test on backend
+  {label:'Plumber', value: 'plumber'},
+  {label:'Electrician', value: 'electrician'},
+  {label:'Handyman', value: 'handyman'},
+  {label:'Appliance Specialist', value: 'appliance specialist'},
+  {label:'HVAC specialist', value: 'air-condition specialist'},
+  {label:'Locksmith', value: 'locksmith'},
+  {label:'Flooring Specialist', value: 'flooring specialist'},
+  {label:'Painter', value: 'painter'},
+  {label:'Drywall Specialist', value: 'drywall specialist'},
+  {label:'Carpenter', value: ''},
+  {label:'Roofer', value: ''},
+  {label:'Landscaper', value: ''},
 ]
 
 const createVendor = async () => {

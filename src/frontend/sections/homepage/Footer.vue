@@ -24,9 +24,12 @@
         <div class="opacity-5">
           © 2023, CKCollab.
         </div>
-        <div class="text-underline text-primary">
-          Privacy Policy
-        </div>
+        <nuxt-link to="/privacy-policy">
+          <div class="text-underline text-primary">
+            Privacy Policy
+          </div>
+        </nuxt-link>
+
       </div>
     </v-container>
   </div>

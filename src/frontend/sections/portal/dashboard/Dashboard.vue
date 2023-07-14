@@ -5,7 +5,7 @@
         <v-card v-if="mounted.header" class="py-4">
           <v-card-title class="d-flex justify-space-between align-center h-100 font-20 flex-wrap">
             <div class="text-capitalize">
-              {{ user.authUser?.company?.name }} Property Management
+              {{ user.authUser?.company?.name }}
             </div>
             <div>
               <div>

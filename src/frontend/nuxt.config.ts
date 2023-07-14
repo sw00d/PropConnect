@@ -2,11 +2,11 @@
 import vuetify from "vite-plugin-vuetify";
 
 // PWA Config
-const title = "Skeletor";
-const shortTitle = "Skeletor";
-const description = "Welcome to Skeletor -- a bootstrapped starter project.";
-const image = "https://raw.githubusercontent.com/ckc-org/skeletor/master/docs/skeletor_full.png";
-const url = "https://github.com/ckc-org/skeletor";
+const title = "PropConnect";
+const shortTitle = "PropConnect";
+const description = "PropConnect -- Your new AI Maintenance Coordinator.";
+// const image = "https://raw.githubusercontent.com/ckc-org/skeletor/master/docs/skeletor_full.png";
+const url = "https://propconnect.io";
 
 // https://v3.nuxtjs.org/api/configuration/nuxt.config
 export default defineNuxtConfig({
@@ -89,11 +89,11 @@ export default defineNuxtConfig({
                     property: "og:url",
                     content: url,
                 },
-                {
-                    hid: "og:image:secure_url",
-                    property: "og:image:secure_url",
-                    content: image,
-                },
+                // {
+                //     hid: "og:image:secure_url",
+                //     property: "og:image:secure_url",
+                //     content: image,
+                // },
                 {
                     hid: "og:title",
                     property: "og:title",
@@ -104,11 +104,11 @@ export default defineNuxtConfig({
                     property: "og:description",
                     content: description,
                 },
-                {
-                    hid: "og:image",
-                    property: "og:image",
-                    content: image,
-                },
+                // {
+                //     hid: "og:image",
+                //     property: "og:image",
+                //     content: image,
+                // },
                 //Twitter
                 {name: "twitter:card", content: "summary_large_image"},
                 {
@@ -126,11 +126,11 @@ export default defineNuxtConfig({
                     name: "twitter:description",
                     content: description,
                 },
-                {
-                    hid: "twitter:image",
-                    name: "twitter:image",
-                    content: image,
-                },
+                // {
+                //     hid: "twitter:image",
+                //     name: "twitter:image",
+                //     content: image,
+                // },
             ],
         },
     }
