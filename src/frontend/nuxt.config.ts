@@ -32,7 +32,7 @@ export default defineNuxtConfig({
         ],
     },
     piniaPersistedstate: {
-        storage: 'cookies'
+        storage: 'localStorage'
     },
     modules: [
         '@pinia/nuxt',
