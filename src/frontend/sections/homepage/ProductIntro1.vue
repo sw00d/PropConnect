@@ -13,13 +13,9 @@
             <div class="font-weight-medium opacity-7 text-h6 mt-11">
               Take a step back from the constant juggle between tenants, vendors, and landlords. Our solution brings
               efficiency
-              to your role by facilitating direct text-based communication between tenant and vendor. With in depth
-              oversight,
-              you're
-              free
-              from mundane tasks, empowering you to focus on expanding your portfolio or simply enjoying your
-              well-deserved
-              downtime.
+              to your role by facilitating direct text-based communication between tenant and vendor. With comprehensive
+              oversight, you're liberated from mundane tasks, freeing you to focus on growing your portfolio or simply
+              enjoying your well-deserved downtime.
             </div>
           </div>
         </v-col>

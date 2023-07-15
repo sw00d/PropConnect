@@ -31,9 +31,9 @@
       </div>
 
       <div class="d-flex justify-space-between flex-column flex-md-row mt-5">
-        <div class="text-h6 opacity-5 font-weight-bold ls-0 mr-10">
-          Harness the power of AI to streamline tenant issue resolution, connecting problems to solutions with ease and
-          precision.
+        <div class="text-h6 opacity-5 ls-0 mr-10">
+          Harness the power of <i><b>AI</b></i> to streamline tenant issue resolution, effortlessly connecting problems
+          with the <i><b>right solutions</b></i>.
         </div>
 
         <v-btn

@@ -8,7 +8,7 @@
           </div>
           <div class="text-h6 mt-5">
             <span class="opacity-5">
-              Signing up takes 2 minutes! Let's start the journey together.
+             Sign up in just 60 seconds and let's embark on this journey together.
             </span>
             😃
           </div>
