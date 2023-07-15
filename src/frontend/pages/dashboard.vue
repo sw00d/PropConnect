@@ -8,7 +8,8 @@ import Dashboard from "../sections/portal/dashboard/Dashboard"
 
 definePageMeta({
   middleware: ["auth"],
-  layout: 'protected'
+  // TODO SAM FOR SOME REASON AUTHED USERS CANT VIEW DASHBOARD
+  // layout: 'protected'
 })
 
 const display = ref(useDisplay())

@@ -266,12 +266,19 @@ TEMPLATED_EMAIL_FILE_EXTENSION = 'html'  # for nice highlighting, instead of .em
 REDIS_URL = os.environ.get('REDIS_URL', 'redis://redis:6379')
 CHANNEL_LAYERS = {
     'default': {
-        'BACKEND': 'channels_redis.core.RedisChannelLayer',
+
+        'BACKEND': 'utils.channels_redis.MaxConnectionRedisChannelLayer',
         'CONFIG': {
             "hosts": [REDIS_URL],
         },
     },
 }
+
+
+# =============================================================================
+# Redis
+# =============================================================================
+REDIS_MAX_CONNECTIONS = os.environ.get('REDIS_MAX_CONNECTIONS', 1)
 
 # =============================================================================
 # Caching
@@ -281,8 +288,9 @@ CACHES = {
         'BACKEND': 'django.core.cache.backends.redis.RedisCache',
         'LOCATION': [REDIS_URL],
         'OPTIONS': {
-            'pool_class': 'redis.BlockingConnectionPool',
-            'max_connections': 2,
+            "parser_class": "redis.connection.PythonParser",
+            "pool_class": "redis.BlockingConnectionPool",
+            "max_connections": REDIS_MAX_CONNECTIONS,
         }
     },
 }
@@ -292,6 +300,7 @@ CACHES = {
 # =============================================================================
 CELERY_BROKER_URL = REDIS_URL
 CELERY_RESULT_BACKEND = REDIS_URL
+CELERY_BROKER_TRANSPORT_OPTIONS = {'max_connections': REDIS_MAX_CONNECTIONS}
 CELERY_TIMEZONE = "US/Pacific"
 CELERY_TASK_TRACK_STARTED = True
 CELERY_TASK_TIME_LIMIT = 15 * 60  # in seconds
@@ -329,9 +338,7 @@ if REDIS_URL.startswith('rediss'):
     CELERY_RESULT_BACKEND += "?ssl_cert_reqs=none"
 
     # Caches
-    CACHES['default']['OPTIONS'] = {
-        'ssl_cert_reqs': ssl.CERT_NONE,
-    }
+    CACHES['default']['OPTIONS']['ssl_cert_reqs'] = ssl.CERT_NONE
 
 # =============================================================================
 # Logging
