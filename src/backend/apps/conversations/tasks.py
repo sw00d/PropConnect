@@ -14,10 +14,16 @@ twilio_auth_token = TWILIO_AUTH_TOKEN
 twilio_sid = TWILIO_ACCOUNT_SID
 logger = logging.getLogger(__name__)
 
+# TODO Add a task to check how many convos have been started this month and charge 40 cents for conversation. \
+#  Task should run on the 1st of every month OR on the renewal date of the company's subscription
+# def bill_for_conversations():
+#     from companies.models import Company
+
 # TODO Before monthly billing cycle, go through twilio numbers that aren't active and delete them -- something like this:
 # def delete_inactive_twilio_numbers():
 #     client = Client(settings.TWILIO_ACCOUNT_SID, settings.TWILIO_AUTH_TOKEN)
-#
+#     TODO When companys cancel their subscription:
+#     TODO 1. Delete the twilio number from the twilio account but keep it in our database so we can buy it later
 #     numbers = client.incoming_phone_numbers.list()
 #
 #     for number in numbers:
@@ -36,6 +42,7 @@ def set_old_conversations_to_not_active(hours=48):
         Conversation.objects.filter(id__in=old_conversations, is_active=True).update(is_active=False)
 
 
+# This is used for the main convo-flow
 @celery_app.task
 def start_vendor_tenant_conversation(conversation_id, vendor_id):
     from .utils import send_message
@@ -59,14 +66,13 @@ def start_vendor_tenant_conversation(conversation_id, vendor_id):
         conversation_number.most_recent_conversation = conversation
         conversation_number.save()
 
-
     vendor = Vendor.objects.get(id=vendor_id)
     conversation.vendor = vendor
     conversation.save()
 
     conversation_recap = get_conversation_recap_util(conversation)  # do this before we send the initial vendor message
 
-    message_to_vendor = "Hey there! I'm a bot for Home Simple property management. " \
+    message_to_vendor = f"Hey there! I'm a bot for {conversation.company.name}. " \
                         "I have a tenant who is requesting some help. " \
                         "Reply here to communicate directly with tenant."
 
@@ -89,7 +95,7 @@ def start_vendor_tenant_conversation(conversation_id, vendor_id):
         sender_number=conversation_number.number
     )
 
-    message_to_tenant = "Hey there! I'm a bot for Home Simple property management. " \
+    message_to_tenant = f"Hey there! I'm a bot for {conversation.company.name}. " \
                         f"I've informed the {vendor.vocation}, {vendor.name}, of your situation. " \
                         "You can reply directly to this number to communicate with them."
     send_message(conversation.tenant.number, conversation_number.number, message_to_tenant)
@@ -102,6 +108,7 @@ def start_vendor_tenant_conversation(conversation_id, vendor_id):
     )
 
 
+# This is used for the main convo-flow
 def get_conversation_recap_util(conversation):
     string = ''
     messages = conversation.messages.all().order_by('time_sent')
@@ -114,10 +121,11 @@ def get_conversation_recap_util(conversation):
     return string
 
 
-def purchase_phone_number_util(phone_number):
+# This is used for the main convo-flow
+def purchase_phone_number_util(phone_number, api_endpoint="play_the_middle_man/"):
     from .utils import error_handler
     try:
-        webhook_url = WEBHOOK_URL + "play_the_middle_man/"
+        webhook_url = WEBHOOK_URL + api_endpoint
         client = Client(twilio_sid, twilio_auth_token)
         purchased_number = client.incoming_phone_numbers.create(phone_number=phone_number)
         purchased_number.update(sms_url=webhook_url)

@@ -67,6 +67,7 @@ def _send_mail(template_name, to_emails, from_email=None, **kwargs):
                 )
 
     from_email = from_email if from_email is not None else settings.DEFAULT_FROM_EMAIL
+    # logger.exception(f'AnymailRecipientsRefused raised for {to_emails}')
 
     try:
         return send_templated_mail(

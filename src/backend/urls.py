@@ -5,7 +5,8 @@ from django.contrib import admin
 from django.urls import path
 from rest_framework import routers
 
-from conversations.views import init_conversation, play_the_middle_man, ConversationViewSet
+from companies.views import CompanyViewSet
+from conversations.views import init_conversation, play_the_middle_man, ConversationViewSet, VendorViewSet
 from users.views import LoginView, LogoutView, UserPasswordResetViewSet, UserViewSet
 
 
@@ -15,13 +16,19 @@ router = routers.DefaultRouter()
 router.register('passwordreset', UserPasswordResetViewSet, basename='passwordreset')
 
 # Custom views
+router.register('companies', CompanyViewSet, basename='companies')
+router.register('vendors', VendorViewSet, basename='vendors')
 router.register('users', UserViewSet)
-router.register('conversations', ConversationViewSet)
+router.register('conversations', ConversationViewSet, basename="conversations")
 
 urlpatterns = [
     # Twilio webhook
     path('init_conversation', init_conversation, name='init_conversation'),
     path('play_the_middle_man', play_the_middle_man, name='play_the_middle_man'),
+
+    # Stripe webhook
+    # path('stripe/webhook/', webhooks.handler_all, name="djstripe-webhook"),
+    path("stripe/", include("djstripe.urls", namespace="djstripe")),
 
     # Our URLS
     path('api/', include(router.urls)),

@@ -1,9 +1,8 @@
 from unittest.mock import patch
-import pytest
 
 from commands.management.commands.generate_data import generate_vendors
 from conversations.models import Message, Vendor
-from factories import ConversationFactory, UserFactory, TwilioNumberFactory
+from factories import ConversationFactory, UserFactory, TwilioNumberFactory, CompanyFactory
 from tests.utils import CkcAPITestCase
 from django.urls import reverse
 from rest_framework import status
@@ -15,46 +14,101 @@ class ConversationViewSetTestCase(CkcAPITestCase):
         generate_vendors()
 
         self.admin_user = UserFactory(is_staff=True)
+        self.company1 = CompanyFactory()
+        self.company2 = CompanyFactory()
+        self.normal_user1 = UserFactory(company=self.company1)
+        self.normal_user2 = UserFactory(company=self.company2)
 
         self.conversation = ConversationFactory.create(vendor=Vendor.objects.first())
-        self.detail_url = reverse('conversation-detail', kwargs={'pk': self.conversation.pk})
+        self.conversation1 = ConversationFactory.create(vendor=Vendor.objects.first(), company=self.company1)
+        self.conversation2 = ConversationFactory.create(vendor=Vendor.objects.first(), company=self.company2)
 
-    def test_list_conversations(self):
-        list_url = reverse('conversation-list')
-        response = self.client.get(list_url)
-        self.assertEqual(response.status_code, status.HTTP_401_UNAUTHORIZED)
+        self.detail_url = reverse('conversations-detail', kwargs={'pk': self.conversation.pk})
 
-        self.client.force_authenticate(self.admin_user)
-        response = self.client.get(list_url)
+    def test_user_can_only_list_their_conversations(self):
+        self.client.force_authenticate(self.normal_user1)
+        request = reverse('conversations-detail', kwargs={'pk': self.conversation2.pk})
+        response = self.client.get(request)
+        self.assertEqual(response.status_code, status.HTTP_404_NOT_FOUND)
+
+        request = reverse('conversations-detail', kwargs={'pk': self.conversation1.pk})
+        response = self.client.get(request)
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+
+        request = reverse('conversations-list')
+        response = self.client.get(request)
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         self.assertEqual(response.data['count'], 1)
+        self.assertEqual(response.data['results'][0].get('id'), self.conversation1.pk)
+
+        self.client.force_authenticate(self.normal_user2)
+        request = reverse('conversations-detail', kwargs={'pk': self.conversation2.pk})
+        response = self.client.get(request)
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+
+        request = reverse('conversations-detail', kwargs={'pk': self.conversation1.pk})
+        response = self.client.get(request)
+        self.assertEqual(response.status_code, status.HTTP_404_NOT_FOUND)
+
+        request = reverse('conversations-list')
+        response = self.client.get(request)
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(response.data['count'], 1)
+        self.assertEqual(response.data['results'][0].get('id'), self.conversation2.pk)
+
+        # --------------------------------------------
+        # Makes sure users with no company or convos can't access any conversations
+        # --------------------------------------------
+        self.client.force_authenticate(UserFactory())
+        request = reverse('conversations-detail', kwargs={'pk': self.conversation2.pk})
+        response = self.client.get(request)
+        self.assertEqual(response.status_code, status.HTTP_404_NOT_FOUND)
+
+        request = reverse('conversations-detail', kwargs={'pk': self.conversation1.pk})
+        response = self.client.get(request)
+        self.assertEqual(response.status_code, status.HTTP_404_NOT_FOUND)
+
+        request = reverse('conversations-list')
+        response = self.client.get(request)
+        self.assertEqual(response.data['count'], 0)
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
 
     def test_set_last_viewed(self):
-        self.client.force_authenticate(self.admin_user)
         time = now()
-        response = self.client.post(f"{self.detail_url}set_last_viewed/")
-        self.conversation.refresh_from_db()
+        url = reverse('conversations-set-last-viewed', kwargs={'pk': self.conversation1.pk})
+        response = self.client.post(url)
+        self.conversation1.refresh_from_db()
+        self.assertEqual(response.status_code, status.HTTP_401_UNAUTHORIZED)  # Not authed users should get 401
+
+        self.client.force_authenticate(self.normal_user1)
+        response = self.client.post(url)
+        self.conversation1.refresh_from_db()
         self.assertEqual(response.status_code, status.HTTP_200_OK)
-        self.assertGreaterEqual(self.conversation.last_viewed, time)
+        self.assertGreaterEqual(self.conversation1.last_viewed, time)
 
-    @pytest.mark.skip("TODO: fix this test")
-    @patch('conversations.utils.send_message')
+    @patch('conversations.views.send_message')
     def test_send_admin_message(self, mock_send_message):
-        admin_message_url = f"{self.detail_url}send_admin_message/"
+        self.client.force_authenticate(self.normal_user1)
 
-        response = self.client.post(admin_message_url, data={"message_body": "test message"})
-        self.assertEqual(response.status_code, status.HTTP_401_UNAUTHORIZED)
+        url = reverse('conversations-send-admin-message', kwargs={'pk': self.conversation2.pk})
 
-        print("1: Should be a number: ", self.conversation.twilio_number)  # This exists
-        self.conversation.refresh_from_db()
-        print("2: Should be a number: ", self.conversation.twilio_number)  # This doesn't exist, but needs to exist
+        TwilioNumberFactory(most_recent_conversation=self.conversation2)
+        self.conversation1.refresh_from_db()
 
-        self.client.force_authenticate(self.admin_user)
-        response = self.client.post(admin_message_url, data={"message_body": "test message"})
+        assert self.conversation2.twilio_number is not None
+        response = self.client.post(url, data={"message_body": "test message"})
+        self.assertEqual(response.status_code, status.HTTP_404_NOT_FOUND)
+
+        TwilioNumberFactory(most_recent_conversation=self.conversation1)
+        self.conversation1.refresh_from_db()
+
+        assert self.conversation1.twilio_number is not None
+        url = reverse('conversations-send-admin-message', kwargs={'pk': self.conversation1.pk})
+        response = self.client.post(url, data={"message_body": "test message"})
         self.assertEqual(response.status_code, status.HTTP_200_OK)
 
         message_count = Message.objects.filter(
-            conversation=self.conversation,
+            conversation=self.conversation1,
             message_content="test message",
             role="admin"
         ).count()

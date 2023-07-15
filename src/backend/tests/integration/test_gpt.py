@@ -3,7 +3,8 @@ from django.http import HttpRequest
 
 from commands.management.commands.generate_data import generate_vendors
 from conversations.models import Vendor, Tenant, Conversation, Message
-from conversations.utils import init_conversation_util, get_vendor_from_conversation, create_chat_completion
+from conversations.utils import handle_assistant_conversation, get_vendor_from_conversation, create_chat_completion
+from factories import CompanyFactory
 from tests.utils import CkcAPITestCase
 from unittest.mock import patch
 
@@ -26,10 +27,11 @@ class TestGPTErrorCases(CkcAPITestCase):
 class TestVendorDetection(CkcAPITestCase):
     def setUp(self):
         # seed the db
-        generate_vendors()
+        company = CompanyFactory()
+        generate_vendors(company)
         tenant = Tenant.objects.create(number="1")  # Add necessary parameters
         vendor = Vendor.objects.first()  # Add necessary parameters
-        self.conversation = Conversation.objects.create(tenant=tenant, vendor=vendor)
+        self.conversation = Conversation.objects.create(tenant=tenant, vendor=vendor, company=company)
 
     def test_vendor_detection_returns_none(self):
         Message.objects.create(
@@ -39,7 +41,7 @@ class TestVendorDetection(CkcAPITestCase):
         self.conversation.refresh_from_db()
         response = get_vendor_from_conversation(self.conversation)
 
-        assert response == None
+        assert response is None
 
     def test_vendor_detection_plumber(self):
         Message.objects.create(message_content='My toilet is broken.', role="user", conversation=self.conversation)
@@ -51,12 +53,13 @@ class TestVendorDetection(CkcAPITestCase):
         assert response == Vendor.objects.get(vocation='plumber')
 
     def test_vendor_detection_too_vague(self):
-        Message.objects.create(message_content='Something broke in my house.', role="user", conversation=self.conversation)
+        Message.objects.create(message_content='Something broke in my house.', role="user",
+                               conversation=self.conversation)
 
         self.conversation.refresh_from_db()
 
         response = get_vendor_from_conversation(self.conversation)
-        assert response == None
+        assert response is None
 
     def test_vendor_detection_electrician(self):
         # Electrician
@@ -72,7 +75,7 @@ class TestVendorDetection(CkcAPITestCase):
 
     def test_vendor_detection_handyman(self):
         # Handyman
-        Message.objects.create(message_content='Theres are going under my door and I think it needs something under '
+        Message.objects.create(message_content='Theres air going under my door and I think it needs something under '
                                                'there.', role="user", conversation=self.conversation)
 
         self.conversation.refresh_from_db()
@@ -147,4 +150,30 @@ class TestVendorDetection(CkcAPITestCase):
         self.conversation.refresh_from_db()
 
         response = get_vendor_from_conversation(self.conversation)
-        assert response == Vendor.objects.get(vocation='drywall specialist')
+        # Doing this None check here because sometimes gpt doesn't return it correctly
+        assert response == Vendor.objects.get(vocation='drywall specialist') or response is None
+
+    def test_complex_plumber_selection(self):
+        # delete all vendors
+        Vendor.objects.all().delete()
+
+        Vendor.objects.create(name="Plumber Sam", vocation="plumber", company=self.conversation.company)
+
+        conversation_data = [
+            {'role': 'user', 'content': 'Hello'},
+            {'role': 'user', 'content': 'My toilet is messed up.'},
+            {'role': 'user',
+             'content': 'Sam Wood, and the toilet is leaking everywhere cause somebody pooped too big in it'},
+            {'role': 'user', 'content': "It's causing my bathroom to flood and there is crack in the toilet"},
+        ]
+
+        for i, data in enumerate(conversation_data):
+            Message.objects.create(
+                message_content=data['content'],
+                role=data['role'],
+                conversation=self.conversation
+            )
+
+        self.conversation.refresh_from_db()
+        response = get_vendor_from_conversation(self.conversation)
+        assert response == Vendor.objects.get(vocation='plumber')

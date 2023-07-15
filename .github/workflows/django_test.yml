@@ -6,6 +6,7 @@ env:
   DB_HOST: localhost
   REDIS_URL: redis://localhost:6379
   OPEN_API_KEY: ${{ secrets.OPEN_API_KEY }}
+  STRIPE_TEST_SECRET_KEY: ${{ secrets.STRIPE_TEST_SECRET_KEY }}
   DEFAULT_TWILIO_NUMBER: ${{ secrets.DEFAULT_TWILIO_NUMBER }}
   TWILIO_AUTH_TOKEN: ${{ secrets.TWILIO_AUTH_TOKEN }}
   TWILIO_ACCOUNT_SID: ${{ secrets.TWILIO_ACCOUNT_SID }}

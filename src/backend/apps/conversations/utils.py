@@ -8,6 +8,7 @@ import time
 
 import openai
 
+from companies.models import Company
 from conversations.models import Vendor, Conversation, Tenant, Message, PhoneNumber, MediaMessageContent
 from conversations.serializers import MessageSerializer
 from settings.base import OPEN_API_KEY, TWILIO_AUTH_TOKEN, TWILIO_ACCOUNT_SID, WEBHOOK_URL
@@ -27,6 +28,9 @@ def play_the_middle_man_util(request):
     from_number = request.POST.get('From', None)
     body = request.POST.get('Body', None)
     conversation = PhoneNumber.objects.filter(number=to_number).first().most_recent_conversation
+
+    if not conversation.is_active:
+        return f"This conversation is no longer active. Please text {conversation.assistant_phone_number} to start a new conversation."
 
     # Get media url if available
     # media_url = request.POST.get('MediaUrl0', None)  # Get the URL of the first media item, if it exists
@@ -94,33 +98,47 @@ def create_message_and_content(sender_number, receiver_number, role, conversatio
     return message
 
 
-def init_conversation_util(request):
+def handle_assistant_conversation(request):
     logger.info(
-        "Message Recieved! \n"
+        "Message Received! \n"
         f"from number: , {request.POST.get('From', None)} \n"
         f"to number: , {request.POST.get('To', None)} \n"
         f"body: , {request.POST.get('Body', None)} \n"
     )
 
-    # Handles the initial conversation with the tenant and sends them to a message with the vendor
+    # Handles the initial conversation between the tenant and the bot
     from_number = request.POST.get('From', None)
     to_number = request.POST.get('To', None)
     body = request.POST.get('Body', None)
+    company = Company.objects.filter(assistant_phone_number=to_number).first()
     tenant, _ = Tenant.objects.get_or_create(number=from_number)
+    tenant.company = company
+
+    tenant.save()
 
     # TODO filter this by time as well. Should be a new convo after a few days maybe?
     conversation, _ = Conversation.objects.get_or_create(tenant=tenant, vendor=None)
+    conversation.company = company
+
+    conversation.save()
+
+    logger.info(company)
+
+    if conversation.vendor_detection_attempts > 5:
+        return "Sorry, it looks like your issue is out of the scope of what this bot handles. Please contact your property manager directly."
+
+    if company.current_subscription is None:
+        return f"This assistant is not active. Please contact your property manager directly."
 
     if conversation.messages.count() == 0:
-        vocations = Vendor.objects.filter(active=True).values_list('vocation', flat=True)
+        vocations = Vendor.objects.filter(active=True, company=company).values_list('vocation', flat=True)
         vocations_set = set(vocations)
 
-        content = "You are a helpful assistant for Home Simple property management " \
+        content = f"You are a helpful assistant for a property management company, {conversation.company.name}," \
                   "that communicates via text messages with tenants to handle their maintenance issues. " \
                   "Your primary goal is to collect the tenant's full name, address, and a detailed description of the problem they are experiencing. " \
                   "Once you have gathered this information, you need to suggest the type of profession they might need for their situation (without explicitly naming the profession in your response)." \
                   f"The profession types available include {vocations_set}."
-
         Message.objects.create(
             message_content=content,
             role="system",
@@ -137,10 +155,9 @@ def init_conversation_util(request):
         receiver_number=to_number,
     )
 
-    conversation_json = get_conversation_messages(conversation)
+    conversation_json = get_message_history_for_gpt(conversation)
 
     completion_from_gpt = create_chat_completion(conversation_json)
-    # TODO only do vendor check if we have more than 1 user message in the conversation?
     # TODO Only do vendor check if proposed vendor isn't populated?
     vendor_found = get_vendor_from_conversation(conversation)
     last_assistant_message = Message.objects.filter(conversation=conversation, role="assistant").last()
@@ -176,7 +193,7 @@ def init_conversation_util(request):
 
             # Vendor is denied
             response = "Oh sorry about that! Either tell me more specifics about your situation, or you can reach out " \
-                       "to your property manager at +1 (925) 998-1664"  # don't include period here (twilio hates it)
+                       "to your property manager."  # don't include period here (twilio hates it)
 
             conversation.proposed_vendor = None
             conversation.save()
@@ -224,7 +241,7 @@ def init_conversation_util(request):
         return None
 
 
-def get_conversation_messages(conversation):
+def get_message_history_for_gpt(conversation):
     messages = conversation.messages.all()
     serializer = MessageSerializer(messages, many=True)
 
@@ -239,31 +256,30 @@ def get_conversation_messages(conversation):
 
 def get_vendor_from_conversation(conversation):
     # GPT approach (less dumb than keyword but still not perfect)
-    vocations = ', '.join(list(Vendor.objects.filter(active=True).values_list('vocation', flat=True)))
-    user_messages = ', '.join(list(conversation.messages.filter(role="user").values_list('message_content', flat=True)))
+    vocations = "`, `".join(list(Vendor.objects.filter(active=True, company=conversation.company, company__isnull=False).values_list('vocation', flat=True)))
+    user_messages = '. '.join(list(conversation.messages.filter(role="user").values_list('message_content', flat=True)))
 
     prompt = (
-        "Your task is to identify the most suitable professional required for a given situation "
-        "in a residential setting. You must respond with only a single word chosen from the following list of professions: {vocations}.\n\n"
-        "Consider this scenario:\n"
-        "{user_messages}\n\n"
-        "Based on the details provided by the tenant, determine the most applicable profession required to address this issue.\n\n"
-        "If the issue presented is too vague or lacks sufficient detail, "
-        "you should ask for more specific information about the issue. "
-        "In such cases, especially when the statement is incomplete or too vague, "
-        "your response should ask for more information."
+        "Pretend you are only allowed to answer with one of the following: {vocations}, 'need more information', and 'no applicable vendor'. \n\n"
+        "If you don't have enough information, say 'need more information'. \n\n"
+        "If the type of vendor doesn't exist in the list above say, say 'need more no applicable vendor'. \n\n"
+        "The only information you have is: '{user_messages}'\n\n"
     ).format(vocations=vocations, user_messages=user_messages)
 
     response = create_chat_completion([{'content': prompt, 'role': 'system'}])
 
-    if response.lower().replace('.', '') in vocations:
+    if response.lower().replace('.', '') in vocations.lower():
+        logger.info(f'Vendor exists within response. GPT res: {response}. Convo: {conversation}.')
         for vocation in vocations.split(', '):
-            if vocation.lower() in response.lower():
-                vendor = Vendor.objects.get(vocation=vocation)
-                logger.info(f'Vendor found: {vendor}. Convo: {conversation}')
+            formatted_vocation = vocation.replace('`', '').lower()
+            if formatted_vocation in response.lower():
+                vendor = Vendor.objects.get(vocation=formatted_vocation, company=conversation.company)
+                logger.info(f'Vendor found: {vendor}.')
                 return vendor
     else:
-        logger.info(f'No Vendor found. GPT res: {response}. Convo: {conversation}')
+        conversation.vendor_detection_attempts = conversation.vendor_detection_attempts + 1
+        conversation.save()
+        logger.info(f'No Vendor found. GPT res: {response}. \n\n Convo: {conversation}. \n\n Attempts: {conversation.vendor_detection_attempts}')
         return None
 
 
@@ -277,7 +293,7 @@ def create_chat_completion(conversation, retry_counter=10):
     except openai.error.RateLimitError:
         if retry_counter > 0:
             logger.error(f'- Rate limit. Making another request in 5s. Retries left: {retry_counter}')
-            time.sleep(5)
+            time.sleep(10)
             return create_chat_completion(conversation, retry_counter - 1)
         else:
             raise "Max retries exceeded."
@@ -285,8 +301,8 @@ def create_chat_completion(conversation, retry_counter=10):
     except Exception as e:
         error_handler(e)
         # Maybe test alex here as well/instead?
-        return "Sorry, we're having some issues over here. Can you reach out directly to " \
-               "your property manager at +1 (925) 998-1664"  # don't include period here (twilio hates it)
+        return "Sorry, we're having some issues over here. Please reach out directly to " \
+               "your property manager."  # don't include period here (twilio hates it)
 
 
 def send_message(to_number, from_number, message, media_urls=None):
@@ -328,9 +344,9 @@ def send_message(to_number, from_number, message, media_urls=None):
 
 def error_handler(e):
     logger.error('Error: %s', e)  # This is the correct usage
-    # TODO set conversation to error state, inactive, and send message to alex?
-    return "Sorry, we're having some issues over here. Can you reach out directly to " \
-           "your property manager at +1 (925) 998-1664"  # don't include period here (twilio hates it)
+    # TODO set conversation to error state, inactive, and send message to prop manager?
+    return "Sorry, we're having some issues over here. Please reach out directly to " \
+           "your property manager."  # if ending with phone number here, don't include period (twilio hates it)
 
 
 def get_media_type(url):

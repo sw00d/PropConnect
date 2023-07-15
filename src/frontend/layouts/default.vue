@@ -2,35 +2,17 @@
   <v-app class="overflow-hidden">
     <v-main>
       <v-container fluid class="h-100">
-        <div class="z-index-2 d-flex justify-space-between px-4 pb-4 relative">
-          <v-btn
-            icon
-            variant="outlined"
-            class="transition"
-            @click="toggle_theme"
-          >
-            <v-icon
-              :class="theme.global.current.value.dark ? 'rotate-180 icon' : ' icon'"
-              icon="mdi-theme-light-dark"
-              size="30px"
-            />
-          </v-btn>
-
-          <v-btn
-            icon
-            variant="outlined"
-            class="transition ml-4 ml-sm-0"
-            @click="logout"
-          >
-            <v-icon
-              class="rotate-180"
-              icon="mdi-logout"
-              size="24px"
-            />
-          </v-btn>
-        </div>
         <v-row no-gutters justify="center" class="fill-height z-index-1 relative">
           <v-col cols="12" md="10" lg="8" sm="10">
+
+            <v-list-item class="mb-10">
+              <div class="d-flex justify-space-between  align-center">
+                <NuxtLink to="/">
+                  <v-toolbar-title class="lh-38 text-primary font-weight-black">PropConnect</v-toolbar-title>
+                </NuxtLink>
+              </div>
+            </v-list-item>
+
             <slot/>
           </v-col>
         </v-row>
@@ -40,10 +22,11 @@
 </template>
 
 <script setup lang="ts">
-import {useAuth} from "~/composables/useAuth";
 import {useThemeSwitcher} from "~/composables/useThemeSwitcher";
+import {useUserStore} from "~/store/userStore";
+import Footer from "~/sections/homepage/Footer.vue";
 
-const auth = useAuth()
+const auth = useUserStore()
 
 const {theme, toggle_theme} = useThemeSwitcher()
 

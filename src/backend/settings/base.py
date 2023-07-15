@@ -13,12 +13,10 @@ sys.path.insert(0, os.path.join(BASE_DIR, 'apps'))
 
 SETTINGS_MODULE = os.getenv("DJANGO_SETTINGS_MODULE")
 
-
 # =============================================================================
 # Debugging
 # =============================================================================
 DEBUG = os.environ.get('DEBUG', False)
-
 
 # =============================================================================
 # Django
@@ -50,6 +48,8 @@ THIRD_PARTY_APPS = (
     'django.contrib.staticfiles',
     'django.contrib.postgres',
 
+    'djstripe',
+
     'rest_framework',
     'rest_framework.authtoken',
     'django_extensions',
@@ -61,7 +61,9 @@ THIRD_PARTY_APPS = (
 OUR_APPS = (
     'users',
     'commands',
+    'companies',
     'conversations',
+    'stripe_features',
 )
 INSTALLED_APPS = THIRD_PARTY_APPS + OUR_APPS
 
@@ -113,6 +115,27 @@ AUTH_USER_MODEL = 'users.User'
 DEFAULT_AUTO_FIELD = 'django.db.models.AutoField'
 SESSION_ENGINE = os.environ.get("SESSION_ENGINE", "django.contrib.sessions.backends.cached_db")
 
+# =============================================================================
+# Stripe
+# =============================================================================
+# STRIPE_PUBLISH_KEY = os.environ.get('STRIPE_PUBLISH_KEY')
+# STRIPE_SECRET_KEY =
+
+STRIPE_LIVE_SECRET_KEY = os.environ.get("STRIPE_LIVE_SECRET_KEY")
+STRIPE_TEST_SECRET_KEY = os.environ.get("STRIPE_TEST_SECRET_KEY")
+
+assert not (
+        STRIPE_LIVE_SECRET_KEY and STRIPE_TEST_SECRET_KEY), "Choose only STRIPE_LIVE_SECRET_KEY or STRIPE_SECRET_KEY " \
+                                                            "env var, not both!"
+
+# implicitly set live mode based on whether we have a live key
+STRIPE_LIVE_MODE = bool(STRIPE_LIVE_SECRET_KEY)
+STRIPE_SECRET_KEY = STRIPE_LIVE_SECRET_KEY or STRIPE_TEST_SECRET_KEY
+
+# Get it from the section in the Stripe dashboard where you added the webhook endpoint. (reveal secret)
+DJSTRIPE_WEBHOOK_SECRET = os.environ.get('DJSTRIPE_WEBHOOK_SECRET')
+DJSTRIPE_USE_NATIVE_JSONFIELD = True
+DJSTRIPE_FOREIGN_KEY_TO_FIELD = "id"
 
 # =============================================================================
 # Database
@@ -127,7 +150,7 @@ if 'test' in argv or 'pytest' in argv:
     DATABASES = {
         'default': {
             'ENGINE': 'django.db.backends.postgresql_psycopg2',
-            'NAME': 'test_'+os.environ.get('DB_NAME', 'postgres'),
+            'NAME': 'test_' + os.environ.get('DB_NAME', 'postgres'),
             'USER': os.environ.get('DB_USERNAME', 'postgres'),
             'PASSWORD': os.environ.get('DB_PASSWORD', 'postgres'),
             'HOST': os.environ.get('DB_HOST', 'db'),
@@ -170,7 +193,6 @@ REST_FRAMEWORK = {
     )
 }
 
-
 # =============================================================================
 # Security/cookies
 # =============================================================================
@@ -185,12 +207,10 @@ CSRF_TRUSTED_ORIGINS = (
     SITE_DOMAIN,
 )
 
-
 # =============================================================================
 # Whitenoise
 # =============================================================================
 WHITENOISE_MANIFEST_STRICT = False
-
 
 # =============================================================================
 # Storage
@@ -213,7 +233,6 @@ MEDIA_ROOT = os.path.join(BASE_DIR, 'uploads')
 MEDIA_URL = '/media/'
 MEDIA_URL_PREFIX = next((section for section in MEDIA_URL.split('/') if section), 'media')
 
-
 # =============================================================================
 # Email
 # =============================================================================
@@ -223,7 +242,7 @@ SERVER_EMAIL = os.environ.get('SERVER_EMAIL', DEFAULT_FROM_EMAIL)
 
 ANYMAIL = {
     # To use this we want to set EMAIL_BACKEND = "anymail.backends.sendgrid.EmailBackend"
-    'SENDGRID_API_KEY': os.environ.get('SENDGRID_API_KEY', '123456'),
+    'SENDGRID_API_KEY': os.environ.get('SENDGRID_API_KEY', ''),
 }
 
 DEFAULT_EMAIL_CONTEXT = {
@@ -241,14 +260,14 @@ TEMPLATED_EMAIL_EMAIL_MULTIALTERNATIVES_CLASS = 'anymail.message.AnymailMessage'
 TEMPLATED_EMAIL_TEMPLATE_DIR = 'emails/'
 TEMPLATED_EMAIL_FILE_EXTENSION = 'html'  # for nice highlighting, instead of .email ending
 
-
 # ============================================================================
 # Channels
 # ============================================================================
 REDIS_URL = os.environ.get('REDIS_URL', 'redis://redis:6379')
 CHANNEL_LAYERS = {
     'default': {
-        'BACKEND': 'channels_redis.core.RedisChannelLayer',
+
+        'BACKEND': 'utils.channels_redis.MaxConnectionRedisChannelLayer',
         'CONFIG': {
             "hosts": [REDIS_URL],
         },
@@ -257,21 +276,31 @@ CHANNEL_LAYERS = {
 
 
 # =============================================================================
+# Redis
+# =============================================================================
+REDIS_MAX_CONNECTIONS = os.environ.get('REDIS_MAX_CONNECTIONS', 1)
+
+# =============================================================================
 # Caching
 # =============================================================================
 CACHES = {
     'default': {
         'BACKEND': 'django.core.cache.backends.redis.RedisCache',
         'LOCATION': [REDIS_URL],
+        'OPTIONS': {
+            "parser_class": "redis.connection.PythonParser",
+            "pool_class": "redis.BlockingConnectionPool",
+            "max_connections": REDIS_MAX_CONNECTIONS,
+        }
     },
 }
-
 
 # =============================================================================
 # Celery
 # =============================================================================
 CELERY_BROKER_URL = REDIS_URL
 CELERY_RESULT_BACKEND = REDIS_URL
+CELERY_BROKER_TRANSPORT_OPTIONS = {'max_connections': REDIS_MAX_CONNECTIONS}
 CELERY_TIMEZONE = "US/Pacific"
 CELERY_TASK_TRACK_STARTED = True
 CELERY_TASK_TIME_LIMIT = 15 * 60  # in seconds
@@ -309,10 +338,7 @@ if REDIS_URL.startswith('rediss'):
     CELERY_RESULT_BACKEND += "?ssl_cert_reqs=none"
 
     # Caches
-    CACHES['default']['OPTIONS'] = {
-        'ssl_cert_reqs': ssl.CERT_NONE,
-    }
-
+    CACHES['default']['OPTIONS']['ssl_cert_reqs'] = ssl.CERT_NONE
 
 # =============================================================================
 # Logging
@@ -371,9 +397,9 @@ if SLACK_WEBHOOK_URL:
 if DEBUG:  # pragma: no cover
     INSTALLED_APPS += ('debug_toolbar',)
     MIDDLEWARE = (
-        'debug_toolbar.middleware.DebugToolbarMiddleware',
-        'querycount.middleware.QueryCountMiddleware',
-    ) + MIDDLEWARE  # we want Debug Middleware at the top
+                     'debug_toolbar.middleware.DebugToolbarMiddleware',
+                     'querycount.middleware.QueryCountMiddleware',
+                 ) + MIDDLEWARE  # we want Debug Middleware at the top
 
     INTERNAL_IPS = ['127.0.0.1']
 

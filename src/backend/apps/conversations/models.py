@@ -3,14 +3,16 @@ from django.contrib.postgres.fields import ArrayField
 from django.db.models import Q
 
 import settings.base
+from companies.models import Company
 
 
 class Vendor(models.Model):
     name = models.CharField(max_length=200)
     vocation = models.CharField(max_length=200, blank=True, null=True)  # plumber | electrician | etc.
     number = models.CharField(max_length=20)
-    keywords = ArrayField(models.CharField(max_length=200))
+    keywords = ArrayField(models.CharField(max_length=200), null=True, blank=True)  # currently unused
     active = models.BooleanField(default=True)
+    company = models.ForeignKey(Company, null=True, on_delete=models.SET_NULL)
 
     def __str__(self):
         return self.name
@@ -20,6 +22,7 @@ class Tenant(models.Model):
     name = models.CharField(max_length=200, null=True)
     number = models.CharField(max_length=20)
     address = models.CharField(max_length=200, null=True)
+    company = models.ForeignKey(Company, null=True, on_delete=models.SET_NULL)
 
     def __str__(self):
         return self.name if self.name else self.number
@@ -32,6 +35,8 @@ class Conversation(models.Model):
     date_created = models.DateTimeField(auto_now_add=True)
     is_active = models.BooleanField(default=True)  # set to false if no messages in 3 days
     last_viewed = models.DateTimeField(auto_now_add=True)  # last time the conversation was viewed by the admin
+    company = models.ForeignKey(Company, null=True, on_delete=models.SET_NULL)
+    vendor_detection_attempts = models.IntegerField(default=0)
 
     def __str__(self):
         return f"Conversation ({self.pk}) between {self.tenant} and vendor {self.vendor}"
@@ -44,10 +49,11 @@ class Conversation(models.Model):
     @property
     def assistant_messages(self):
         # TODO Test these
+        # TODO Convert to company number
         from .models import Message
-        DEFAULT_TWILIO_NUMBER = settings.base.DEFAULT_TWILIO_NUMBER
+        number = self.company.assistant_phone_number
         return Message.objects.filter(
-            Q(receiver_number=DEFAULT_TWILIO_NUMBER) | Q(sender_number=DEFAULT_TWILIO_NUMBER),
+            Q(receiver_number=number) | Q(sender_number=number),
             conversation=self
         )
 
@@ -91,6 +97,7 @@ class Message(models.Model):
         related_name='messages',
         on_delete=models.CASCADE,
     )
+    date_sent = models.DateTimeField(auto_now_add=True)
 
     def __str__(self):
         # Return first 50 characters of message content

@@ -32,7 +32,14 @@ class MessageSerializer(serializers.ModelSerializer):
 class VendorSerializer(serializers.ModelSerializer):
     class Meta:
         model = Vendor
-        fields = '__all__'
+        fields = (
+            'id',
+            'name',
+            'number',
+            'company',
+            'active',
+            'vocation',
+        )
 
 
 class TenantSerializer(serializers.ModelSerializer):
