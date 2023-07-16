@@ -3,8 +3,14 @@
     <v-container class="py-10">
       <div class="d-flex align-start">
         <div>
-
-          <v-toolbar-title class="lh-38 text-primary font-weight-black">PropConnect</v-toolbar-title>
+          <div class="d-flex align-center mb-4">
+            <v-sheet class="d-flex align-center mr-4 bg-transparent">
+              <v-img :src="logoGraphic" width="40px"/>
+            </v-sheet>
+            <v-toolbar-title class="lh-38 text-primary font-weight-black d-flex">
+              PropConnect
+            </v-toolbar-title>
+          </div>
           <div class="opacity-5">
             Using AI to craft simple solutions to <br>
             complex problems.
@@ -37,6 +43,7 @@
 
 <script setup lang="ts">
 // Imports
+import logoGraphic from "~/assets/logos/logo-graphic-only.png"
 
 // Data
 

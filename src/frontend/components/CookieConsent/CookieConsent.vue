@@ -2,13 +2,14 @@
   <v-slide-x-reverse-transition>
     <v-sheet width="300" class="pa-4" v-if="!accepted">
       <div class="weight-600 opacity-7">
-        This website uses cookies to ensure you get the best experience on our website.
+        This website uses cookies to ensure you get the best experience navigating our site!
       </div>
       <v-btn
-        class="accent text-uppercase rounded-0 mt-1"
+        class="text-uppercase rounded-0 mt-1"
         height="42px"
         width="101px"
-        depressed
+        variant="tonal"
+        color="primary"
         @click="accept_cookie"
       >
         Got it!
