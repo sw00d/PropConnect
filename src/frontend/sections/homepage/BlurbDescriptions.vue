@@ -26,19 +26,17 @@
       </div>
       <div class="font-20 mt-6">
         Rely on our advanced AI to understand and analyze maintenance requests. It automatically pinpoints the issue and
-        identifies the most suitable vendor from your network. This smart matchmaking optimizes the repair process and
-        boosts efficiency.
+        identifies the most suitable vendor from your network.
       </div>
     </v-sheet>
 
     <v-sheet class="blurb three bg-primary">
       <div class="font-30 font-weight-bold">
-        3. Streamlined Vendor Communication
+        3) Streamlined Vendor Communication
       </div>
       <div class="font-20 mt-6">
         Our platform sets up a secure and transparent communication channel between the tenant and the vendor. This
-        streamlines real-time updates, photo sharing, and convenient scheduling. With this feature, the entire
-        maintenance process—from reporting to resolution—is made simple and transparent.
+        streamlines real-time updates, photo sharing, and convenient scheduling.
       </div>
     </v-sheet>
   </v-container>

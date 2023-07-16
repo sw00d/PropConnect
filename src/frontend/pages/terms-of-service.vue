@@ -1,4 +1,8 @@
 <template>
+  <h1><strong>Terms Of Service</strong></h1>
+  <br>
+  <br>
+
   <p>1. Introduction and Acceptance of the Terms of Service</p>
   <p>Welcome to [PropConnect], a property management assistance service that aims to streamline maintenance processes
     for property management companies. Our Service provides a comprehensive solution that utilizes an advanced

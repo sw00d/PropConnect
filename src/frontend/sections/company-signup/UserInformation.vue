@@ -3,7 +3,7 @@
     <template #default>
       <div class="text-h4 font-weight-black text-primary">Welcome to PropConnect</div>
       <div class="mb-6 mt-2">
-        Let's start with the basic. 😃
+        Let's start with the basics. 😃
       </div>
       <v-form :model-value="valid" @submit.prevent="onSubmit">
         <v-row class="d-flex" no-gutters>
@@ -58,9 +58,18 @@
         </v-btn>
         <div class="mt-4 opacity-7 font-12">
 
-          * By signing up, you agree to our <a href="/terms-of-service" target="_blank"
-                                               class="text-decoration-underline">Terms of Service</a> and <a
-          href="/privacy-policy" target="_blank" class="text-decoration-underline">Privacy Policy</a>
+          * By signing up, you agree to our
+          <nuxt-link
+            to="/terms-of-service"
+            class="text-decoration-underline"
+          >
+            Terms of Service
+          </nuxt-link>
+          and
+          <nuxt-link
+            to="/privacy-policy" class="text-decoration-underline">
+            Privacy Policy
+          </nuxt-link>
         </div>
       </v-form>
     </template>

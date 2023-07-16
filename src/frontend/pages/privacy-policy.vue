@@ -1,5 +1,7 @@
 <template>
-  <p><strong>Privacy Policy</strong></p>
+  <h1><strong>Privacy Policy</strong></h1>
+  <br>
+  <br>
   <p><strong>1. Introduction</strong></p>
   <p>Welcome to PropConnect. We respect your privacy and want to protect your personal information. This
     Privacy Policy explains how we collect, use, and disclose your personal information.</p>

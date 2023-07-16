@@ -1,22 +1,19 @@
 <template>
   <v-app class="overflow-hidden">
     <v-main>
-      <v-container fluid class="h-100">
-        <v-row no-gutters justify="center" class="fill-height z-index-1 relative">
-          <v-col cols="12" md="10" lg="8" sm="10">
+      <v-container>
 
-            <v-list-item class="mb-10">
-              <div class="d-flex justify-space-between  align-center">
-                <NuxtLink to="/">
-                  <v-toolbar-title class="lh-38 text-primary font-weight-black">PropConnect</v-toolbar-title>
-                </NuxtLink>
-              </div>
-            </v-list-item>
+        <v-list-item class="mb-10">
+          <div class="d-flex justify-space-between  align-center">
+            <NuxtLink to="/">
+              <v-toolbar-title class="lh-38 text-primary font-weight-black">PropConnect</v-toolbar-title>
+            </NuxtLink>
+          </div>
+        </v-list-item>
 
-            <slot/>
-          </v-col>
-        </v-row>
+        <slot/>
       </v-container>
+      <Footer/>
     </v-main>
   </v-app>
 </template>
