@@ -1,5 +1,5 @@
 
-# homesimple-chatbox
+# PropConnect
 
 ## installation
 
