@@ -5,11 +5,11 @@
         <v-container class="d-flex align-center">
           <v-toolbar-title class="lh-38 text-primary font-weight-black">PropConnect</v-toolbar-title>
           <v-spacer class="hidden-sm-and-down"></v-spacer>
-          <nuxt-link :to="store.authUser?.isLoggedIn ? '/dashboard' : '/sign-in'">
+          <nuxt-link :to="store?.isLoggedIn ? '/dashboard' : '/sign-in'">
             <button
               class="border-b sign-in font-14 text-primary"
             >
-              {{ store.authUser?.isLoggedIn ? 'Portal' : 'Sign in' }}
+              {{ store?.isLoggedIn ? 'Portal' : 'Sign in' }}
             </button>
           </nuxt-link>
         </v-container>

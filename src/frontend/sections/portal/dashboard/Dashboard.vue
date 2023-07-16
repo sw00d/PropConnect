@@ -55,7 +55,7 @@
           <br>
           <b>1)</b> You now have a dedicated AI hotline, <b>{{ company.assistant_phone_number }}</b>. This is the number
           your tenants will
-          text when wanting to submit a maintenance request
+          text when wanting to submit a maintenance request.
           <br>
           <br>
           <b>2)</b> Once our AI has gotten enough information from the tenant, the tenant and vendor will be connected

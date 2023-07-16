@@ -2,7 +2,7 @@
   <AuthContentContainer :image="beachHouse">
     <template #default>
       <div>
-        <div class="text-h4 font-weight-black text-primary">Welcome, {{ auth.authUser.first_name }}!</div>
+        <div class="text-h4 font-weight-black text-primary">Welcome, {{ auth.authUser?.first_name }}!</div>
         <div class="mb-6 mt-2">
           Let's hear a bit about your workplace!
         </div>

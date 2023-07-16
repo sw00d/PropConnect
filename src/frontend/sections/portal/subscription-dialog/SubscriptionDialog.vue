@@ -233,7 +233,7 @@ const submit = async () => {
     })
 
     if (finalizeSignupRes.error?.value) {
-      cardError.value = 'Error Occurred. Please try cache and try again.'
+      cardError.value = 'Error Occurred. Please clear your cache and try again.'
       throw new Error(finalizeSignupRes.error)
     }
 

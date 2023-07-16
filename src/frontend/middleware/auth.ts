@@ -7,22 +7,23 @@ export default defineNuxtRouteMiddleware(async (_to, _from) => {
         csrftoken.value = null
         return navigateTo('/')
     }
+    if (process.client) {
+        const auth = useUserStore()
 
-    const auth = useUserStore()
+        if (!auth.authUser || !auth.isLoggedIn) {
+            // await auth.fetchUser()
 
-    if (!auth.authUser || !auth.isLoggedIn) {
-        // await auth.fetchUser()
-
-        return navigateTo('/')
-    } else if (_from.path === '/signup/company-info' && _to.path === '/dashboard' && !auth.authUser.company) {
-        // allows user to go back from signing up
-        // await auth.logout()
-        return navigateTo('/')
-    } else if (
-        auth.authUser && !auth.authUser.company && _to.path !== '/signup/company-info' && _from.path !== '/signup/company-info'
-    ) {
-        const snackbar = useSnackbarStore()
-        snackbar.displaySnackbar('highlight', "Please provide a company first.")
-        return navigateTo('/signup/company-info')
+            return navigateTo('/')
+        } else if (_from.path === '/signup/company-info' && _to.path === '/dashboard' && !auth.authUser.company) {
+            // allows user to go back from signing up
+            // await auth.logout()
+            return navigateTo('/')
+        } else if (
+            auth.authUser && !auth.authUser.company && _to.path !== '/signup/company-info' && _from.path !== '/signup/company-info'
+        ) {
+            const snackbar = useSnackbarStore()
+            snackbar.displaySnackbar('highlight', "Please provide a company first.")
+            return navigateTo('/signup/company-info')
+        }
     }
 })
