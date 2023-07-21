@@ -71,7 +71,7 @@ class CompanyViewSet(viewsets.ModelViewSet):
             company.assistant_phone_number = DEFAULT_TWILIO_NUMBER
         else:
             logger.info(f"Purchasing new number: {number.phone_number}")
-            # purchase_phone_number_util(number.phone_number, "init_conversation/")
+            purchase_phone_number_util(number.phone_number, "init_conversation/", 'toll-free')
             company.assistant_phone_number = number.phone_number
 
         company.save()
