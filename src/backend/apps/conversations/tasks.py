@@ -122,13 +122,35 @@ def get_conversation_recap_util(conversation):
 
 
 # This is used for the main convo-flow
-def purchase_phone_number_util(phone_number, api_endpoint="play_the_middle_man/"):
+def purchase_phone_number_util(phone_number, api_endpoint="play_the_middle_man/", type_of_number='a2p'):
     from .utils import error_handler
     try:
-        webhook_url = WEBHOOK_URL + api_endpoint
         client = Client(twilio_sid, twilio_auth_token)
-        purchased_number = client.incoming_phone_numbers.create(phone_number=phone_number)
-        purchased_number.update(sms_url=webhook_url)
+        webhook_url = WEBHOOK_URL + api_endpoint
+
+        purchased_number = client.incoming_phone_numbers.create(
+            phone_number=phone_number,
+        )
+
+        purchased_number.sms_url = webhook_url
+        purchased_number.capabilities = {'voice': False, 'sms': True}
+
+        if type_of_number == 'a2p':
+            # Register a2p number for vendor/tenant coms
+            service = client.verify.v2.services.list(limit=1)[0]  # Get first and only service/campaign
+
+            # Here's where we assign the purchased number to the messaging service
+            client.proxy.v1 \
+                .services(service.sid) \
+                .phone_numbers \
+                .create(sid=purchased_number.sid)
+
+        if type_of_number == 'toll-free':
+            # TODO maybe verify this number in the future?
+            pass
+
+        return purchased_number
     except TwilioRestException as e:
         logger.error(f"Failed to purchase phone number. Error: {e}")
         error_handler(e)
+

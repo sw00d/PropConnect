@@ -4,7 +4,6 @@ from rest_framework import viewsets, status
 from rest_framework.decorators import action, api_view
 from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework.response import Response
-from stripe import Webhook
 
 from conversations.tasks import purchase_phone_number_util
 from stripe_features.models import Product

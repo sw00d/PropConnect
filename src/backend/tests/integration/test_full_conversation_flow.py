@@ -344,31 +344,7 @@ class TestFullConversationFlow(CkcAPITestCase):
         assert "Thanks! Sounds good" not in response
         assert conversation.vendor_detection_attempts == 3
 
-        request.POST = {'Body': "I just feel like a plumber would be a good idea here",
-                        'From': '+1234567890', "To": self.company.assistant_phone_number}
-        handle_assistant_conversation(request)
-        conversation.refresh_from_db()
-        response = conversation.messages.last().message_content
-        assert "Thanks! Sounds good" not in response
-        assert conversation.vendor_detection_attempts == 4
-
-        request.POST = {'Body': "It seems like it's gonna ruin my bathroom floor",
-                        'From': '+1234567890', "To": self.company.assistant_phone_number}
-        handle_assistant_conversation(request)
-        conversation.refresh_from_db()
-        response = conversation.messages.last().message_content
-        assert "Thanks! Sounds good" not in response
-        assert conversation.vendor_detection_attempts == 5
-
-        request.POST = {'Body': "Should I plunge it?",
-                        'From': '+1234567890', "To": self.company.assistant_phone_number}
-        handle_assistant_conversation(request)
-        conversation.refresh_from_db()
-        response = conversation.messages.last().message_content
-        assert "Thanks! Sounds good" not in response
-        assert conversation.vendor_detection_attempts == 6
-
-        request.POST = {'Body': "Thanks for your help but i'm lost.",
+        request.POST = {'Body': "Can you send me somebody?",
                         'From': '+1234567890', "To": self.company.assistant_phone_number}
         res = handle_assistant_conversation(request)
         assert res == "Sorry, it looks like your issue is out of the scope of what this bot handles. Please contact your property manager directly."

@@ -2,7 +2,9 @@ from unittest.mock import patch
 
 from commands.management.commands.generate_data import generate_vendors
 from conversations.models import Message, Vendor
+from conversations.tasks import purchase_phone_number_util
 from factories import ConversationFactory, UserFactory, TwilioNumberFactory, CompanyFactory
+from settings.base import WEBHOOK_URL
 from tests.utils import CkcAPITestCase
 from django.urls import reverse
 from rest_framework import status
@@ -114,3 +116,16 @@ class ConversationViewSetTestCase(CkcAPITestCase):
         ).count()
 
         self.assertEqual(message_count, 1)
+
+    # def test_purchase_toll_free_number(self):
+    #     # Must use twilio test creds
+    #     purchased_number = purchase_phone_number_util(
+    #         '+15005550006',
+    #         api_endpoint='/init_conversation',
+    #         type_of_number='toll-free',
+    #     )
+    #
+    #     self.assertEqual(purchased_number.phone_number, '+15005550006')
+    #     assert purchased_number.capabilities['sms'] is True
+    #     assert purchased_number.capabilities['voice'] is False
+    #     assert purchased_number.sms_url == f"{WEBHOOK_URL}/init_conversation"

@@ -124,7 +124,7 @@ def handle_assistant_conversation(request):
 
     logger.info(company)
 
-    if conversation.vendor_detection_attempts > 5:
+    if conversation.vendor_detection_attempts > 2:
         return "Sorry, it looks like your issue is out of the scope of what this bot handles. Please contact your property manager directly."
 
     if company.current_subscription is None:
@@ -166,6 +166,7 @@ def handle_assistant_conversation(request):
         'If that sounds like the correct vendor for your situation, reply YES, otherwise reply NO.',
         "I'm sorry! I'm a little confused. Please reply YES or NO."
     ]
+
     # Check if the last message from assistant was a vendor suggestion or a confusion clarification
     if last_assistant_message and confirmation_message_conditions[0] in last_assistant_message.message_content:
 
