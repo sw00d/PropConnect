@@ -9,6 +9,7 @@ from .models import Conversation, Message, PhoneNumber, Vendor
 from twilio.rest import Client
 from settings.base import TWILIO_AUTH_TOKEN, TWILIO_ACCOUNT_SID, WEBHOOK_URL
 import logging
+from .utils import error_handler
 
 twilio_auth_token = TWILIO_AUTH_TOKEN
 twilio_sid = TWILIO_ACCOUNT_SID
@@ -56,7 +57,7 @@ def start_vendor_tenant_conversation(conversation_id, vendor_id):
     )
     if available_numbers.count() == 0:
         client = Client(twilio_sid, twilio_auth_token)
-        number = client.available_phone_numbers("US").local.list(area_code='619')[0]
+        number = client.available_phone_numbers("US").local.list(area_code='619')[0]  # TODO This area code should be based off company location
         logger.info(f"Purchasing new number: {number.phone_number}")
         purchase_phone_number_util(number.phone_number)
         conversation_number = PhoneNumber.objects.create(number=number.phone_number, most_recent_conversation=conversation)
@@ -121,19 +122,39 @@ def get_conversation_recap_util(conversation):
     return string
 
 
-# This is used for the main convo-flow
-def purchase_phone_number_util(phone_number, api_endpoint="play_the_middle_man/", type_of_number='a2p'):
-    from .utils import error_handler
+# def set_sms_url(api_endpoint="/play_the_middle_man/"):
+#     # just for testing
+#     client = Client(twilio_sid, twilio_auth_token)
+#     webhook_url = 'https://propconnect.com' + api_endpoint
+#     purchased_number = client.incoming_phone_numbers('PNa433e6bcd35295b2ee942e1b4cc125f2').fetch()
+#     address = client.addresses.list(limit=1)[0]
+#     print(purchased_number.emergency_address_sid)
+#     purchased_number.update(
+#         sms_url=webhook_url,
+#         address_sid=address.sid,
+#         emergency_address_sid=address.sid,
+#     )
+#     purchased_number = client.incoming_phone_numbers('PNa433e6bcd35295b2ee942e1b4cc125f2').fetch()
+#     print(purchased_number.emergency_address_sid)
+
+
+def purchase_phone_number_util(phone_number, api_endpoint="/play_the_middle_man/", type_of_number='a2p'):
     try:
         client = Client(twilio_sid, twilio_auth_token)
         webhook_url = WEBHOOK_URL + api_endpoint
 
+        address_sid = client.addresses.list(limit=1)[0].sid  # Should eventually be the company's address
+
+        purchased_number = client.incoming_phone_numbers.create(
+            phone_number=phone_number,
+            sms_url=webhook_url,
+            address_sid=address_sid,
+            emergency_address_sid=address_sid
+        )
+
         purchased_number = client.incoming_phone_numbers.create(
             phone_number=phone_number,
         )
-
-        purchased_number.sms_url = webhook_url
-        purchased_number.capabilities = {'voice': False, 'sms': True}
 
         if type_of_number == 'a2p':
             # Register a2p number for vendor/tenant coms

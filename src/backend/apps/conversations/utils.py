@@ -12,7 +12,6 @@ from companies.models import Company
 from conversations.models import Vendor, Conversation, Tenant, Message, PhoneNumber, MediaMessageContent
 from conversations.serializers import MessageSerializer
 from settings.base import OPEN_API_KEY, TWILIO_AUTH_TOKEN, TWILIO_ACCOUNT_SID, WEBHOOK_URL
-from .tasks import start_vendor_tenant_conversation
 
 openai.api_key = OPEN_API_KEY
 twilio_auth_token = TWILIO_AUTH_TOKEN
@@ -99,6 +98,8 @@ def create_message_and_content(sender_number, receiver_number, role, conversatio
 
 
 def handle_assistant_conversation(request):
+    from .tasks import start_vendor_tenant_conversation
+
     logger.info(
         "Message Received! \n"
         f"from number: , {request.POST.get('From', None)} \n"

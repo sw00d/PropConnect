@@ -62,7 +62,6 @@ class CompanyViewSet(viewsets.ModelViewSet):
         djstripe_subscription = Subscription.sync_from_stripe_data(stripe_subscription)
         company.current_subscription = djstripe_subscription
 
-
         client = Client(twilio_sid, twilio_auth_token)
         number = client.available_phone_numbers("US").local.list()[0]
         if 'samote.wood' in self.request.user.email:
@@ -71,7 +70,7 @@ class CompanyViewSet(viewsets.ModelViewSet):
             company.assistant_phone_number = DEFAULT_TWILIO_NUMBER
         else:
             logger.info(f"Purchasing new number: {number.phone_number}")
-            purchase_phone_number_util(number.phone_number, "init_conversation/", 'toll-free')
+            purchase_phone_number_util(number.phone_number, "/init_conversation/", 'toll-free')
             company.assistant_phone_number = number.phone_number
 
         company.save()

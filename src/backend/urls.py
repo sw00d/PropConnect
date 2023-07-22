@@ -23,8 +23,8 @@ router.register('conversations', ConversationViewSet, basename="conversations")
 
 urlpatterns = [
     # Twilio webhook
-    path('init_conversation', init_conversation, name='init_conversation'),
-    path('play_the_middle_man', play_the_middle_man, name='play_the_middle_man'),
+    path('init_conversation/', init_conversation, name='init_conversation'),
+    path('play_the_middle_man/', play_the_middle_man, name='play_the_middle_man'),
 
     # Stripe webhook
     # path('stripe/webhook/', webhooks.handler_all, name="djstripe-webhook"),
