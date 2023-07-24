@@ -194,7 +194,7 @@
               height="50px"
               :loading="sendingMessage"
               @click="sendMessage"
-              :disabled="!convoIsActive"
+              :disabled="!convoIsActive || !message?.length"
             >
               Send
             </v-btn>
