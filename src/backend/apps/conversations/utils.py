@@ -1,12 +1,13 @@
 import logging
 from sys import argv
 import requests
+import threading
+import queue
+import time
+import openai
 
 from twilio.base.exceptions import TwilioRestException
 from twilio.rest import Client
-import time
-
-import openai
 
 from companies.models import Company
 from conversations.models import Vendor, Conversation, Tenant, Message, PhoneNumber, MediaMessageContent
@@ -27,6 +28,9 @@ def play_the_middle_man_util(request):
     from_number = request.POST.get('From', None)
     body = request.POST.get('Body', None)
     conversation = PhoneNumber.objects.filter(number=to_number).first().most_recent_conversation
+
+    if not conversation:
+        return "Sorry, this conversation is no longer active. Please contact your property manager directly."
 
     if not conversation.is_active:
         return f"This conversation is no longer active. Please text {conversation.assistant_phone_number} to start a new conversation."
@@ -54,7 +58,7 @@ def play_the_middle_man_util(request):
             body=body,
             media_urls=media_urls
         )
-        send_message(conversation.vendor.number, to_number, body, media_urls)
+        send_message(conversation.vendor.number, to_number, f"[TENANT]: {body}", media_urls)
     elif is_from_vendor:
         logger.info(f'- Forwarding message from vendor to tenant. Conversation: {conversation.id}')
         create_message_and_content(
@@ -65,7 +69,7 @@ def play_the_middle_man_util(request):
             body=body,
             media_urls=media_urls
         )
-        send_message(conversation.tenant.number, to_number, body, media_urls)
+        send_message(conversation.tenant.number, to_number, f"[VENDOR]: {body}", media_urls)
 
     # Nothing should be returned because we're just forwarding the message
     return None
@@ -308,40 +312,54 @@ def create_chat_completion(conversation, retry_counter=10):
 
 
 def send_message(to_number, from_number, message, media_urls=None):
-    try:
-        # from_number HAS TO BE A TWILIO NUMBER
-        client = Client(twilio_sid, twilio_auth_token)
+    # from_number HAS TO BE A TWILIO NUMBER
+    client = Client(twilio_sid, twilio_auth_token)
+    print(client)
+    # Split message into chunks of 1600 characters each
+    message_chunks = [message[i:i + 1600] for i in range(0, len(message), 1600)]
+    for message_chunk in message_chunks:
+        def work_message():
+            logger.info(f'=========================== Sending message to {to_number} from {from_number}: {message_chunk}')
+            try:
+                message_arguments = {
+                    'from_': from_number,
+                    'to': to_number,
+                    'body': message_chunk
+                }
 
-        # Split message into chunks of 1600 characters each
-        message_chunks = [message[i:i + 1600] for i in range(0, len(message), 1600)]
+                client.messages.create(**message_arguments)
 
-        for message_chunk in message_chunks:
-            message_arguments = {
-                'from_': from_number,
-                'to': to_number,
-                'body': message_chunk
-            }
+            except TwilioRestException as e:
+                print(e)
+                logger.error(e)
+                error_handler(e)
 
-            client.messages.create(**message_arguments)
+        # Add the work to the queue
+        q.put(work_message)
 
-        if media_urls:
-            logger.info('Sending media')
-            message_arguments = {
-                'from_': from_number,
-                'to': to_number,
-            }
+    if media_urls:
+        logger.info('Sending media')
+        message_arguments = {
+            'from_': from_number,
+            'to': to_number,
+        }
 
-            # Twilio expects a list of media URLs
-            if isinstance(media_urls, list):
-                message_arguments['media_url'] = media_urls
-            else:
-                message_arguments['media_url'] = [media_urls]
-            client.messages.create(**message_arguments)
+        # Twilio expects a list of media URLs
+        if isinstance(media_urls, list):
+            message_arguments['media_url'] = media_urls
+        else:
+            message_arguments['media_url'] = [media_urls]
 
-    except TwilioRestException as e:
-        print(e)
-        logger.error(e)
-        error_handler(e)
+        def work_media():
+            try:
+                client.messages.create(**message_arguments)
+            except TwilioRestException as e:
+                print(e)
+                logger.error(e)
+                error_handler(e)
+        # Add the work to the queue
+        q.put(work_media)
+
 
 
 def error_handler(e):
@@ -363,3 +381,33 @@ def get_media_type(url):
         return 'video'
     else:
         return 'other'
+
+
+# ===============================================================
+# Below is queue for sending messages, since we can only send one text message per one second per twilio campaign/service
+# ===============================================================
+# Create a queue
+q = queue.Queue()
+
+
+def worker():
+    while True:
+        # Get an item from the queue
+        item = q.get()
+
+        # "Process" the item (in this case, just print it)
+        item()
+
+        # Sleep for 1.5 seconds
+        time.sleep(1.5)
+
+        # Mark the item as done
+        q.task_done()
+
+
+# Create a worker thread
+t = threading.Thread(target=worker)
+
+# Set the thread as daemon so it will terminate when the main program terminates
+t.setDaemon(True)
+t.start()

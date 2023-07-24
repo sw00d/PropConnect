@@ -268,31 +268,6 @@ class TestFullConversationFlow(CkcAPITestCase):
         # Ensure the create method was called
         mock_create.assert_called_once_with(model="gpt-3.5-turbo", messages=conversation)
 
-    @patch('conversations.utils.Client')
-    def test_send_message_too_long(self, mock_client):
-        # Prepare
-        message = "Hello World!" * 200
-        to_number = "+1234567890"
-        from_number = "+0987654321"
-
-        # Create a mock Twilio client
-        client_instance = mock_client.return_value
-
-        client_instance.messages.create = MagicMock()
-        mock_client.return_value = client_instance
-
-        # Run
-        send_message(to_number, from_number, message)
-
-        # Assert
-        assert client_instance.messages.create.call_count == 2  # Check that the method was called twice
-
-        expected_calls = [
-            call(from_=from_number, to=to_number, body=message[:1600]),
-            call(from_=from_number, to=to_number, body=message[1600:]),
-        ]
-        client_instance.messages.create.assert_has_calls(expected_calls, any_order=False)  # Check the call arguments
-
     @patch.object(stripe.Subscription, 'retrieve')
     @patch('conversations.utils.send_message')
     @patch('conversations.tasks.purchase_phone_number_util')

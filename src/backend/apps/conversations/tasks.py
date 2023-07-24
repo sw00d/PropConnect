@@ -63,7 +63,7 @@ def start_vendor_tenant_conversation(conversation_id, vendor_id):
         conversation_number = PhoneNumber.objects.create(number=number.phone_number, most_recent_conversation=conversation)
     else:
         conversation_number = available_numbers.first()
-        logger.info(f"Using existing number: {conversation_number.number}")
+        logger.info(f"Using existing number: {conversation_number.number} for conversation: {conversation_id}")
         conversation_number.most_recent_conversation = conversation
         conversation_number.save()
 
@@ -75,7 +75,7 @@ def start_vendor_tenant_conversation(conversation_id, vendor_id):
 
     message_to_vendor = f"Hey there! I'm a bot for {conversation.company.name}. " \
                         "I have a tenant who is requesting some help. " \
-                        "Reply here to communicate directly with tenant."
+                        "You are now connected with the tenant and can communicate directly with them here."
 
     send_message(conversation.vendor.number, conversation_number.number, message_to_vendor)
     Message.objects.create(
@@ -98,7 +98,7 @@ def start_vendor_tenant_conversation(conversation_id, vendor_id):
 
     message_to_tenant = f"Hey there! I'm a bot for {conversation.company.name}. " \
                         f"I've informed the {vendor.vocation}, {vendor.name}, of your situation. " \
-                        "You can reply directly to this number to communicate with them."
+                        "You are now connected with the vendor and can communicate directly with them here."
     send_message(conversation.tenant.number, conversation_number.number, message_to_tenant)
     Message.objects.create(
         message_content=message_to_tenant,

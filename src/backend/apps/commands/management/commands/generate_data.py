@@ -236,8 +236,9 @@ class Command(BaseCommand):
 
         for number in get_active_twilio_numbers():
             if number == DEFAULT_TWILIO_NUMBER:
-                PhoneNumber.objects.create(number=number, is_base_number=True)
-                print('Made base phone.', number)
+                # do nothing if it's the default number
+                # print('Made base phone.', number)
+                pass
 
             else:
                 PhoneNumber.objects.create(number=number, is_base_number=False)
