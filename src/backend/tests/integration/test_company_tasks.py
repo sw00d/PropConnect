@@ -47,10 +47,10 @@ class TestCompanyTasks(CkcAPITestCase):
             assert Transaction.objects.first().amount == 4
             assert Transaction.objects.first().charge_date == timezone.now()
             assert Transaction.objects.first().company == company
-            
+
     def test_get_last_month_range(self):
         # Freeze time to a specific date
-        with freeze_time("2023-08-15"):
+        with freeze_time("2023-08-01"):
             start, end = get_last_month_range()
 
         # Assert the results
