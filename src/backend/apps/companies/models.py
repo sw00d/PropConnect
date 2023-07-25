@@ -31,12 +31,16 @@ class Company(models.Model):
     @property
     def has_active_subscription(self):
         if self.current_subscription:
-            return self.current_subscription['status'] == 'active'
+            return self.current_subscription.status == 'active'
         return False
 
-    # @property
-    # def current_subscription(self):
-    #     if self.current_subscription_id:
-    #         subscription = stripe.Subscription.retrieve(self.current_subscription_id)
-    #         return subscription
-    #     return None
+
+class Transaction(models.Model):
+    company = models.ForeignKey(Company, on_delete=models.CASCADE)
+    amount = models.DecimalField(max_digits=10, decimal_places=2)
+    charge_date = models.DateTimeField(auto_now_add=True)
+    successful = models.BooleanField(default=False)
+    invoice_id = models.CharField(max_length=200, null=True)
+
+    def __str__(self):
+        return f"Transaction for {self.company.name} - {'Successful' if self.successful else 'Failed'}"

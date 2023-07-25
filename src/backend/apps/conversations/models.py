@@ -35,7 +35,7 @@ class Conversation(models.Model):
     date_created = models.DateTimeField(auto_now_add=True)
     is_active = models.BooleanField(default=True)  # set to false if no messages in 3 days
     last_viewed = models.DateTimeField(auto_now_add=True)  # last time the conversation was viewed by the admin
-    company = models.ForeignKey(Company, null=True, on_delete=models.SET_NULL)
+    company = models.ForeignKey(Company, null=True, related_name="conversations", on_delete=models.SET_NULL)
     vendor_detection_attempts = models.IntegerField(default=0)
 
     def __str__(self):

@@ -11,8 +11,8 @@ from tests.utils import CkcAPITestCase
 from django.urls import reverse
 from rest_framework import status
 from django.utils.timezone import now
-from conversations.tasks import purchase_phone_number_util
-from settings.base import WEBHOOK_URL
+# from conversations.tasks import purchase_phone_number_util
+# from settings.base import WEBHOOK_URL
 
 
 class ConversationViewSetTestCase(CkcAPITestCase):

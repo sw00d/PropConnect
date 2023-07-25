@@ -307,10 +307,14 @@ CELERY_TASK_TIME_LIMIT = 15 * 60  # in seconds
 CELERY_WORKER_HIJACK_ROOT_LOGGER = False  # let's handle our own logging stuff
 
 CELERY_BEAT_SCHEDULE = {
-    # INDIVIDUAL BOOKING TASKS
     'set-2-day-old-conversations-to-not-active': {
         'task': 'conversations.tasks.set_old_conversations_to_not_active',
         'schedule': crontab(minute=0, hour='*/12'),  # Run every 12 hours
+    },
+
+    'charge-company-for-last-months-conversations': {
+        'task': 'companies.tasks.charge_companies_for_conversations',
+        'schedule': crontab(minute=0, hour=0, day_of_month=1),  # Run on the 1st of every month at midnight
     },
 }
 
