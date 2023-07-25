@@ -43,6 +43,7 @@ class UserSelfDetailSerializer(serializers.ModelSerializer):
             'first_name',
             'last_name',
             'company',
+            'agreeToTerms',
         )
         read_only_fields = ('email', 'email_verified')
 
@@ -59,6 +60,7 @@ class UserCreateSerializer(serializers.ModelSerializer):
             'last_name',
             'password',
             'send_otp_email_verification',
+            'agreeToTerms',
         )
 
     def create(self, validated_data):
@@ -81,6 +83,7 @@ class UserDetailSerializer(serializers.ModelSerializer):
             'first_name',
             'last_name',
             'company',
+            'agreeToTerms',
         )
 
 
