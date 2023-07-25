@@ -43,15 +43,6 @@ class TestVendorDetection(CkcAPITestCase):
 
         assert response is None
 
-    def test_vendor_detection_plumber(self):
-        Message.objects.create(message_content='My toilet is broken.', role="user", conversation=self.conversation)
-        Message.objects.create(message_content='Its leaking everywhere.', role="user", conversation=self.conversation)
-
-        self.conversation.refresh_from_db()
-
-        response = get_vendor_from_conversation(self.conversation)
-        assert response == Vendor.objects.get(vocation='plumber')
-
     def test_vendor_detection_too_vague(self):
         Message.objects.create(message_content='Something broke in my house.', role="user",
                                conversation=self.conversation)
@@ -60,6 +51,15 @@ class TestVendorDetection(CkcAPITestCase):
 
         response = get_vendor_from_conversation(self.conversation)
         assert response is None
+
+    def test_vendor_detection_plumber(self):
+        Message.objects.create(message_content='My toilet is broken.', role="user", conversation=self.conversation)
+        Message.objects.create(message_content='Its leaking everywhere.', role="user", conversation=self.conversation)
+
+        self.conversation.refresh_from_db()
+
+        response = get_vendor_from_conversation(self.conversation)
+        assert response == Vendor.objects.get(vocation='plumber')
 
     def test_vendor_detection_electrician(self):
         # Electrician

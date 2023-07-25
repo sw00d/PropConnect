@@ -21,7 +21,7 @@
         with. All your vendors need is a number they can text from and they're ready to go! Here's what you should know:
         <br>
         <br>
-        <b>1)</b> You can add vendors by clicking the <i>Add Vendor</i> button below.
+        <b>1)</b> Add vendors by clicking the <i>Add Vendor</i> button below.
         <br>
         <br>
         <b>2)</b> Once you add a vendor, they'll be in our system and ready to take on your tenants issues.

@@ -85,7 +85,6 @@ class MediaMessageContent(models.Model):
 
 
 class Message(models.Model):
-    # TODO add failed field for failed deliveries
     sender_number = models.CharField(max_length=20, null=False,
                                      blank=False)  # can be used to identify the sender model based off of conversation
     receiver_number = models.CharField(max_length=20, null=False, blank=False)

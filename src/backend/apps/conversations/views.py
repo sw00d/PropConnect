@@ -7,13 +7,13 @@ from rest_framework.pagination import PageNumberPagination
 from django.views.decorators.csrf import csrf_exempt
 from django.http import HttpResponse
 from rest_framework.viewsets import ModelViewSet
-from rest_framework.permissions import IsAdminUser
+
 from twilio.twiml.messaging_response import MessagingResponse
 from rest_framework.decorators import api_view, permission_classes, action
 from rest_framework.permissions import AllowAny
 
 from conversations.utils import handle_assistant_conversation, play_the_middle_man_util, send_message
-from users import permissions
+
 from .models import Conversation, Message, Vendor, PhoneNumber
 from .serializers import ConversationDetailSerializer, ConversationListSerializer, VendorSerializer
 

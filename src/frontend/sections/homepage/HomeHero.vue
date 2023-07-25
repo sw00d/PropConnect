@@ -3,7 +3,14 @@
     <div class="d-flex flex-column">
       <div class="d-flex justify-center w-100">
         <v-container class="d-flex align-center">
-          <v-toolbar-title class="lh-38 text-primary font-weight-black">PropConnect</v-toolbar-title>
+         <div class="d-flex align-center mb-4">
+            <v-sheet class="d-flex align-center mr-4 bg-transparent">
+              <v-img :src="logoGraphic" width="40px"/>
+            </v-sheet>
+            <v-toolbar-title class="lh-38 text-primary font-weight-black d-flex">
+              PropConnect
+            </v-toolbar-title>
+          </div>
           <v-spacer class="hidden-sm-and-down"></v-spacer>
           <nuxt-link :to="store?.isLoggedIn ? '/dashboard' : '/sign-in'">
             <button
@@ -54,6 +61,7 @@
 // Imports
 import robotSVG from "assets/public-site/robotSVG.svg"
 import {useUserStore} from "~/store/userStore";
+import logoGraphic from "assets/logos/logo-graphic-only.png";
 
 // Data
 const store = useUserStore()

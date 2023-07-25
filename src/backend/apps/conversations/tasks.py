@@ -9,6 +9,7 @@ from .models import Conversation, Message, PhoneNumber, Vendor
 from twilio.rest import Client
 from settings.base import TWILIO_AUTH_TOKEN, TWILIO_ACCOUNT_SID, WEBHOOK_URL
 import logging
+from .utils import error_handler
 
 twilio_auth_token = TWILIO_AUTH_TOKEN
 twilio_sid = TWILIO_ACCOUNT_SID
@@ -56,13 +57,13 @@ def start_vendor_tenant_conversation(conversation_id, vendor_id):
     )
     if available_numbers.count() == 0:
         client = Client(twilio_sid, twilio_auth_token)
-        number = client.available_phone_numbers("US").local.list(area_code='619')[0]
+        number = client.available_phone_numbers("US").local.list(area_code='619')[0]  # TODO This area code should be based off company location
         logger.info(f"Purchasing new number: {number.phone_number}")
         purchase_phone_number_util(number.phone_number)
         conversation_number = PhoneNumber.objects.create(number=number.phone_number, most_recent_conversation=conversation)
     else:
         conversation_number = available_numbers.first()
-        logger.info(f"Using existing number: {conversation_number.number}")
+        logger.info(f"Using existing number: {conversation_number.number} for conversation: {conversation_id}")
         conversation_number.most_recent_conversation = conversation
         conversation_number.save()
 
@@ -74,7 +75,7 @@ def start_vendor_tenant_conversation(conversation_id, vendor_id):
 
     message_to_vendor = f"Hey there! I'm a bot for {conversation.company.name}. " \
                         "I have a tenant who is requesting some help. " \
-                        "Reply here to communicate directly with tenant."
+                        "You are now connected with the tenant and can communicate directly with them here."
 
     send_message(conversation.vendor.number, conversation_number.number, message_to_vendor)
     Message.objects.create(
@@ -97,7 +98,7 @@ def start_vendor_tenant_conversation(conversation_id, vendor_id):
 
     message_to_tenant = f"Hey there! I'm a bot for {conversation.company.name}. " \
                         f"I've informed the {vendor.vocation}, {vendor.name}, of your situation. " \
-                        "You can reply directly to this number to communicate with them."
+                        "You are now connected with the vendor and can communicate directly with them here."
     send_message(conversation.tenant.number, conversation_number.number, message_to_tenant)
     Message.objects.create(
         message_content=message_to_tenant,
@@ -121,14 +122,56 @@ def get_conversation_recap_util(conversation):
     return string
 
 
-# This is used for the main convo-flow
-def purchase_phone_number_util(phone_number, api_endpoint="play_the_middle_man/"):
-    from .utils import error_handler
+# def set_sms_url(api_endpoint="/play_the_middle_man/"):
+#     # just for testing
+#     client = Client(twilio_sid, twilio_auth_token)
+#     webhook_url = 'https://propconnect.com' + api_endpoint
+#     purchased_number = client.incoming_phone_numbers('PNa433e6bcd35295b2ee942e1b4cc125f2').fetch()
+#     address = client.addresses.list(limit=1)[0]
+#     print(purchased_number.emergency_address_sid)
+#     purchased_number.update(
+#         sms_url=webhook_url,
+#         address_sid=address.sid,
+#         emergency_address_sid=address.sid,
+#     )
+#     purchased_number = client.incoming_phone_numbers('PNa433e6bcd35295b2ee942e1b4cc125f2').fetch()
+#     print(purchased_number.emergency_address_sid)
+
+
+def purchase_phone_number_util(phone_number, api_endpoint="/play_the_middle_man/", type_of_number='a2p'):
     try:
-        webhook_url = WEBHOOK_URL + api_endpoint
         client = Client(twilio_sid, twilio_auth_token)
-        purchased_number = client.incoming_phone_numbers.create(phone_number=phone_number)
-        purchased_number.update(sms_url=webhook_url)
+        webhook_url = WEBHOOK_URL + api_endpoint
+
+        address_sid = client.addresses.list(limit=1)[0].sid  # Should eventually be the company's address
+
+        purchased_number = client.incoming_phone_numbers.create(
+            phone_number=phone_number,
+            sms_url=webhook_url,
+            address_sid=address_sid,
+            emergency_address_sid=address_sid
+        )
+
+        purchased_number = client.incoming_phone_numbers.create(
+            phone_number=phone_number,
+        )
+
+        if type_of_number == 'a2p':
+            # Register a2p number for vendor/tenant coms
+            service = client.verify.v2.services.list(limit=1)[0]  # Get first and only service/campaign
+
+            # Here's where we assign the purchased number to the messaging service
+            client.proxy.v1 \
+                .services(service.sid) \
+                .phone_numbers \
+                .create(sid=purchased_number.sid)
+
+        if type_of_number == 'toll-free':
+            # TODO maybe verify this number in the future?
+            pass
+
+        return purchased_number
     except TwilioRestException as e:
         logger.error(f"Failed to purchase phone number. Error: {e}")
         error_handler(e)
+
