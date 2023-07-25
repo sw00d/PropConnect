@@ -95,7 +95,7 @@ class ConversationViewSetTestCase(CkcAPITestCase):
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         self.assertGreaterEqual(self.conversation1.last_viewed, time)
 
-    def test_purchase_phone_number_util(self):
+    def test_purchase_toll_free_phone_number(self):
         # --------------------------------------------
         # Doing what we can here with test credentials (very limited atm)
         # --------------------------------------------
