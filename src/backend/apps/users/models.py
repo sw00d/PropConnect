@@ -47,6 +47,8 @@ class User(AbstractBaseUser, PermissionsMixin):
     is_staff = models.BooleanField(default=False)
     is_superuser = models.BooleanField(default=False)
 
+    agreeToTerms = models.BooleanField(default=False)
+
     company = models.ForeignKey('companies.Company', on_delete=models.deletion.DO_NOTHING, null=True, blank=True, related_name='users')
 
     objects = CustomUserManager()

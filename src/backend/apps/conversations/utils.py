@@ -409,5 +409,6 @@ def worker():
 t = threading.Thread(target=worker)
 
 # Set the thread as daemon so it will terminate when the main program terminates
-t.setDaemon(True)
+
+t.setDaemon(True)  # TODO: this is deprecated
 t.start()

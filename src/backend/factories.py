@@ -7,7 +7,7 @@ import factory
 from django.contrib.auth import get_user_model
 
 from companies.models import Company
-from conversations.models import Tenant, Conversation, PhoneNumber
+from conversations.models import Tenant, Conversation, PhoneNumber, Vendor
 from djstripe.models import Subscription, Customer
 from datetime import timedelta
 from django.utils import timezone
@@ -46,7 +46,7 @@ class VendorFactory(factory.django.DjangoModelFactory):
     number = factory.Faker('numerify', text="+1##########")
 
     class Meta:
-        model = Tenant
+        model = Vendor
 
 
 class TwilioNumberFactory(factory.django.DjangoModelFactory):
@@ -63,6 +63,7 @@ class ConversationFactory(factory.django.DjangoModelFactory):
     vendor = factory.SubFactory(VendorFactory)
     is_active = factory.Faker('boolean')
     last_viewed = factory.Faker('past_datetime', start_date="-30d", tzinfo=None)
+    date_created = factory.Faker('past_datetime', start_date="-30d", tzinfo=None)
 
     class Meta:
         model = Conversation
@@ -105,6 +106,7 @@ class SubscriptionFactory(factory.django.DjangoModelFactory):
     current_period_end = (timezone.now() + timedelta(days=30)).isoformat()  # 30 days from now, in UNIX timestamp format
     current_period_start = timezone.now().isoformat()
     customer = factory.SubFactory(CustomerFactory)
+    status = "active"
 
 
 class CompanyFactory(factory.django.DjangoModelFactory):

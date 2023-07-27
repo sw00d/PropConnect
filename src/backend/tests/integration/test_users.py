@@ -8,8 +8,9 @@ from users.models import User
 class UserAndLoginTests(CkcAPITestCase):
 
     def test_create_user(self):
-        user = User.objects.create_user('testuser@test.com', 'password')
+        user = User.objects.create_user('testuser@test.com', 'password', agreeToTerms=True)
         assert user
+        assert user.agreeToTerms is True
         assert not user.is_staff
         assert not user.is_superuser
 

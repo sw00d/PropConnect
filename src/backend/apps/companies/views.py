@@ -63,7 +63,7 @@ class CompanyViewSet(viewsets.ModelViewSet):
         company.current_subscription = djstripe_subscription
 
         client = Client(twilio_sid, twilio_auth_token)
-        number = client.available_phone_numbers("US").local.list()[0]
+        number = client.available_phone_numbers("US").toll_free.list(limit=3)[0]
         if 'samote.wood' in self.request.user.email:
             logger.info(f"Using admin number: {DEFAULT_TWILIO_NUMBER}")
             print(f"Using admin number: {DEFAULT_TWILIO_NUMBER}")

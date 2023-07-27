@@ -1,4 +1,5 @@
 from datetime import timedelta
+from sys import argv
 
 from django.db.models import Q
 from django.utils import timezone
@@ -7,7 +8,8 @@ from twilio.base.exceptions import TwilioRestException
 from settings import celery_app
 from .models import Conversation, Message, PhoneNumber, Vendor
 from twilio.rest import Client
-from settings.base import TWILIO_AUTH_TOKEN, TWILIO_ACCOUNT_SID, WEBHOOK_URL
+from settings.base import TWILIO_AUTH_TOKEN, TWILIO_ACCOUNT_SID, WEBHOOK_URL, TWILIO_TEST_AUTH_TOKEN, \
+    TWILIO_TEST_ACCOUNT_SID
 import logging
 from .utils import error_handler
 
@@ -140,20 +142,25 @@ def get_conversation_recap_util(conversation):
 
 def purchase_phone_number_util(phone_number, api_endpoint="/play_the_middle_man/", type_of_number='a2p'):
     try:
-        client = Client(twilio_sid, twilio_auth_token)
+        if 'pytest' in argv[0]:
+            client = Client(TWILIO_TEST_ACCOUNT_SID, TWILIO_TEST_AUTH_TOKEN)
+        else:
+            client = Client(twilio_sid, twilio_auth_token)
+
         webhook_url = WEBHOOK_URL + api_endpoint
 
-        address_sid = client.addresses.list(limit=1)[0].sid  # Should eventually be the company's address
+        if 'pytest' in argv[0]:
+            test_client_with_prod_creds = Client(twilio_sid, twilio_auth_token)
+            address_sid = test_client_with_prod_creds.addresses.list(limit=1)[0].sid
+            webhook_url = 'https://propconnect.io' + api_endpoint
+        else:
+            address_sid = client.addresses.list(limit=1)[0].sid  # Should eventually be the company's address
 
         purchased_number = client.incoming_phone_numbers.create(
             phone_number=phone_number,
             sms_url=webhook_url,
-            address_sid=address_sid,
-            emergency_address_sid=address_sid
-        )
-
-        purchased_number = client.incoming_phone_numbers.create(
-            phone_number=phone_number,
+            address_sid=address_sid,  # make sure this is being set on purchased numbers
+            emergency_address_sid=address_sid  # make sure this is being set on purchased numbers
         )
 
         if type_of_number == 'a2p':

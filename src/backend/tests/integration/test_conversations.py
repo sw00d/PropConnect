@@ -1,18 +1,21 @@
 from unittest import skip
 from unittest.mock import patch, MagicMock
+from twilio.rest import Client
 
 from twilio.base.exceptions import TwilioRestException
 
 from commands.management.commands.generate_data import generate_vendors
 from conversations.models import Message, Vendor
+from conversations.tasks import purchase_phone_number_util
 from conversations.utils import send_message, q
 from factories import ConversationFactory, UserFactory, TwilioNumberFactory, CompanyFactory
+from settings.base import TWILIO_AUTH_TOKEN, TWILIO_ACCOUNT_SID
 from tests.utils import CkcAPITestCase
 from django.urls import reverse
 from rest_framework import status
 from django.utils.timezone import now
-from conversations.tasks import purchase_phone_number_util
-from settings.base import WEBHOOK_URL
+# from conversations.tasks import purchase_phone_number_util
+# from settings.base import WEBHOOK_URL
 
 
 class ConversationViewSetTestCase(CkcAPITestCase):
@@ -91,6 +94,22 @@ class ConversationViewSetTestCase(CkcAPITestCase):
         self.conversation1.refresh_from_db()
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         self.assertGreaterEqual(self.conversation1.last_viewed, time)
+
+    def test_purchase_toll_free_phone_number(self):
+        # --------------------------------------------
+        # Doing what we can here with test credentials (very limited atm)
+        # --------------------------------------------
+        client = Client(TWILIO_ACCOUNT_SID, TWILIO_AUTH_TOKEN)
+        number = client.available_phone_numbers("US").toll_free.list(limit=3)[0]
+
+        # we have to use +15005550006 because that's the only number we can use in test mode
+        purchased_number = purchase_phone_number_util('+15005550006', api_endpoint="/init_conversation/", type_of_number='toll_free')
+
+        assert number.phone_number.startswith('+18')
+        assert purchased_number is not None
+        assert purchased_number.sms_url == 'https://propconnect.io/init_conversation/'
+        # assert purchased_number.address_sid is not None # test for these eventually. Not working atm
+        # assert purchased_number.emergency_address_sid is not None # test for these eventually. Not working atm
 
     # --------------------------------------------
     # TODO Fix the tests below this. Testing the queue is proving hard. Running them individually is more reliable than running them all at once

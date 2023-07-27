@@ -35,6 +35,10 @@ SITE_DOMAIN = os.environ.get('SITE_DOMAIN', 'http://localhost:8000')
 OPEN_API_KEY = os.environ.get('OPEN_API_KEY')
 TWILIO_AUTH_TOKEN = os.environ.get('TWILIO_AUTH_TOKEN')
 TWILIO_ACCOUNT_SID = os.environ.get('TWILIO_ACCOUNT_SID')
+
+TWILIO_TEST_AUTH_TOKEN = os.environ.get('TWILIO_TEST_AUTH_TOKEN')
+TWILIO_TEST_ACCOUNT_SID = os.environ.get('TWILIO_TEST_ACCOUNT_SID')
+
 WEBHOOK_URL = os.environ.get('WEBHOOK_URL', SITE_DOMAIN)
 DEFAULT_TWILIO_NUMBER = os.environ.get('DEFAULT_TWILIO_NUMBER')
 
@@ -307,10 +311,14 @@ CELERY_TASK_TIME_LIMIT = 15 * 60  # in seconds
 CELERY_WORKER_HIJACK_ROOT_LOGGER = False  # let's handle our own logging stuff
 
 CELERY_BEAT_SCHEDULE = {
-    # INDIVIDUAL BOOKING TASKS
     'set-2-day-old-conversations-to-not-active': {
         'task': 'conversations.tasks.set_old_conversations_to_not_active',
         'schedule': crontab(minute=0, hour='*/12'),  # Run every 12 hours
+    },
+
+    'charge-company-for-last-months-conversations': {
+        'task': 'companies.tasks.charge_companies_for_conversations',
+        'schedule': crontab(minute=0, hour=0, day_of_month=1),  # Run on the 1st of every month at midnight
     },
 }
 
