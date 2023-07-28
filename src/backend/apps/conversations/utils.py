@@ -12,7 +12,8 @@ from twilio.rest import Client
 from companies.models import Company
 from conversations.models import Vendor, Conversation, Tenant, Message, PhoneNumber, MediaMessageContent
 from conversations.serializers import MessageSerializer
-from settings.base import OPEN_API_KEY, TWILIO_AUTH_TOKEN, TWILIO_ACCOUNT_SID, WEBHOOK_URL
+from settings.base import OPEN_API_KEY, TWILIO_AUTH_TOKEN, TWILIO_ACCOUNT_SID, WEBHOOK_URL, TWILIO_TEST_ACCOUNT_SID, \
+    TWILIO_TEST_AUTH_TOKEN
 
 openai.api_key = OPEN_API_KEY
 twilio_auth_token = TWILIO_AUTH_TOKEN
@@ -136,7 +137,7 @@ def handle_assistant_conversation(request):
         return f"This assistant is not active. Please contact your property manager directly."
 
     if conversation.messages.count() == 0:
-        vocations = Vendor.objects.filter(active=True, company=company).values_list('vocation', flat=True)
+        vocations = Vendor.objects.filter(active=True, has_opted_in=True, company=company).values_list('vocation', flat=True)
         vocations_set = set(vocations)
 
         content = f"You are a helpful assistant for a property management company, {conversation.company.name}," \
@@ -262,7 +263,7 @@ def get_message_history_for_gpt(conversation):
 
 def get_vendor_from_conversation(conversation):
     # GPT approach (less dumb than keyword but still not perfect)
-    vocations = "`, `".join(list(Vendor.objects.filter(active=True, company=conversation.company, company__isnull=False).values_list('vocation', flat=True)))
+    vocations = "`, `".join(list(Vendor.objects.filter(active=True, has_opted_in=True, company=conversation.company, company__isnull=False).values_list('vocation', flat=True)))
     user_messages = '. '.join(list(conversation.messages.filter(role="user").values_list('message_content', flat=True)))
 
     prompt = (
@@ -313,7 +314,13 @@ def create_chat_completion(conversation, retry_counter=10):
 
 def send_message(to_number, from_number, message, media_urls=None):
     # from_number HAS TO BE A TWILIO NUMBER
-    client = Client(twilio_sid, twilio_auth_token)
+    if 'pytest' in argv[0]:
+        print('pytest detected. Using test credentials.')
+        client = Client(TWILIO_TEST_ACCOUNT_SID, TWILIO_TEST_AUTH_TOKEN)
+        from_number = "+15005550006"  # Twilio test number -- has to be this to work in tests unless we mock
+    else:
+        client = Client(twilio_sid, twilio_auth_token)
+
     print(client)
     # Split message into chunks of 1600 characters each
     message_chunks = [message[i:i + 1600] for i in range(0, len(message), 1600)]

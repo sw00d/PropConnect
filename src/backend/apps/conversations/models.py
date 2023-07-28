@@ -13,6 +13,8 @@ class Vendor(models.Model):
     keywords = ArrayField(models.CharField(max_length=200), null=True, blank=True)  # currently unused
     active = models.BooleanField(default=True)
     company = models.ForeignKey(Company, null=True, on_delete=models.SET_NULL)
+    has_opted_in = models.BooleanField(default=False)
+    is_archived = models.BooleanField(default=False)
 
     def __str__(self):
         return self.name

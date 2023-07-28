@@ -31,7 +31,7 @@ class VendorTests(CkcAPITestCase):
         data = {
             "name": "New Vendor",
             "vocation": "Electrician",
-            "number": "0987654321",
+            "number": "12086608828",
             "keywords": ["new1", "new2"],
             "active": True,
             "company": self.company.id,
@@ -59,6 +59,21 @@ class VendorTests(CkcAPITestCase):
         response = self.client.get(self.url)
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         self.assertEqual(response.data['name'], 'Test Vendor')
+
+    def test_toggle_vendor_archived(self):
+
+        self.client.force_authenticate(self.user)
+        list_res = self.client.get(reverse('vendors-list'))
+        assert list_res.status_code == status.HTTP_200_OK
+        assert list_res.data['count'] == 1
+
+        response = self.client.patch(self.url, {'is_archived': True})
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(Vendor.objects.get(pk=self.vendor.pk).is_archived, True)
+
+        list_res = self.client.get(reverse('vendors-list'))
+        assert list_res.status_code == status.HTTP_200_OK
+        assert list_res.data['count'] == 0
 
     def test_update_vendor(self):
         # Try to update vendor details as a user from a different company
