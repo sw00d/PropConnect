@@ -166,7 +166,7 @@ class TestVendorDetection(CkcAPITestCase):
         # delete all vendors
         Vendor.objects.all().delete()
 
-        Vendor.objects.create(name="Plumber Sam", vocation="plumber", company=self.conversation.company)
+        Vendor.objects.create(name="Plumber Sam", vocation="plumber", company=self.conversation.company, active=True, has_opted_in=True)
 
         conversation_data = [
             {'role': 'user', 'content': 'Hello'},

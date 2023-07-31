@@ -137,6 +137,7 @@ def init_conversation(request):
     body = request.POST.get('Body', '')
 
     vendor_opting_in = Vendor.objects.filter(number=from_number, has_opted_in=False)
+    # TODO TEST THIS
     if vendor_opting_in.exists():
         # Check if number is a vendor's number AND the vendor has not opted in yet
         vendor = vendor_opting_in.first()
@@ -147,6 +148,7 @@ def init_conversation(request):
                        'certainly not', 'definitely not']
         if any(word in body.lower() for word in yes_synonyms):
             vendor.has_opted_in = True
+            vendor.active = True
             vendor.save()
             # Reply to vendor
             send_message(from_number, to_number, "Thank you! You will now receive messages from your tenants.")

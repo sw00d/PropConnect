@@ -79,6 +79,8 @@ def generate_vendors(company=None):
             name=info['name'],
             number=info['number'],
             keywords=info['keywords'],
+            active=True,
+            has_opted_in=True,
             vocation=vendor,
             company=company
         )
