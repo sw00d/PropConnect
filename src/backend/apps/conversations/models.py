@@ -11,8 +11,10 @@ class Vendor(models.Model):
     vocation = models.CharField(max_length=200, blank=True, null=True)  # plumber | electrician | etc.
     number = models.CharField(max_length=20)
     keywords = ArrayField(models.CharField(max_length=200), null=True, blank=True)  # currently unused
-    active = models.BooleanField(default=True)
+    active = models.BooleanField(default=False)
     company = models.ForeignKey(Company, null=True, on_delete=models.SET_NULL)
+    has_opted_in = models.BooleanField(default=False)
+    is_archived = models.BooleanField(default=False)
 
     def __str__(self):
         return self.name

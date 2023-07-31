@@ -32,16 +32,38 @@ class VendorViewSet(ModelViewSet):
     permission_classes = [AllowAny]
 
     def get_queryset(self):
-        return Vendor.objects.filter(company=self.request.user.company).order_by('id')
+        return Vendor.objects.filter(company=self.request.user.company, is_archived=False).order_by('id')
 
-#     overwrite create
+    #     overwrite create
     def create(self, request, *args, **kwargs):
         if not request.user.company.id == int(request.data.get('company')):
             return Response({'error': 'You do not have permission to perform this action.'},
                             status=status.HTTP_403_FORBIDDEN)
 
         response = super().create(request, *args, **kwargs)
+
+        send_message(
+            request.data.get('number'),
+            request.user.company.assistant_phone_number,
+            f"{request.user.company.name} has included you as a service vendor in their automated maintenance "
+            f"management system, PropConnect. To confirm and start receiving direct messages from tenants, please reply with 'YES'."
+            # f" If you need more information, you can learn more here: https://www.youtube.com/watch?v=dQw4w9WgXcQ"
+        )
+
         return response
+
+    @action(detail=True, methods=['post'])
+    def resend_opt_in(self, request, pk=None):
+        vendor = self.get_object()
+
+        send_message(
+            vendor.number,
+            request.user.company.assistant_phone_number,
+            f"We noticed you haven't responded to our earlier message. {request.user.company.name} has enlisted you as a service "
+            f"vendor for their property management system. To accept and start receiving tenant communications, please reply 'YES'. "
+            f"Remember, this will enable faster and more efficient service requests for all involved. Thank you!"
+        )
+        return Response({'status': 'opt in message sent'})
 
 
 class ConversationViewSet(ModelViewSet):
@@ -49,7 +71,8 @@ class ConversationViewSet(ModelViewSet):
     permission_classes([AllowAny])
 
     def get_queryset(self):
-        return Conversation.objects.filter(company=self.request.user.company, company__isnull=False).order_by('-date_created')
+        return Conversation.objects.filter(company=self.request.user.company, company__isnull=False).order_by(
+            '-date_created')
 
     def get_serializer_class(self):
         if self.action == 'list':
@@ -107,6 +130,36 @@ def play_the_middle_man(request):
 @api_view(['POST'])
 @permission_classes([AllowAny])
 def init_conversation(request):
+    # ==================== Handle vendor opt in texts ================================
+    # TODO: Use a different number for this in the future?
+    from_number = request.POST.get('From', None)
+    to_number = request.POST.get('To', None)
+    body = request.POST.get('Body', '')
+
+    vendor_opting_in = Vendor.objects.filter(number=from_number, has_opted_in=False)
+    # TODO TEST THIS
+    if vendor_opting_in.exists():
+        # Check if number is a vendor's number AND the vendor has not opted in yet
+        vendor = vendor_opting_in.first()
+
+        yes_synonyms = ['yes', 'yep', 'yeah', 'yup', 'sure', 'absolutely', 'definitely', 'certainly', 'yea',
+                        'affirmative', 'uh-huh', 'indeed', 'of course', 'true']
+        no_synonyms = ['no', 'nope', 'nah', 'negative', 'not at all', 'nay', 'absolutely not', 'by no means',
+                       'certainly not', 'definitely not']
+        if any(word in body.lower() for word in yes_synonyms):
+            vendor.has_opted_in = True
+            vendor.active = True
+            vendor.save()
+            # Reply to vendor
+            send_message(from_number, to_number, "Thank you! You will now receive messages from your tenants.")
+        elif any(word in body.lower() for word in no_synonyms):
+            # Reply to vendor
+            send_message(from_number, to_number,
+                         "Sounds good! You will not receive messages from your tenants. If you ever change your mind, feel free to respond 'yes' to this message.")
+
+        return HttpResponse()
+
+    # ==================== Handle normal conversation between tenant and GPT ================================
     message = handle_assistant_conversation(request)
 
     if not message:
