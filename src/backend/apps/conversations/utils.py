@@ -272,7 +272,6 @@ def get_vendor_from_conversation(conversation):
         "If the type of vendor doesn't exist in the list above say, say 'need more no applicable vendor'. \n\n"
         "The only information you have is: '{user_messages}'\n\n"
     ).format(vocations=vocations, user_messages=user_messages)
-    print(prompt)
     response = create_chat_completion([{'content': prompt, 'role': 'system'}])
 
     if response.lower().replace('.', '') in vocations.lower():
