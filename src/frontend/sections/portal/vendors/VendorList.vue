@@ -149,6 +149,7 @@
                             </v-list-item>
 
                             <v-alert
+                                v-if="!vendor.has_opted_in"
                                 color="warning"
                                 border="start"
                                 variant="tonal"
