@@ -67,6 +67,11 @@ def generate_vendors(company=None):
             'number': '+12086608828',
             'keywords': ['drywall', 'wallboard', 'plasterboard', 'gypsum', 'sheetrock', 'drywall']
         },
+        'landscaper': {
+            'name': 'Landscaper Sam',
+            'number': '+12086608828',
+            'keywords': ['grass', 'lawn', 'tree', 'bush', 'landscaper']
+        }
     }
 
     for vendor, info in vendor_data.items():

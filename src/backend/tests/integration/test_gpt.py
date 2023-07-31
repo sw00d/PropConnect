@@ -83,6 +83,15 @@ class TestVendorDetection(CkcAPITestCase):
         response = get_vendor_from_conversation(self.conversation)
         assert response == Vendor.objects.get(vocation='handyman')
 
+    def test_vendor_detection_landscaper(self):
+        # Landscaper
+        Message.objects.create(message_content='Can you send somebody to trim my bushes in the front yard?', role="user", conversation=self.conversation)
+
+        self.conversation.refresh_from_db()
+
+        response = get_vendor_from_conversation(self.conversation)
+        assert response == Vendor.objects.get(vocation='landscaper')
+
     def test_vendor_detection_appliance_specialist(self):
         # Appliance Specialist
         Message.objects.create(message_content='My fridge is not cooling properly.', role="user",

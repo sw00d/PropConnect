@@ -265,7 +265,7 @@ def get_vendor_from_conversation(conversation):
     # GPT approach (less dumb than keyword but still not perfect)
     vocations = "`, `".join(list(Vendor.objects.filter(active=True, has_opted_in=True, company=conversation.company, company__isnull=False).values_list('vocation', flat=True)))
     user_messages = '. '.join(list(conversation.messages.filter(role="user").values_list('message_content', flat=True)))
-
+    print(vocations, user_messages)
     prompt = (
         "Pretend you are only allowed to answer with one of the following: {vocations}, 'need more information', and 'no applicable vendor'. \n\n"
         "If you don't have enough information, say 'need more information'. \n\n"
