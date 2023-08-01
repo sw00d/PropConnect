@@ -39,6 +39,8 @@ class VendorSerializer(serializers.ModelSerializer):
             'company',
             'active',
             'vocation',
+            'has_opted_in',
+            'is_archived',
         )
 
 

@@ -64,7 +64,7 @@ class CompanyViewSet(viewsets.ModelViewSet):
 
         client = Client(twilio_sid, twilio_auth_token)
         number = client.available_phone_numbers("US").toll_free.list(limit=3)[0]
-        if 'samote.wood' in self.request.user.email:
+        if 'samote.wood' in self.request.user.email or self.request.user.is_superuser:
             logger.info(f"Using admin number: {DEFAULT_TWILIO_NUMBER}")
             print(f"Using admin number: {DEFAULT_TWILIO_NUMBER}")
             company.assistant_phone_number = DEFAULT_TWILIO_NUMBER
