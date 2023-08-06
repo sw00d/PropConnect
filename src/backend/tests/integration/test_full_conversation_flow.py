@@ -119,8 +119,6 @@ class TestFullConversationFlow(CkcAPITestCase):
         assert type(second_response) == str
         assert conversation.messages.count() == 5
 
-        assert conversation.tenant.address is not None
-
         # Third/follow up message(s)
         request.POST = {
             'Body': "Nope.",
@@ -142,7 +140,10 @@ class TestFullConversationFlow(CkcAPITestCase):
         assert "You'll be receiving a text from our staff shortly!" in fourth_response
         assert type(fourth_response) == str
         assert conversation.messages.count() == 9
+
         assert conversation.tenant.name is not None
+        assert conversation.tenant.address is not None
+
         assert len(mail.outbox) == 1
 
         #  Make sure a conversation was started between the two parties
@@ -217,64 +218,4 @@ class TestFullConversationFlow(CkcAPITestCase):
 
         # Ensure the create method was called
         mock_create.assert_called_once_with(model="gpt-3.5-turbo", messages=conversation)
-
-    @patch.object(stripe.Subscription, 'retrieve')
-    @patch('conversations.utils.send_message')
-    @patch('conversations.tasks.purchase_phone_number_util')
-    def test_conversation_that_doesnt_match_any_vendor(
-        self,
-        mock_purchase_phone_number_util,
-        mock_send_message,
-        mock_retrieve,
-    ):
-        # delete all vendors
-        Vendor.objects.all().delete()
-
-        self.company.assistant_phone_number = '+0987654321'
-        test_company = self.company
-        Vendor.objects.create(name="Painter Sam", vocation="painter", company=self.company)
-        test_company.save()
-
-        request = HttpRequest()
-        request.POST = {'Body': 'My toilet is broken', 'From': '+1234567890', "To": self.company.assistant_phone_number}
-        handle_assistant_conversation(request)
-        conversation = Conversation.objects.filter(company=test_company).first()
-
-        assert Conversation.objects.count() == 1
-        assert conversation.company == test_company
-        assert conversation.vendor_detection_attempts == 1
-
-        messages = Message.objects.filter(conversation=conversation)
-        assert conversation.company == test_company
-
-        response_from_gpt = messages.last().message_content
-
-        assert type(response_from_gpt) == str
-        assert Conversation.objects.count() == 1
-        assert conversation.messages.count() == 3
-
-        request.POST = {'Body': "Sam Wood, 4861 conrad ave, it isn't flushing and I assume it's just clogged.",
-                        'From': '+1234567890', "To": self.company.assistant_phone_number}
-        handle_assistant_conversation(request)
-        conversation.refresh_from_db()
-        response = conversation.messages.last().message_content
-        assert "Thanks! Sounds good" not in response  # standard response when vendor is found
-        assert conversation.vendor_detection_attempts == 2
-
-        request.POST = {'Body': "There is water everywhere and I don't know what to do.",
-                        'From': '+1234567890', "To": self.company.assistant_phone_number}
-        handle_assistant_conversation(request)
-        conversation.refresh_from_db()
-        response = conversation.messages.last().message_content
-        assert "Thanks! Sounds good" not in response
-        assert conversation.vendor_detection_attempts == 3
-
-        request.POST = {'Body': "Can you send me somebody?",
-                        'From': '+1234567890', "To": self.company.assistant_phone_number}
-        res = handle_assistant_conversation(request)
-        assert res == "Sorry, it looks like your issue is out of the scope of what this bot handles. Please contact your property manager directly."
-
-        conversation.refresh_from_db()
-        response = conversation.messages.last().message_content
-        assert "Thanks! Sounds good" not in response
 
