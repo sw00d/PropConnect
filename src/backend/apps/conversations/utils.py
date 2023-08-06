@@ -122,8 +122,9 @@ def handle_assistant_conversation(request):
 
     tenant.save()
 
-    conversation_with_point_of_contact = Conversation.objects.filter(tenant=tenant, vendor=None, point_of_contact_has_interjected=True).exists()
-    if conversation_with_point_of_contact:
+    conversation_with_point_of_contact = Conversation.objects.filter(tenant=tenant, vendor=None, point_of_contact_has_interjected=True)
+    print('hello')
+    if conversation_with_point_of_contact.exists():
         # TODO Test this
         # This is for when a prop manager has interjected and is talking to the tenant via the web app.
         # We'll want to skip all AI in this case
@@ -131,7 +132,7 @@ def handle_assistant_conversation(request):
         Message.objects.create(
             message_content=body,
             role="user",
-            conversation=conversation_with_point_of_contact,
+            conversation=conversation_with_point_of_contact.first(),
             sender_number=from_number,
             receiver_number=to_number,
         )
