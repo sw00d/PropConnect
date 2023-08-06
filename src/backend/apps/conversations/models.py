@@ -39,6 +39,9 @@ class Conversation(models.Model):
     last_viewed = models.DateTimeField(auto_now_add=True)  # last time the conversation was viewed by the admin
     company = models.ForeignKey(Company, null=True, related_name="conversations", on_delete=models.SET_NULL)
     vendor_detection_attempts = models.IntegerField(default=0)
+    address = models.CharField(max_length=200, null=True)
+    waiting_on_property_manager = models.BooleanField(default=False)
+    needs_more_information = models.BooleanField(default=True)  # TODO Unused
 
     def __str__(self):
         return f"Conversation ({self.pk}) between {self.tenant} and vendor {self.vendor}"
@@ -99,6 +102,7 @@ class Message(models.Model):
         on_delete=models.CASCADE,
     )
     date_sent = models.DateTimeField(auto_now_add=True)
+    error_on_send = models.BooleanField(default=False)
 
     def __str__(self):
         # Return first 50 characters of message content

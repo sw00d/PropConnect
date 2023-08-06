@@ -25,6 +25,8 @@ class Company(models.Model):
     state = models.CharField(max_length=100)
     zip_code = models.CharField(max_length=20)
     country = models.CharField(max_length=100)
+    point_of_contact = models.ForeignKey('users.User', on_delete=models.CASCADE, null=True, blank=True,
+                                         related_name='point_of_contact_companies')
 
     assistant_phone_number = models.CharField(max_length=20, blank=True, null=True)
 

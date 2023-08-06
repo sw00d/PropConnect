@@ -1,3 +1,4 @@
+from queue import Queue
 from unittest import skip
 from unittest.mock import patch, MagicMock
 from twilio.rest import Client
@@ -5,7 +6,7 @@ from twilio.rest import Client
 from twilio.base.exceptions import TwilioRestException
 
 from commands.management.commands.generate_data import generate_vendors
-from conversations.models import Message, Vendor
+from conversations.models import Message, Vendor, Conversation, Tenant
 from conversations.tasks import purchase_phone_number_util
 from conversations.utils import send_message, q
 from factories import ConversationFactory, UserFactory, TwilioNumberFactory, CompanyFactory
@@ -14,8 +15,6 @@ from tests.utils import CkcAPITestCase
 from django.urls import reverse
 from rest_framework import status
 from django.utils.timezone import now
-# from conversations.tasks import purchase_phone_number_util
-# from settings.base import WEBHOOK_URL
 
 
 class ConversationViewSetTestCase(CkcAPITestCase):
@@ -103,7 +102,8 @@ class ConversationViewSetTestCase(CkcAPITestCase):
         number = client.available_phone_numbers("US").toll_free.list(limit=3)[0]
 
         # we have to use +15005550006 because that's the only number we can use in test mode
-        purchased_number = purchase_phone_number_util('+15005550006', api_endpoint="/init_conversation/", type_of_number='toll_free')
+        purchased_number = purchase_phone_number_util('+15005550006', api_endpoint="/init_conversation/",
+                                                      type_of_number='toll_free')
 
         assert number.phone_number.startswith('+18')
         assert purchased_number is not None
@@ -221,3 +221,32 @@ class ConversationViewSetTestCase(CkcAPITestCase):
         self.assertEqual(q.qsize(), 2)
         q.join()
         self.assertEqual(q.qsize(), 0)
+
+
+class SendMessageTest(CkcAPITestCase):
+    @patch('conversations.utils.Client')
+    def test_send_message_error_setting_message_field(self, mock_client):
+        # Create the mock Twilio client
+        mock_messages = MagicMock()
+        mock_messages.create.side_effect = TwilioRestException('Test error', 'Test message')
+        mock_client.return_value.messages = mock_messages
+
+        # Create mock message object with necessary attributes
+        mock_message_object = MagicMock()
+        mock_message_object.id = 1
+        mock_message_object.error_on_send = False
+
+        # Create queue
+        q = Queue()
+
+        # Replace 'your_module' with the name of the actual module where `send_message` is defined
+        with patch('conversations.utils.q', q):
+            # Run send_message function
+            send_message('+1234567890', '+0987654321', 'test message', message_object=mock_message_object)
+
+        # Get the queued function and execute it
+        work_message = q.get()
+        work_message()
+
+        # Check that the error_on_send attribute was updated
+        self.assertTrue(mock_message_object.error_on_send)

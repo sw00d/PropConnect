@@ -39,6 +39,10 @@ class CompanyCreateSerializer(serializers.ModelSerializer):
         user.company = company
         user.save()
 
+        # assign user to be company's point_of_contact
+        company.point_of_contact = user
+        company.save()
+
         return company
 
 

@@ -1,6 +1,7 @@
 from datetime import timedelta
 
 import stripe
+from django.core import mail
 from django.utils.timezone import now
 
 from django.http import HttpRequest
@@ -12,7 +13,7 @@ from commands.management.commands.generate_data import generate_vendors
 from conversations.models import Conversation, Vendor, PhoneNumber, Tenant, Message
 from conversations.tasks import set_old_conversations_to_not_active, start_vendor_tenant_conversation
 from conversations.utils import handle_assistant_conversation, play_the_middle_man_util, \
-    create_chat_completion, get_vendor_from_conversation, send_message, get_message_history_for_gpt
+    create_chat_completion, send_message, get_message_history_for_gpt
 from tests.utils import CkcAPITestCase
 from factories import CompanyFactory
 
@@ -82,31 +83,19 @@ class TestFullConversationFlow(CkcAPITestCase):
     @patch.object(stripe.Subscription, 'retrieve')
     @patch('conversations.utils.send_message')
     @patch('conversations.tasks.purchase_phone_number_util')
-    @patch('conversations.utils.create_chat_completion')
-    def test_handle_assistant_conversation_with_complex_situation(
+    def test_handle_assistant_conversation_with_simple_situation(
         self,
-        mock_create_chat_completion,
         mock_purchase_phone_number_util,
         mock_send_message,
         mock_retrieve,
     ):
-        # -----------------------------
-        # TLDR:
-        # 1: This subs all gpt/twilio responses.
-        # 2: It tests a complex flow in which GPT guesses wrong and has to get more info
-        # 3: It also tests the  purchasing a new twilio number (subs the request of course)
-        # -----------------------------
 
         self.company.assistant_phone_number = '+0987654321'
         test_company = self.company
         test_company.save()
 
-        # First message
-        mock_create_chat_completion.return_value = "Sorry your toilet is broken! Please provide your address, name and detailed" \
-                                                   " description of the problem and I'll put you in touch with a vendor to come take a look at it."
-
         request = HttpRequest()
-        request.POST = {'Body': 'My toilet is broken', 'From': '+1234567890', "To": '+0987654321'}
+        request.POST = {'Body': 'Hi the storm broke my window', 'From': '+1234567890', "To": '+0987654321'}
         handle_assistant_conversation(request)
 
         assert Conversation.objects.count() == 1
@@ -117,93 +106,74 @@ class TestFullConversationFlow(CkcAPITestCase):
         response_from_gpt = messages.last().message_content
 
         assert type(response_from_gpt) == str
-        assert response_from_gpt == "Sorry your toilet is broken! Please provide your address, name and detailed" \
-                                    " description of the problem and I'll put you in touch with a vendor to come take a look at it."
         assert Conversation.objects.count() == 1
         assert conversation.messages.count() == 3
 
         # Second/follow up message(s)
-        request.POST = {'Body': "Sam Wood, 4861 conrad ave, it isn't flushing and I assume it's just clogged.",
+        request.POST = {'Body': "Sam wood. 2323 greenleaf ave. It has a crack going across it but it's not shattered. maybe the hail got it idk",
                         'From': '+1234567890', "To": self.company.assistant_phone_number}
-
-        # # This is a mock message from GPT, so we can grab the "plumber" vendor.
-        # # user won't receive this message
-        mock_create_chat_completion.return_value = "Plumber"
 
         handle_assistant_conversation(request)
         second_response = conversation.messages.last().message_content
-        assert 'Thanks! Sounds good, I think our plumber is best' in second_response
+        assert 'if you feel you have provided enough information' in second_response
+        assert type(second_response) == str
+        assert conversation.messages.count() == 5
 
-        # This will hit GPT so we can get more info from the tenant
-        mock_res = "Can you please tell me more about the situation? Is the wall wet due to a leak?"
-        mock_create_chat_completion.return_value = mock_res
-        request.POST = {'Body': "Idk",
-                        'From': '+1234567890', "To": self.company.assistant_phone_number}
+        assert conversation.tenant.address is not None
+
+        # Third/follow up message(s)
+        request.POST = {
+            'Body': "Nope.",
+            'From': '+1234567890', "To": self.company.assistant_phone_number}
+
         handle_assistant_conversation(request)
         third_response = conversation.messages.last().message_content
-        assert mock_res == third_response
+        assert 'if you feel you have provided enough information' in third_response
+        assert type(third_response) == str
+        assert conversation.messages.count() == 7
 
-        # This is a mock message from GPT, so we can grab the "plumber" vendor.
-        # user won't receive this message
-        mock_create_chat_completion.return_value = "Plumber."
+        # Fourth/follow up message(s)
+        request.POST = {
+            'Body': "Done.",
+            'From': '+1234567890', "To": self.company.assistant_phone_number}
 
-        request.POST = {'Body': "It's leaking everywhere. Seems like a plumber would be better",
-                        'From': '+1234567890', "To": self.company.assistant_phone_number}
         handle_assistant_conversation(request)
-        fourth_respsonse = conversation.messages.last().message_content
-        assert "Thanks! Sounds good, I think our plumber" in fourth_respsonse
-
-        request.POST = {'Body': "NO",
-                        'From': '+1234567890', "To": self.company.assistant_phone_number}
-        handle_assistant_conversation(request)
-        fifth_response = conversation.messages.last().message_content
-        assert "Oh sorry about that! Either tell me more specifics about your situation" in fifth_response
-
-        # This is a mock message from GPT, so we can grab the "plumber" vendor.
-        # user won't receive this message
-        mock_create_chat_completion.return_value = "Appliance Specialist"
-
-        request.POST = {'Body': "It's leaking everywhere. Seems like an appliance specialist would be better",
-                        'From': '+1234567890', "To": self.company.assistant_phone_number}
-        handle_assistant_conversation(request)
-        sixth_response = conversation.messages.last().message_content
-        assert "Thanks! Sounds good, I think our appliance" in sixth_response
-
-        request.POST = {'Body': "YES",
-                        'From': '+1234567890', "To": self.company.assistant_phone_number}
-        handle_assistant_conversation(request)
-        seventh_response = conversation.messages.last().message_content
-        assert "Thanks for confirming! I'll connect you with the vendor now. You should be receiving a text shortly." == seventh_response
+        fourth_response = conversation.messages.last().message_content
+        assert "You'll be receiving a text from our staff shortly!" in fourth_response
+        assert type(fourth_response) == str
+        assert conversation.messages.count() == 9
+        assert conversation.tenant.name is not None
+        assert len(mail.outbox) == 1
 
         #  Make sure a conversation was started between the two parties
-        assert conversation.messages.last().receiver_number == conversation.tenant.number
-
-        # New phone number should have been purchased from twilio and created in our db
-        assert PhoneNumber.objects.count() == 1
-        assert PhoneNumber.objects.first().most_recent_conversation == conversation
-        conversation.refresh_from_db()
-
-        assert conversation.vendor.name == 'Appliance Specialist Sam'
-        assert conversation.messages.count() == 18
-
-        # Test middle-man webhook/sms forwarding between vendor and tenant
-        request = HttpRequest()
-        request.POST = {'Body': 'Test message from tenant', 'From': conversation.tenant.number,
-                        'To': PhoneNumber.objects.first().number}  # from tenant
-        response = play_the_middle_man_util(request)
-        assert conversation.messages.last().message_content == 'Test message from tenant'
-        assert conversation.messages.last().sender_number == conversation.tenant.number
-
-        request = HttpRequest()
-        request.POST = {'Body': 'Test message from vendor', 'From': conversation.vendor.number,
-                        'To': PhoneNumber.objects.first().number}  # from vendor
-        response = play_the_middle_man_util(request)
-        assert conversation.messages.last().message_content == 'Test message from vendor'
-        assert conversation.messages.last().sender_number == Conversation.objects.first().vendor.number
-
-        assert conversation.company == self.company
-
-        assert response is None  # Nothing should be returned because we're just forwarding the message
+        # assert conversation.messages.last().receiver_number == conversation.tenant.number
+        #
+        # # New phone number should have been purchased from twilio and created in our db
+        # assert PhoneNumber.objects.count() == 1
+        # assert PhoneNumber.objects.first().most_recent_conversation == conversation
+        # conversation.refresh_from_db()
+        #
+        # assert conversation.vendor.name == 'Appliance Specialist Sam'
+        # assert conversation.messages.count() == 18
+        #
+        # # Test middle-man webhook/sms forwarding between vendor and tenant
+        # request = HttpRequest()
+        # request.POST = {'Body': 'Test message from tenant', 'From': conversation.tenant.number,
+        #                 'To': PhoneNumber.objects.first().number}  # from tenant
+        # response = play_the_middle_man_util(request)
+        # assert conversation.messages.last().message_content == 'Test message from tenant'
+        # assert conversation.messages.last().sender_number == conversation.tenant.number
+        #
+        # request = HttpRequest()
+        # request.POST = {'Body': 'Test message from vendor', 'From': conversation.vendor.number,
+        #                 'To': PhoneNumber.objects.first().number}  # from vendor
+        # response = play_the_middle_man_util(request)
+        # assert conversation.messages.last().message_content == 'Test message from vendor'
+        # assert conversation.messages.last().sender_number == Conversation.objects.first().vendor.number
+        #
+        # assert conversation.company == self.company
+        #
+        # assert response is None  # Nothing should be returned because we're just forwarding the message
 
     def test_set_old_conversations_to_not_active(self):
         tenant = Tenant.objects.create(number="1")  # Add necessary parameters
@@ -231,26 +201,6 @@ class TestFullConversationFlow(CkcAPITestCase):
         set_old_conversations_to_not_active(0)
         assert conversation1.is_active is False
         assert conversation2.is_active is True
-
-    def test_get_vendor_from_conversation(self):
-        tenant = Tenant.objects.create(number="1")  # Add necessary parameters
-        vendor = Vendor.objects.first()  # Add necessary parameters
-        company = self.company
-        conversation = Conversation.objects.create(tenant=tenant, vendor=vendor)
-
-        Message.objects.create(message_content='My toilet is broken.', role="user", conversation=conversation)
-        Message.objects.create(message_content='Its leaking everywhere.', role="user", conversation=conversation)
-
-        conversation.refresh_from_db()
-
-        # conversation has no vendors yet so return None
-        response = get_vendor_from_conversation(conversation)
-        assert response is None
-
-        conversation.company = company
-
-        response = get_vendor_from_conversation(conversation)
-        assert response == Vendor.objects.get(vocation='plumber')
 
     @patch('openai.ChatCompletion.create')
     def test_create_chat_completion_with_error(self, mock_create):

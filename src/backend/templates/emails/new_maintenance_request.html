@@ -1,0 +1,34 @@
+{% extends "emails/base.html" %}
+
+{% block subject %}
+    [NEW MAINTENANCE REQUEST] {{ tenant.address }}
+{% endblock %}
+
+{% block extra_head %}
+
+{% endblock %}
+
+{% block content %}
+
+    <table style="margin-bottom: 15px;">
+        <div>
+            <h2>NEW MAINTENANCE REQUEST</h2>
+            <br>
+            <b>Tenant Name:</b> John Doe
+            <br>
+            <b>Tenant Address:</b> 123 Main St, San Francisco, CA 94105
+            <br>
+            <br>
+            To view and assign vendor: <a href="{{ SITE_DOMAIN }}/conversations/{{ conversation.id }}/">Click Here</a>
+            <br>
+            <br>
+            <a href="{{ SITE_DOMAIN }}/conversations/{{ conversation.id }}/">
+                <button
+                    style="background-color: #000080; border-radius: 8px; border: none; color: white; padding: 15px 32px; text-align: center; text-decoration: none; display: inline-block;"
+                >
+                    View Conversation
+                </button>
+            </a>
+        </div>
+    </table>
+{% endblock %}

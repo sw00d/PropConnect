@@ -79,36 +79,37 @@ def start_vendor_tenant_conversation(conversation_id, vendor_id):
                         "I have a tenant who is requesting some help. " \
                         "You are now connected with the tenant and can communicate directly with them here."
 
-    send_message(conversation.vendor.number, conversation_number.number, message_to_vendor)
-    Message.objects.create(
+    message = Message.objects.create(
         message_content=message_to_vendor,
         role="assistant",
         conversation=conversation,
         receiver_number=conversation.vendor.number,
         sender_number=conversation_number.number
     )
+    send_message(conversation.vendor.number, conversation_number.number, message_to_vendor, message_object=message)
 
     conversation_history = f"Conversation: \n\n {conversation_recap}"
-    send_message(conversation.vendor.number, conversation_number.number, conversation_history)
-    Message.objects.create(
+    message = Message.objects.create(
         message_content=conversation_history,
         role="assistant",
         conversation=conversation,
         receiver_number=conversation.vendor.number,
         sender_number=conversation_number.number
     )
+    send_message(conversation.vendor.number, conversation_number.number, conversation_history, message_object=message)
 
     message_to_tenant = f"Hey there! I'm a bot for {conversation.company.name}. " \
                         f"I've informed the {vendor.vocation}, {vendor.name}, of your situation. " \
                         "You are now connected with the vendor and can communicate directly with them here."
-    send_message(conversation.tenant.number, conversation_number.number, message_to_tenant)
-    Message.objects.create(
+
+    message = Message.objects.create(
         message_content=message_to_tenant,
         role="assistant",
         conversation=conversation,
         receiver_number=conversation.tenant.number,
         sender_number=conversation_number.number
     )
+    send_message(conversation.tenant.number, conversation_number.number, message_to_tenant, message_object=message)
 
 
 # This is used for the main convo-flow

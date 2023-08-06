@@ -3,7 +3,7 @@ from django.contrib.auth.tokens import default_token_generator
 from django.utils.encoding import force_bytes
 from django.utils.http import urlsafe_base64_encode
 
-from users.factories import UserFactory
+from factories import ConversationFactory, CompanyFactory, UserFactory
 from . import email
 
 
@@ -19,6 +19,11 @@ def password_reset(to_email):
     uid = urlsafe_base64_encode(force_bytes(user.pk))
     token = default_token_generator.make_token(user)
     return email.password_reset(user, uid, token)
+
+
+def new_maintenance_request(to_email):
+    conversation = ConversationFactory()
+    return email.new_maintenance_request(to_email, conversation)
 
 
 def _get_a_user_from_email(email):

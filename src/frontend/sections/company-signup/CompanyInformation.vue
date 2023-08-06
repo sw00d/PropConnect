@@ -52,24 +52,24 @@
               />
             </v-col>
           </v-row>
-          <v-slide-y-transition>
-            <v-alert
-              v-if="showAlert"
-              color="highlight"
-              border="start"
-              variant="tonal"
-              class="mt-3"
-            >
-              We are still in <strong>beta</strong> and are best suited for managing 200 doors or less.
-              <strong> Expect limited functionality. </strong>
-              <br>
-              <br>
-              However, we would love to chat about a custom solution for you. Reach out to us directly at
-              <strong class="text-decoration-underline">
-                <a href="mailto:sam@ckcollab.com">sam@ckcollab.com</a>
-              </strong>.
-            </v-alert>
-          </v-slide-y-transition>
+<!--          <v-slide-y-transition>-->
+<!--            <v-alert-->
+<!--              v-if="showAlert"-->
+<!--              color="highlight"-->
+<!--              border="start"-->
+<!--              variant="tonal"-->
+<!--              class="mt-3"-->
+<!--            >-->
+<!--              We are still in <strong>beta</strong> and are best suited for managing 200 doors or less.-->
+<!--              <strong> Expect limited functionality. </strong>-->
+<!--              <br>-->
+<!--              <br>-->
+<!--              However, we would love to chat about a custom solution for you. Reach out to us directly at-->
+<!--              <strong class="text-decoration-underline">-->
+<!--                <a href="mailto:sam@ckcollab.com">sam@ckcollab.com</a>-->
+<!--              </strong>.-->
+<!--            </v-alert>-->
+<!--          </v-slide-y-transition>-->
           <v-btn
             type="submit"
             :color="valid ? 'primary' : null"
@@ -106,16 +106,16 @@ const errors = ref({});
 const submitting = ref<boolean>(false);
 const fetchingOptions = ref<boolean>(false);
 
-const showAlert = computed(() => {
-  if (
-    numberOfDoors.value === '1-50' ||
-    numberOfDoors.value === '50-200'
-  ) {
-    return false
-  } else {
-    return true
-  }
-})
+// const showAlert = computed(() => {
+//   if (
+//     numberOfDoors.value === '1-50' ||
+//     numberOfDoors.value === '50-200'
+//   ) {
+//     return false
+//   } else {
+//     return true
+//   }
+// })
 
 const nameRules = [
   (v: string) => !!v || 'Company name is required',

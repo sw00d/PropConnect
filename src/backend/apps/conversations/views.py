@@ -101,7 +101,7 @@ class ConversationViewSet(ModelViewSet):
         from_number = PhoneNumber.objects.get(most_recent_conversation=self.get_object())
         tenant_number = self.get_object().tenant.number
         vendor_number = self.get_object().vendor.number
-        Message.objects.create(
+        message = Message.objects.create(
             message_content=message_body,
             role="admin",
             conversation=self.get_object(),
@@ -110,8 +110,8 @@ class ConversationViewSet(ModelViewSet):
 
         try:
             logger.info(f"Sending admin message to conversation ({self.get_object()}) from with body: {message_body}")
-            send_message(tenant_number, from_number, message_body)
-            send_message(vendor_number, from_number, message_body)
+            send_message(tenant_number, from_number, message_body, message_object=message)
+            send_message(vendor_number, from_number, message_body, message_object=message)
             return Response({'status': 'Message sent.'})
         except Exception as e:
             return Response({'error': str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)

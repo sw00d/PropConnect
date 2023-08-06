@@ -112,7 +112,7 @@
             Vendor
           </v-chip>
           <v-sheet width="200px" v-if="activeConversationType === 'assistant'" class="font-12 ml-3 bg-transparent">
-            *The initial conversation with the bot
+            *The initial conversation with the AI
           </v-sheet>
           <v-sheet width="200px" v-else class="font-12 ml-3 bg-transparent">
             *The conversation between the vendor and the tenant

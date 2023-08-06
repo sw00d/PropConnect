@@ -26,6 +26,7 @@ class MessageSerializer(serializers.ModelSerializer):
             'role',
             'message_content',
             'conversation',
+            'error_on_send',
         )
 
 
