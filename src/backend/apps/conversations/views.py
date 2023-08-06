@@ -89,7 +89,33 @@ class ConversationViewSet(ModelViewSet):
         return Response({'status': 'last_viewed time updated'})
 
     @action(detail=True, methods=['post'])
-    def send_admin_message(self, request, *args, **kwargs):
+    def send_admin_message_to_tenant(self, request, *args, **kwargs):
+        # This is so admin can inject messages into the conversation
+        message_body = request.data.get('message_body')
+
+        if not message_body:
+            return Response({'error': 'Message_body must be provided.'},
+                            status=status.HTTP_400_BAD_REQUEST)
+
+        # from_number = self.get_object().twilio_number.number
+        from_number = self.get_object().company.assistant_phone_number
+        tenant_number = self.get_object().tenant.number
+        message = Message.objects.create(
+            message_content=message_body,
+            role="admin_to_tenant",
+            conversation=self.get_object(),
+            sender_number=from_number
+        )
+
+        try:
+            logger.info(f"Sending admin message to conversation ({self.get_object()}) from with body: {message_body}")
+            send_message(tenant_number, from_number, message_body, message_object=message)
+            return Response({'status': 'Message sent.'})
+        except Exception as e:
+            return Response({'error': str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+    @action(detail=True, methods=['post'])
+    def send_admin_message_to_group(self, request, *args, **kwargs):
         # This is so admin can inject messages into the conversation
         message_body = request.data.get('message_body')
 

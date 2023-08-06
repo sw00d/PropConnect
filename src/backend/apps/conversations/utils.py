@@ -186,7 +186,7 @@ def handle_assistant_conversation(request):
 def get_message_history_for_gpt(conversation):
     messages = conversation.messages.all()
     serializer = MessageSerializer(messages, many=True)
-
+    # TODO Factor in admin_to_tenant and admin roles here for messages
     data = []
     for item in serializer.data:
         data.append({

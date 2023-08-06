@@ -58,7 +58,7 @@ class Conversation(models.Model):
         from .models import Message
         number = self.company.assistant_phone_number
         return Message.objects.filter(
-            Q(receiver_number=number) | Q(sender_number=number),
+            Q(receiver_number=number) | Q(sender_number=number) | Q(role='admin_to_tenant'),
             conversation=self
         )
 

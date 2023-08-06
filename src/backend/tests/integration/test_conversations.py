@@ -116,13 +116,13 @@ class ConversationViewSetTestCase(CkcAPITestCase):
     # --------------------------------------------
     @patch('conversations.utils.Client')
     @skip('Queue has a hard time when running test suite')
-    def test_send_admin_message(self, mock_client):
+    def test_send_admin_to_tenant_message(self, mock_client):
         mock_messages = MagicMock()
         mock_client.return_value.messages = mock_messages
 
         self.client.force_authenticate(self.normal_user1)
 
-        url = reverse('conversations-send-admin-message', kwargs={'pk': self.conversation2.pk})
+        url = reverse('conversations-send-admin-message-to-tenant', kwargs={'pk': self.conversation2.pk})
 
         TwilioNumberFactory(most_recent_conversation=self.conversation2)
         self.conversation1.refresh_from_db()
@@ -135,7 +135,42 @@ class ConversationViewSetTestCase(CkcAPITestCase):
         self.conversation1.refresh_from_db()
 
         assert self.conversation1.twilio_number is not None
-        url = reverse('conversations-send-admin-message', kwargs={'pk': self.conversation1.pk})
+        url = reverse('conversations-send-admin-message-to-tenant', kwargs={'pk': self.conversation1.pk})
+        response = self.client.post(url, data={"message_body": "test message"})
+        self.assertEqual(q.qsize(), 1)
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+
+        message_count = Message.objects.filter(
+            conversation=self.conversation1,
+            message_content="test message",
+            role="admin_to_tenant"
+        ).count()
+
+        self.assertEqual(message_count, 1)
+        q.join()
+
+    @patch('conversations.utils.Client')
+    @skip('Queue has a hard time when running test suite')
+    def test_send_admin_to_group_message(self, mock_client):
+        mock_messages = MagicMock()
+        mock_client.return_value.messages = mock_messages
+
+        self.client.force_authenticate(self.normal_user1)
+
+        url = reverse('conversations-send-admin-message-to-group', kwargs={'pk': self.conversation2.pk})
+
+        TwilioNumberFactory(most_recent_conversation=self.conversation2)
+        self.conversation1.refresh_from_db()
+
+        assert self.conversation2.twilio_number is not None
+        response = self.client.post(url, data={"message_body": "test message"})
+        self.assertEqual(response.status_code, status.HTTP_404_NOT_FOUND)
+
+        TwilioNumberFactory(most_recent_conversation=self.conversation1)
+        self.conversation1.refresh_from_db()
+
+        assert self.conversation1.twilio_number is not None
+        url = reverse('conversations-send-admin-message-to-group', kwargs={'pk': self.conversation1.pk})
         response = self.client.post(url, data={"message_body": "test message"})
         self.assertEqual(q.qsize(), 2)
         self.assertEqual(response.status_code, status.HTTP_200_OK)
