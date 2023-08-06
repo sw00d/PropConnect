@@ -77,6 +77,7 @@ class ConversationDetailSerializer(serializers.ModelSerializer):
             'assistant_messages',
             'vendor_messages',
             'twilio_number',
+            'point_of_contact_has_interjected',
         )
 
 

@@ -42,6 +42,7 @@ class Conversation(models.Model):
     address = models.CharField(max_length=200, null=True)
     waiting_on_property_manager = models.BooleanField(default=False)
     needs_more_information = models.BooleanField(default=True)  # TODO Unused
+    point_of_contact_has_interjected = models.BooleanField(default=False)
 
     def __str__(self):
         return f"Conversation ({self.pk}) between {self.tenant} and vendor {self.vendor}"

@@ -122,6 +122,21 @@ def handle_assistant_conversation(request):
 
     tenant.save()
 
+    conversation_with_point_of_contact = Conversation.objects.filter(tenant=tenant, vendor=None, point_of_contact_has_interjected=True).exists()
+    if conversation_with_point_of_contact:
+        # TODO Test this
+        # This is for when a prop manager has interjected and is talking to the tenant via the web app.
+        # We'll want to skip all AI in this case
+        # TODO Should be a web socket eventually
+        Message.objects.create(
+            message_content=body,
+            role="user",
+            conversation=conversation_with_point_of_contact,
+            sender_number=from_number,
+            receiver_number=to_number,
+        )
+        return None
+
     # TODO filter this by time as well. Should be a new convo after a few days maybe?
     conversation, _ = Conversation.objects.get_or_create(tenant=tenant, vendor=None, waiting_on_property_manager=False)
     conversation.company = company

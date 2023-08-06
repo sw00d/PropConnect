@@ -88,6 +88,14 @@ class ConversationViewSet(ModelViewSet):
 
         return Response({'status': 'last_viewed time updated'})
 
+    # @action(detail=True, methods=['post'])
+    # def set_last_viewed(self, request, pk=None):
+    #     conversation = self.get_object()
+    #     conversation.last_viewed = now()
+    #     conversation.save()
+    #
+    #     return Response({'status': 'last_viewed time updated'})
+
     @action(detail=True, methods=['post'])
     def send_admin_message_to_tenant(self, request, *args, **kwargs):
         # This is so admin can inject messages into the conversation
@@ -98,17 +106,21 @@ class ConversationViewSet(ModelViewSet):
                             status=status.HTTP_400_BAD_REQUEST)
 
         # from_number = self.get_object().twilio_number.number
-        from_number = self.get_object().company.assistant_phone_number
-        tenant_number = self.get_object().tenant.number
+        conversation = self.get_object()
+        from_number = conversation.company.assistant_phone_number
+        tenant_number = conversation.tenant.number
         message = Message.objects.create(
             message_content=message_body,
             role="admin_to_tenant",
-            conversation=self.get_object(),
+            conversation=conversation,
             sender_number=from_number
         )
 
+        conversation.point_of_contact_has_interjected = True
+        conversation.save()
+
         try:
-            logger.info(f"Sending admin message to conversation ({self.get_object()}) from with body: {message_body}")
+            logger.info(f"Sending admin message to conversation ({conversation}) from with body: {message_body}")
             send_message(tenant_number, from_number, message_body, message_object=message)
             return Response({'status': 'Message sent.'})
         except Exception as e:

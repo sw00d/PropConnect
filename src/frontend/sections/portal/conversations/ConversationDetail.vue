@@ -95,6 +95,7 @@
                     </v-card-text>
                 </v-card>
             </v-col>
+
             <v-col md="6" sm="12">
                 <div class="d-flex align-center">
 
@@ -171,7 +172,8 @@
                             </div>
                         </div>
 
-                        <div v-else-if="message.role === 'admin' || message.role === 'admin_to_tenant'" class="right-msg mt-3">
+                        <div v-else-if="message.role === 'admin' || message.role === 'admin_to_tenant'"
+                             class="right-msg mt-3">
                             <div class="font-12 text-highContrast text-right">
                                 Property Manager
                             </div>
@@ -182,25 +184,28 @@
 
                     </div>
                 </v-sheet>
+
+
+                <div class="mt-3 text-right">* Refresh to load new messages</div>
+
                 <div class="mt-2">
                     <div class="font-12 opacity-8 mb-1">Property manager:</div>
                     <div class="d-flex align-center">
-
                         <v-textarea
                             v-model="message"
                             variant="outlined"
                             placeholder="Type a message..."
-                            class="mr-2"
                             hide-details
+                            class="mr-2"
                             auto-grow
                             rows="1"
                             :disabled="!convoIsActive"
                         />
-
                         <!--            TODO Disable this if the convo isn't active aka 3 days old I think? -->
                         <v-btn
                             width="100px"
                             height="50px"
+                            color="primary"
                             :loading="sendingMessage"
                             @click="sendMessage"
                             :disabled="!convoIsActive || !message?.length"
@@ -208,6 +213,17 @@
                             Send
                         </v-btn>
                     </div>
+                    <v-alert
+                        v-if="!conversation.point_of_contact_has_interjected && activeConversationType === 'assistant'"
+                        color="primary"
+                        border="start"
+                        variant="tonal"
+                        class="text-warning d-flex weight-700 mt-3"
+                    >
+                        {{
+                            activeConversationType === 'assistant' && 'If you interject here, we will bypass all AI responses for the remainder of the conversation.'
+                        }}
+                    </v-alert>
 
                 </div>
 
@@ -264,6 +280,7 @@ const fetchConversation = async () => {
         conversation.value = data.value
         activeConversationToggle.value = conversation.value.is_active ? 0 : 1
         activeConversationType.value = conversation.value.vendor_messages?.length ? 'vendor' : 'assistant'
+        console.log(conversation.value)
     } catch (error) {
         console.error(error)
         // alert('Error fetching conversation')
