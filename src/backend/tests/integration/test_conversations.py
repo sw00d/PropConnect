@@ -81,6 +81,25 @@ class ConversationViewSetTestCase(CkcAPITestCase):
         self.assertEqual(response.data['count'], 0)
         self.assertEqual(response.status_code, status.HTTP_200_OK)
 
+    def test_assign_vendor(self):
+        data = {
+            'vendor': Vendor.objects.first().pk
+        }
+        user = UserFactory(company=self.company1)
+        conversation = ConversationFactory.create(vendor=None, company=self.company1)
+
+        url = reverse('conversations-assign-vendor', kwargs={'pk': conversation.pk})
+        response = self.client.post(url, data)
+        conversation.refresh_from_db()
+        self.assertEqual(response.status_code, status.HTTP_401_UNAUTHORIZED)  # Not authed users should get 401
+
+        self.client.force_authenticate(user)
+        assert conversation.vendor is None
+        response = self.client.post(url, data)
+        conversation.refresh_from_db()
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        assert conversation.vendor.id == Vendor.objects.first().pk
+
     def test_set_last_viewed(self):
         time = now()
         url = reverse('conversations-set-last-viewed', kwargs={'pk': self.conversation1.pk})

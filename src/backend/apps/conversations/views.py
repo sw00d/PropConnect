@@ -1,6 +1,7 @@
 import logging
 from django.utils.timezone import now
 
+from rest_framework.exceptions import ValidationError
 from rest_framework import status
 from rest_framework.response import Response
 from rest_framework.pagination import PageNumberPagination
@@ -88,13 +89,16 @@ class ConversationViewSet(ModelViewSet):
 
         return Response({'status': 'last_viewed time updated'})
 
-    # @action(detail=True, methods=['post'])
-    # def set_last_viewed(self, request, pk=None):
-    #     conversation = self.get_object()
-    #     conversation.last_viewed = now()
-    #     conversation.save()
-    #
-    #     return Response({'status': 'last_viewed time updated'})
+    @action(detail=True, methods=['post'])
+    def assign_vendor(self, request, pk=None):
+        conversation = self.get_object()
+        try:
+            conversation.vendor = Vendor.objects.get(id=request.data.get('vendor'))
+        except Vendor.DoesNotExist:
+            raise ValidationError({"error": "Vendor not found."})
+        conversation.save()
+
+        return Response({'status': 'Vendor assigned to conversation.'})
 
     @action(detail=True, methods=['post'])
     def send_admin_message_to_tenant(self, request, *args, **kwargs):
