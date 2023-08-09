@@ -143,7 +143,9 @@
                                     <v-list-item-title class="font-weight-bold">{{ vendor.name }}</v-list-item-title>
                                     <v-list-item-title>{{ vendor.number }}</v-list-item-title>
                                     <v-list-item-subtitle>
-                                        {{ Object.values(vendorOptions).find((v) => v.value === vendor.vocation).label }}
+                                        {{
+                                            Object.values(vendorOptions).find((v) => v.value === vendor.vocation).label
+                                        }}
                                     </v-list-item-subtitle>
                                 </v-list-item-content>
                             </v-list-item>

@@ -1,21 +1,17 @@
 <template>
-  <v-container>
-    <div class="d-md-flex text-left flex-column justify-center align-center">
-      <v-row class="fill-width">
-        <v-col>
-          <ConversationDetail/>
-        </v-col>
-      </v-row>
-    </div>
-  </v-container>
+    <v-container>
+        <div class="d-md-flex text-left flex-column justify-center align-center">
+            <ConversationDetail/>
+        </div>
+    </v-container>
 </template>
 
 <script setup>
 import ConversationDetail from "../../sections/portal/conversations/ConversationDetail"
 
 definePageMeta({
-  middleware: ["auth"],
-  layout: 'protected'
+    middleware: ["auth"],
+    layout: 'protected'
 })
 
 
@@ -23,6 +19,6 @@ definePageMeta({
 
 <style lang="scss" scoped>
 .v-data-table-footer {
-  display: none !important;
+    display: none !important;
 }
 </style>

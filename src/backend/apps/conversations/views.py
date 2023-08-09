@@ -1,4 +1,6 @@
 import logging
+from sys import argv
+
 from django.utils.timezone import now
 
 from rest_framework.exceptions import ValidationError
@@ -17,6 +19,7 @@ from conversations.utils import handle_assistant_conversation, play_the_middle_m
 
 from .models import Conversation, Message, Vendor, PhoneNumber
 from .serializers import ConversationDetailSerializer, ConversationListSerializer, VendorSerializer
+from .tasks import start_vendor_tenant_conversation
 
 logger = logging.getLogger(__name__)
 
@@ -94,6 +97,12 @@ class ConversationViewSet(ModelViewSet):
         conversation = self.get_object()
         try:
             conversation.vendor = Vendor.objects.get(id=request.data.get('vendor'))
+
+            if 'pytest' in argv[0]:
+                print('pytest detected. Using test credentials.')
+                start_vendor_tenant_conversation(conversation.id, conversation.vendor.id)
+            else:
+                start_vendor_tenant_conversation.delay(conversation.id, conversation.vendor.id)
         except Vendor.DoesNotExist:
             raise ValidationError({"error": "Vendor not found."})
         conversation.save()
@@ -193,11 +202,11 @@ def init_conversation(request):
             vendor.active = True
             vendor.save()
             # Reply to vendor
-            send_message(from_number, to_number, "Thank you! You will now receive messages from your tenants.")
+            send_message(from_number, to_number, "Thank you! You will now receive messages from tenants.")
         elif any(word in body.lower() for word in no_synonyms):
             # Reply to vendor
             send_message(from_number, to_number,
-                         "Sounds good! You will not receive messages from your tenants. If you ever change your mind, feel free to respond 'yes' to this message.")
+                         "Sounds good! You will not receive messages from any tenants. If you ever change your mind, feel free to respond 'yes' to this message.")
 
         return HttpResponse()
 

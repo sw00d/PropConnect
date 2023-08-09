@@ -1,12 +1,12 @@
 from queue import Queue
 from unittest import skip
-from unittest.mock import patch, MagicMock
+from unittest.mock import patch, MagicMock, Mock
 from twilio.rest import Client
 
 from twilio.base.exceptions import TwilioRestException
 
 from commands.management.commands.generate_data import generate_vendors
-from conversations.models import Message, Vendor, Conversation, Tenant
+from conversations.models import Message, Vendor, Conversation, Tenant, PhoneNumber
 from conversations.tasks import purchase_phone_number_util
 from conversations.utils import send_message, q
 from factories import ConversationFactory, UserFactory, TwilioNumberFactory, CompanyFactory
@@ -81,7 +81,17 @@ class ConversationViewSetTestCase(CkcAPITestCase):
         self.assertEqual(response.data['count'], 0)
         self.assertEqual(response.status_code, status.HTTP_200_OK)
 
-    def test_assign_vendor(self):
+    @patch('conversations.utils.send_message')
+    @patch('conversations.tasks.Client')
+    @patch('conversations.tasks.purchase_phone_number_util')
+    def test_assign_vendor(self, mock_purchase_phone_number, mock_client, mock_send_message):
+        mock_client_instance = mock_client.return_value
+        mock_client_instance.available_phone_numbers.return_value.local.list.return_value = [
+            Mock(phone_number='+0987654321')]
+
+        # Create an available phone number for the test
+        PhoneNumber.objects.create(number="+1234567895", most_recent_conversation=None, is_base_number=False)
+
         data = {
             'vendor': Vendor.objects.first().pk
         }
@@ -90,15 +100,23 @@ class ConversationViewSetTestCase(CkcAPITestCase):
 
         url = reverse('conversations-assign-vendor', kwargs={'pk': conversation.pk})
         response = self.client.post(url, data)
-        conversation.refresh_from_db()
+
         self.assertEqual(response.status_code, status.HTTP_401_UNAUTHORIZED)  # Not authed users should get 401
 
         self.client.force_authenticate(user)
         assert conversation.vendor is None
         response = self.client.post(url, data)
         conversation.refresh_from_db()
+
+        self.assertIsNotNone(conversation.vendor_id)
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         assert conversation.vendor.id == Vendor.objects.first().pk
+
+        phone_number = PhoneNumber.objects.get(most_recent_conversation=conversation)
+        self.assertEqual(phone_number.number, '+1234567895')  # Verify we used the existing number
+
+        mock_purchase_phone_number.assert_not_called()  # We should not have needed to purchase a number
+
 
     def test_set_last_viewed(self):
         time = now()

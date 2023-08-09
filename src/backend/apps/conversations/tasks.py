@@ -75,7 +75,7 @@ def start_vendor_tenant_conversation(conversation_id, vendor_id):
 
     conversation_recap = get_conversation_recap_util(conversation)  # do this before we send the initial vendor message
 
-    message_to_vendor = f"Hey there! I'm a bot for {conversation.company.name}. " \
+    message_to_vendor = f"Hey there! I'm here on part of the {conversation.company.name} team. " \
                         "I have a tenant who is requesting some help. " \
                         "You are now connected with the tenant and can communicate directly with them here."
 
@@ -98,7 +98,7 @@ def start_vendor_tenant_conversation(conversation_id, vendor_id):
     )
     send_message(conversation.vendor.number, conversation_number.number, conversation_history, message_object=message)
 
-    message_to_tenant = f"Hey there! I'm a bot for {conversation.company.name}. " \
+    message_to_tenant = f"Hey there! I'm here on part of the {conversation.company.name} team. " \
                         f"I've informed the {vendor.vocation}, {vendor.name}, of your situation. " \
                         "You are now connected with the vendor and can communicate directly with them here."
 

@@ -123,7 +123,7 @@ def handle_assistant_conversation(request):
     tenant.save()
 
     conversation_with_point_of_contact = Conversation.objects.filter(tenant=tenant, vendor=None, point_of_contact_has_interjected=True)
-    print('hello')
+
     if conversation_with_point_of_contact.exists():
         # TODO Test this
         # This is for when a prop manager has interjected and is talking to the tenant via the web app.
@@ -152,7 +152,10 @@ def handle_assistant_conversation(request):
         content = f"You are a helpful assistant for a property management company, {conversation.company.name}," \
                   "that communicates via text messages with tenants to handle their maintenance issues. " \
                   "Your primary goal is to collect the tenant's full name, address, and a detailed description of the problem they are experiencing. " \
-                  "Once they have provided their name and address, you can keep asking for more information over and over again."
+                  "Once they have provided their name and address, you can keep asking for more information over and over again. Once the user responds" \
+                  "with DONE or the conversation exceeds 10 messages (but please don't tell them this)," \
+                  " the property manager will be informed and the tenant will be put in contact with the vendor via" \
+                  "a direct text message conversation that we set up just for their conversation. Respond to the user in responses less than 160 characters."
 
         Message.objects.create(
             message_content=content,
@@ -205,9 +208,11 @@ def get_message_history_for_gpt(conversation):
     # TODO Factor in admin_to_tenant and admin roles here for messages
     data = []
     for item in serializer.data:
+        content = item['message_content'].replace('\nReply DONE if you feel you have provided enough information.', '')
+        print(content)
         data.append({
             'role': item['role'],
-            'content': item['message_content'],
+            'content': content,
         })
     return data
 
