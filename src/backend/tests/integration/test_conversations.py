@@ -245,7 +245,7 @@ class ConversationViewSetTestCase(CkcAPITestCase):
     def test_send_message_media_urls(self, mock_client):
         mock_messages = MagicMock()
         mock_client.return_value.messages = mock_messages
-        send_message('+1234567890', '+0987654321', 'Test message', media_urls='http://example.com/test.jpg')
+        send_message('+1234567890', '+0987654321', 'Test message', media_urls='https://placehold.co/600x400')
         self.assertEqual(q.qsize(), 2)
         q.join()
 
