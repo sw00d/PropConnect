@@ -138,7 +138,7 @@ class VendorTests(CkcAPITestCase):
         mock_send_message.assert_called_once_with(
             post_data['From'],
             post_data['To'],
-            "Sounds good! You will not receive messages from tenants. If you ever change your mind, feel free to respond 'yes' to this message."
+            "Sounds good! You will not receive messages from any tenants. If you ever change your mind, feel free to respond 'yes' to this message."
         )
 
         # Check that the response has a status code of 200
