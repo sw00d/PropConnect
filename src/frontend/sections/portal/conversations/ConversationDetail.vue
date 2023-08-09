@@ -173,7 +173,7 @@
                             <div v-else-if="message.role === 'assistant'" class="right-msg mt-3">
                                 <div class="font-12 text-highContrast text-right">
                                     {{
-                                        activeConversationType === 'assistant' ? 'Bot Assistant' : conversation.vendor?.name
+                                        activeConversationType === 'assistant' ? 'AI Assistant' : conversation.vendor?.name
                                     }}
                                 </div>
                                 <div class="rounded-lg pa-2 bg-primary">

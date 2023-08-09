@@ -112,7 +112,7 @@ def handle_assistant_conversation(request):
         f"body: , {request.POST.get('Body', None)} \n"
     )
 
-    # Handles the initial conversation between the tenant and the bot
+    # Handles the initial conversation between the tenant and the AI
     from_number = request.POST.get('From', None)
     to_number = request.POST.get('To', None)
     body = request.POST.get('Body', None)

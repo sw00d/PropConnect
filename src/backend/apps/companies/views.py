@@ -56,7 +56,8 @@ class CompanyViewSet(viewsets.ModelViewSet):
                 {
                     "price": price.stripe_price_id,
                 },
-            ]
+            ],
+            trial_period_days=7  # This offers a 7-day free trial
         )
 
         djstripe_subscription = Subscription.sync_from_stripe_data(stripe_subscription)
