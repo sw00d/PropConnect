@@ -25,7 +25,7 @@
             </div>
 
             <div class="font-12 opacity-5 text-black ls-0 mt-3 font-weight-medium pr-10">
-              $12.00 + $0.40 for every conversation that's managed by our system.
+              $12.00 + $0.70 for every conversation that's managed by our system.
             </div>
           </div>
 

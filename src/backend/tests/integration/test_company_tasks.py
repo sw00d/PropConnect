@@ -44,7 +44,7 @@ class TestCompanyTasks(CkcAPITestCase):
             charge_companies_for_conversations()
 
             assert Transaction.objects.count() == 1
-            assert Transaction.objects.first().amount == 4
+            assert Transaction.objects.first().amount == 7
             assert Transaction.objects.first().charge_date == timezone.now()
             assert Transaction.objects.first().company == company
 

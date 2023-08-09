@@ -51,7 +51,7 @@ def charge_companies_for_conversations():
         num_convos = convos_last_month.count()
 
         # Calculate amount
-        amount = num_convos * 0.4  # 40 cents per conversation
+        amount = num_convos * 0.7  # 70 cents per conversation
 
         try:
             logger.info(f"Charging {company} ${amount} for {num_convos} conversations from day: {first_of_prev_month} to day: {last_of_prev_month}")
