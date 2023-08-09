@@ -209,7 +209,6 @@ def get_message_history_for_gpt(conversation):
     data = []
     for item in serializer.data:
         content = item['message_content'].replace('\nReply DONE if you feel you have provided enough information.', '')
-        print(content)
         data.append({
             'role': item['role'],
             'content': content,
