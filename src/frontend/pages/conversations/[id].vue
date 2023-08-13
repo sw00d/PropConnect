@@ -7,7 +7,7 @@
 </template>
 
 <script setup>
-import ConversationDetail from "../../sections/portal/conversations/ConversationDetail"
+import ConversationDetail from "../../sections/portal/conversations/conversation-detail/ConversationDetail.vue"
 
 definePageMeta({
     middleware: ["auth"],

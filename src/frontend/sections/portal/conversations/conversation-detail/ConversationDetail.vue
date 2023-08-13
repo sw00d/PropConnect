@@ -49,6 +49,15 @@
                                 </div>
                             </div>
 
+                              <div class="table-row border-b">
+                                <div class="weight-700 font-16">
+                                    Address:
+                                </div>
+                                <div>
+                                    {{ conversation.tenant?.address || "No address" }}
+                                </div>
+                            </div>
+
                             <div class="table-row border-b">
                                 <div class="weight-700 font-16">
                                     Vendor:
@@ -229,10 +238,10 @@
 
 <script setup lang="ts">
 import {useRoute} from 'vue-router'
-import {useRequest} from "../../../composables/useRequest"
+import {useRequest} from "../../../../composables/useRequest"
 import {onMounted, ref, nextTick} from 'vue'
 import dayjs from "dayjs"
-import Message from "../../../components/Message/Message.vue"
+import Message from "../../../../components/Message/Message.vue"
 import {useSnackbarStore} from "~/store/snackbarStore";
 import VendorAssignCard from "~/sections/portal/conversations/conversation-detail/VendorAssignCard.vue";
 

@@ -30,15 +30,20 @@
     </template>
     <template #item.tenant="{item: { selectable }}">
       <div>
+
         <div>{{ selectable.tenant?.name || "No Name" }}</div>
+        <div class="font-12 opacity-8">
+          {{ selectable.tenant?.address }}
+        </div>
         <div class="font-12 opacity-8">
           {{ $formatPhoneNumber(selectable.tenant?.number) }}
           <v-btn
             @click.stop="$copyTextToClipboard($formatPhoneNumber(selectable.tenant?.number));"
-            size="x-small"
             icon
+            width="16px"
+            height="16px"
           >
-            <v-icon>mdi-content-copy</v-icon>
+            <v-icon size="12px">mdi-content-copy</v-icon>
           </v-btn>
         </div>
       </div>
