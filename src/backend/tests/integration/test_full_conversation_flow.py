@@ -172,7 +172,6 @@ class TestFullConversationFlow(CkcAPITestCase):
 
         assert conversation.tenant.name is not None
         assert conversation.tenant.address is not None
-        assert False
 
     def test_set_old_conversations_to_not_active(self):
         tenant = Tenant.objects.create(number="1")  # Add necessary parameters
