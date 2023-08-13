@@ -37,7 +37,7 @@
                 <MessageContent :message="message"/>
             </div>
         </div>
-        
+
     </div>
 </template>
 
