@@ -97,7 +97,9 @@ class ConversationViewSet(ModelViewSet):
         conversation = self.get_object()
         try:
             conversation.vendor = Vendor.objects.get(id=request.data.get('vendor'))
-
+            conversation.tenant_intro_message = request.data.get('tenant_intro_message')
+            conversation.vendor_intro_message = request.data.get('vendor_intro_message')
+            conversation.save()
             if 'pytest' in argv[0]:
                 print('pytest detected. Using test credentials.')
                 start_vendor_tenant_conversation(conversation.id, conversation.vendor.id)
@@ -149,7 +151,7 @@ class ConversationViewSet(ModelViewSet):
                             status=status.HTTP_400_BAD_REQUEST)
 
         # from_number = self.get_object().twilio_number.number
-        from_number = PhoneNumber.objects.get(most_recent_conversation=self.get_object())
+        from_number = PhoneNumber.objects.get(most_recent_conversation=self.get_object()).number
         tenant_number = self.get_object().tenant.number
         vendor_number = self.get_object().vendor.number
         message = Message.objects.create(
@@ -160,7 +162,7 @@ class ConversationViewSet(ModelViewSet):
         )
 
         try:
-            logger.info(f"Sending admin message to conversation ({self.get_object()}) from with body: {message_body}")
+            logger.info(f"Sending admin message to conversation ({self.get_object()}) with body: {message_body}")
             send_message(tenant_number, from_number, message_body, message_object=message)
             send_message(vendor_number, from_number, message_body, message_object=message)
             return Response({'status': 'Message sent.'})

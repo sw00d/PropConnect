@@ -10,7 +10,7 @@ import factory
 from django.contrib.auth import get_user_model
 
 from companies.models import Company
-from conversations.models import Tenant, Conversation, PhoneNumber, Vendor
+from conversations.models import Tenant, Conversation, PhoneNumber, Vendor, Message
 from djstripe.models import Subscription, Customer
 from datetime import timedelta
 from django.utils import timezone
@@ -101,6 +101,7 @@ class CompanyFactory(factory.django.DjangoModelFactory):
         return f"Test Company"
 
 
+
 class ConversationFactory(factory.django.DjangoModelFactory):
     tenant = factory.SubFactory(TenantFactory)
     vendor = factory.SubFactory(VendorFactory)
@@ -112,6 +113,14 @@ class ConversationFactory(factory.django.DjangoModelFactory):
     class Meta:
         model = Conversation
 
+
+class MessageFactory(factory.django.DjangoModelFactory):
+    message_content = 'My address is 2093 E. Greenleaf ave san diego CA, 92117'
+    role = "user",
+    conversation = factory.SubFactory(ConversationFactory)
+
+    class Meta:
+        model = Message
 
 # class PaymentMethodFactory(factory.django.DjangoModelFactory):
 #     class Meta:

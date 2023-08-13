@@ -42,7 +42,7 @@ def generate_vendors(company=None):
             'number': '+12086608828',
             'keywords': ['fridge', 'oven', 'dishwasher', 'washer', 'dryer', 'appliance']
         },
-        "air-condition specialist": {
+        "HVAC specialist": {
             'name': 'HVAC Pro Sam',
             'number': '+12086608828',
             'keywords': ['heating', 'cooling', 'ventilation', 'ac', 'furnace', 'hvac']

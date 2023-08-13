@@ -36,7 +36,13 @@ class TestFullConversationFlow(CkcAPITestCase):
         # Arrange
         tenant = Tenant.objects.create(number="1")  # Add necessary parameters
         vendor = Vendor.objects.first()  # Add necessary parameters
-        conversation = Conversation.objects.create(tenant=tenant, vendor=vendor, company=self.company)
+        conversation = Conversation.objects.create(
+            tenant=tenant,
+            vendor=vendor,
+            company=self.company,
+            tenant_intro_message="Hi tenant!",
+            vendor_intro_message="Hi vendor!"
+        )
 
         # Create a mock Twilio client
         mock_client_instance = mock_client.return_value
@@ -63,7 +69,13 @@ class TestFullConversationFlow(CkcAPITestCase):
         # NOW WITH PURCHASING A NUMBER
         PhoneNumber.objects.all().delete()  # Delete the existing phone number
 
-        conversation2 = Conversation.objects.create(tenant=tenant, vendor=vendor, company=self.company)
+        conversation2 = Conversation.objects.create(
+            tenant=tenant,
+            vendor=vendor,
+            company=self.company,
+            tenant_intro_message="Hi tenant!",
+            vendor_intro_message="Hi vendor!"
+        )
 
         # Use the existing phone number
         start_vendor_tenant_conversation(conversation2.id, vendor.id)
@@ -81,12 +93,10 @@ class TestFullConversationFlow(CkcAPITestCase):
         mock_purchase_phone_number.assert_called()  # We should not have needed to purchase a number
 
     @patch.object(stripe.Subscription, 'retrieve')
-    @patch('conversations.utils.send_message')
     @patch('conversations.tasks.purchase_phone_number_util')
     def test_handle_assistant_conversation_with_simple_situation(
         self,
         mock_purchase_phone_number_util,
-        mock_send_message,
         mock_retrieve,
     ):
 
@@ -95,7 +105,7 @@ class TestFullConversationFlow(CkcAPITestCase):
         test_company.save()
 
         request = HttpRequest()
-        request.POST = {'Body': 'Hi the storm broke my window', 'From': '+1234567890', "To": '+0987654321'}
+        request.POST = {'Body': 'Hi the storm broke my window', 'From': '+12345678901', "To": '+0987654321'}
         handle_assistant_conversation(request)
 
         assert Conversation.objects.count() == 1
@@ -111,7 +121,7 @@ class TestFullConversationFlow(CkcAPITestCase):
 
         # Second/follow up message(s)
         request.POST = {'Body': "Sam wood. 2323 greenleaf ave. It has a crack going across it but it's not shattered. maybe the hail got it idk",
-                        'From': '+1234567890', "To": self.company.assistant_phone_number}
+                        'From': '+12345678901', "To": self.company.assistant_phone_number}
 
         handle_assistant_conversation(request)
         second_response = conversation.messages.last().message_content
@@ -122,7 +132,7 @@ class TestFullConversationFlow(CkcAPITestCase):
         # Third/follow up message(s)
         request.POST = {
             'Body': "Nope.",
-            'From': '+1234567890', "To": self.company.assistant_phone_number}
+            'From': '+12345678901', "To": self.company.assistant_phone_number}
 
         handle_assistant_conversation(request)
         third_response = conversation.messages.last().message_content
@@ -133,7 +143,7 @@ class TestFullConversationFlow(CkcAPITestCase):
         # Fourth/follow up message(s)
         request.POST = {
             'Body': "Done.",
-            'From': '+1234567890', "To": self.company.assistant_phone_number}
+            'From': '+12345678901', "To": self.company.assistant_phone_number}
 
         handle_assistant_conversation(request)
         fourth_response = conversation.messages.last().message_content

@@ -220,18 +220,17 @@ const showIntro = ref(false)
 const resending = ref(null)
 
 const vendorOptions = [
-    // These values have to be very specific because they are used to filter vendors via GPT
-    // When adding more, thoroughly test on backend
     { label: 'Plumber', value: 'plumber' },
     { label: 'Electrician', value: 'electrician' },
     { label: 'Handyman', value: 'handyman' },
     { label: 'Appliance Specialist', value: 'appliance specialist' },
-    { label: 'HVAC specialist', value: 'air-condition specialist' },
+    { label: 'HVAC specialist', value: 'HVAC specialist' },
     { label: 'Locksmith', value: 'locksmith' },
     { label: 'Flooring Specialist', value: 'flooring specialist' },
     { label: 'Painter', value: 'painter' },
     { label: 'Drywall Specialist', value: 'drywall specialist' },
     { label: 'Landscaper', value: 'landscaper' },
+    { label: 'Other', value: 'other' },
 ]
 
 const createVendor = async () => {

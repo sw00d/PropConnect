@@ -44,6 +44,9 @@ class Conversation(models.Model):
     needs_more_information = models.BooleanField(default=True)  # TODO Unused
     point_of_contact_has_interjected = models.BooleanField(default=False)
 
+    tenant_intro_message = models.CharField(max_length=800, null=True, blank=True)
+    vendor_intro_message = models.CharField(max_length=800, null=True, blank=True)
+
     def __str__(self):
         return f"Conversation ({self.pk}) between {self.tenant} and vendor {self.vendor}"
 

@@ -14,9 +14,9 @@
         <div>
             <h2>NEW MAINTENANCE REQUEST</h2>
             <br>
-            <b>Tenant Name:</b> John Doe
+            <b>Tenant Name:</b> {{ tenant.name }}
             <br>
-            <b>Tenant Address:</b> 123 Main St, San Francisco, CA 94105
+            <b>Tenant Address:</b> {{ tenant.address }}
             <br>
             <br>
             To view and assign vendor: <a href="{{ SITE_DOMAIN }}/conversations/{{ conversation.id }}/">Click Here</a>

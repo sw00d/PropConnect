@@ -1,15 +1,15 @@
 from queue import Queue
 from unittest import skip
-from unittest.mock import patch, MagicMock, Mock
+from unittest.mock import patch, MagicMock, Mock, call
 from twilio.rest import Client
 
 from twilio.base.exceptions import TwilioRestException
 
 from commands.management.commands.generate_data import generate_vendors
 from conversations.models import Message, Vendor, Conversation, Tenant, PhoneNumber
-from conversations.tasks import purchase_phone_number_util
+from conversations.tasks import purchase_phone_number_util, send_message_task, get_conversation_recap_util
 from conversations.utils import send_message, q
-from factories import ConversationFactory, UserFactory, TwilioNumberFactory, CompanyFactory
+from factories import ConversationFactory, UserFactory, TwilioNumberFactory, CompanyFactory, MessageFactory
 from settings.base import TWILIO_AUTH_TOKEN, TWILIO_ACCOUNT_SID
 from tests.utils import CkcAPITestCase
 from django.urls import reverse
@@ -93,7 +93,9 @@ class ConversationViewSetTestCase(CkcAPITestCase):
         PhoneNumber.objects.create(number="+1234567895", most_recent_conversation=None, is_base_number=False)
 
         data = {
-            'vendor': Vendor.objects.first().pk
+            'vendor': Vendor.objects.first().pk,
+            'tenant_intro_message': 'Hello, this is a test tenant message',
+            'vendor_intro_message': 'Hello, this is a test vendor message',
         }
         user = UserFactory(company=self.company1)
         conversation = ConversationFactory.create(vendor=None, company=self.company1)
@@ -111,12 +113,40 @@ class ConversationViewSetTestCase(CkcAPITestCase):
         self.assertIsNotNone(conversation.vendor_id)
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         assert conversation.vendor.id == Vendor.objects.first().pk
+        assert conversation.tenant_intro_message == 'Hello, this is a test tenant message'
+        assert conversation.vendor_intro_message == 'Hello, this is a test vendor message'
 
         phone_number = PhoneNumber.objects.get(most_recent_conversation=conversation)
         self.assertEqual(phone_number.number, '+1234567895')  # Verify we used the existing number
 
         mock_purchase_phone_number.assert_not_called()  # We should not have needed to purchase a number
 
+        assert Message.objects.all().last().message_content == 'Hello, this is a test tenant message'
+
+    def test_get_conversation_recap_util(self):
+        conversation = ConversationFactory()  # Assuming a simple create works. Adjust as needed.
+
+        MessageFactory(message_content="Hi! I need help.", role="user", conversation=conversation)
+        MessageFactory(message_content="What do you need help with?", role="assistant", conversation=conversation)
+        MessageFactory(message_content="My faucet is broken. Reply DONE if you feel you have provided enough information.", role="user", conversation=conversation)
+
+        recap = get_conversation_recap_util(conversation)
+
+        # Check that the recap contains all messages
+        self.assertIn("Hi! I need help.", recap)
+        self.assertIn("What do you need help with?", recap)
+        self.assertIn("My faucet is broken.", recap)
+
+        # Check that the special string is removed
+        self.assertNotIn("Reply DONE if you feel you have provided enough information.", recap)
+
+        # Check that messages are ordered by their time_sent
+        self.assertTrue(recap.index("Hi! I need help.") < recap.index("What do you need help with?"))
+
+        # Check that the recap contains the right prefixes
+        self.assertIn("- Tenant: Hi! I need help.", recap)
+        self.assertIn("- Assistant: What do you need help with?", recap)
+        self.assertIn("- Tenant: My faucet is broken.", recap)
 
     def test_set_last_viewed(self):
         time = now()
@@ -148,177 +178,55 @@ class ConversationViewSetTestCase(CkcAPITestCase):
         # assert purchased_number.address_sid is not None # test for these eventually. Not working atm
         # assert purchased_number.emergency_address_sid is not None # test for these eventually. Not working atm
 
-    # --------------------------------------------
-    # TODO Fix the tests below this. Testing the queue is proving hard. Running them individually is more reliable than running them all at once
-    # --------------------------------------------
-    @patch('conversations.utils.Client')
-    @skip('Queue has a hard time when running test suite')
-    def test_send_admin_to_tenant_message(self, mock_client):
-        mock_messages = MagicMock()
-        mock_client.return_value.messages = mock_messages
+    @patch('conversations.tasks.logger')
+    @patch('conversations.tasks.Client')
+    def test_send_message_using_test_credentials(self, mock_client, mock_logger):
+        body = 'Hello World'
+        send_message_task('+12086608828', '+15005550006', body)
+        mock_client().messages.create.assert_called_with(from_='+15005550006', to='+12086608828', body=body)
+        mock_logger.info.assert_called_with(
+            '=========================== Sending message to +12086608828 from +15005550006: Hello World')
 
-        self.client.force_authenticate(self.normal_user1)
+    @patch('conversations.utils.error_handler')
+    @patch('conversations.tasks.logger')
+    @patch('conversations.tasks.Client')
+    def test_send_message_with_error(self, mock_client, mock_logger, mock_error_handler):
+        mock_client().messages.create.side_effect = TwilioRestException("Failed", "url", "method", 400)
+        message_object = MessageFactory(message_content="Hello im an error")
+        send_message_task('+12086608828', '+15005550006', message_object.message_content, message_object_id=message_object.id)
+        message_object.refresh_from_db()
+        assert message_object.error_on_send
+        assert message_object.message_content == 'Hello im an error'
+        mock_error_handler.assert_called_once()
 
-        url = reverse('conversations-send-admin-message-to-tenant', kwargs={'pk': self.conversation2.pk})
+    @patch('conversations.tasks.logger')
+    @patch('conversations.tasks.Client')
+    def test_send_message_split_into_chunks(self, mock_Client, mock_logger):
+        # Mock the create method on Client's instance.
+        mock_client_instance = mock_Client.return_value
+        mock_client_instance.messages.create = Mock()
 
-        TwilioNumberFactory(most_recent_conversation=self.conversation2)
-        self.conversation1.refresh_from_db()
+        long_message = 'A' * 1600 + 'B' * 1600 + 'C' * 123  # 2 chunks of 1600 characters
+        send_message_task('+12086608828', '+15005550006', long_message)
+        assert mock_logger.info.call_count == 3
+        assert mock_client_instance.messages.create.call_count == 3
 
-        assert self.conversation2.twilio_number is not None
-        response = self.client.post(url, data={"message_body": "test message"})
-        self.assertEqual(response.status_code, status.HTTP_404_NOT_FOUND)
+        # Validate that the messages sent are actually the correct chunks.
+        first_call, first_args = mock_client_instance.messages.create.call_args_list[0]
+        second_call, second_args = mock_client_instance.messages.create.call_args_list[1]
+        third_call, third_args = mock_client_instance.messages.create.call_args_list[2]
+        # second_call_args, _ = mock_client_instance.messages.create.call_args_list[1]
 
-        TwilioNumberFactory(most_recent_conversation=self.conversation1)
-        self.conversation1.refresh_from_db()
+        assert first_args['body'] == 'A' * 1600
+        assert second_args['body'] == 'B' * 1600
+        assert third_args['body'] == 'C' * 123
 
-        assert self.conversation1.twilio_number is not None
-        url = reverse('conversations-send-admin-message-to-tenant', kwargs={'pk': self.conversation1.pk})
-        response = self.client.post(url, data={"message_body": "test message"})
-        self.assertEqual(q.qsize(), 1)
-        self.assertEqual(response.status_code, status.HTTP_200_OK)
+    @patch('conversations.tasks.logger')
+    @patch('conversations.tasks.Client')
+    def test_send_media(self, mock_Client, mock_logger):
+        # Mock the create method on Client's instance.
+        mock_client_instance = mock_Client.return_value
+        mock_client_instance.messages.create = Mock()
 
-        message_count = Message.objects.filter(
-            conversation=self.conversation1,
-            message_content="test message",
-            role="admin_to_tenant"
-        ).count()
-
-        self.assertEqual(message_count, 1)
-        q.join()
-
-    @patch('conversations.utils.Client')
-    @skip('Queue has a hard time when running test suite')
-    def test_send_admin_to_group_message(self, mock_client):
-        mock_messages = MagicMock()
-        mock_client.return_value.messages = mock_messages
-
-        self.client.force_authenticate(self.normal_user1)
-
-        url = reverse('conversations-send-admin-message-to-group', kwargs={'pk': self.conversation2.pk})
-
-        TwilioNumberFactory(most_recent_conversation=self.conversation2)
-        self.conversation1.refresh_from_db()
-
-        assert self.conversation2.twilio_number is not None
-        response = self.client.post(url, data={"message_body": "test message"})
-        self.assertEqual(response.status_code, status.HTTP_404_NOT_FOUND)
-
-        TwilioNumberFactory(most_recent_conversation=self.conversation1)
-        self.conversation1.refresh_from_db()
-
-        assert self.conversation1.twilio_number is not None
-        url = reverse('conversations-send-admin-message-to-group', kwargs={'pk': self.conversation1.pk})
-        response = self.client.post(url, data={"message_body": "test message"})
-        self.assertEqual(q.qsize(), 2)
-        self.assertEqual(response.status_code, status.HTTP_200_OK)
-
-        message_count = Message.objects.filter(
-            conversation=self.conversation1,
-            message_content="test message",
-            role="admin"
-        ).count()
-
-        self.assertEqual(message_count, 1)
-        q.join()
-
-    @patch('conversations.utils.Client')
-    @skip('Queue has a hard time when running test suite')
-    def test_send_message_util(self, mock_client):
-        mock_messages = MagicMock()
-        mock_client.return_value.messages = mock_messages
-        send_message('+1234567890', '+0987654321', 'Test message')
-        self.assertEqual(q.qsize(), 1)
-        q.join()
-
-    @patch('conversations.utils.Client')
-    @skip('Queue has a hard time when running test suite')
-    def test_send_message_exception(self, mock_client):
-        mock_messages = MagicMock()
-        mock_messages.create.side_effect = TwilioRestException('Test error', 'Test message')
-        mock_client.return_value.messages = mock_messages
-        send_message('+1234567890', '+0987654321', 'Test message')
-        self.assertEqual(q.qsize(), 1)
-        q.join()
-
-    @patch('conversations.utils.Client')
-    @skip('Queue has a hard time when running test suite')
-    def test_send_message_media_urls(self, mock_client):
-        mock_messages = MagicMock()
-        mock_client.return_value.messages = mock_messages
-        send_message('+1234567890', '+0987654321', 'Test message', media_urls='https://placehold.co/600x400')
-        self.assertEqual(q.qsize(), 2)
-        q.join()
-
-    @patch('conversations.utils.Client')
-    @skip('Queue has a hard time when running test suite')
-    def test_multiple_send_message_calls(self, mock_client):
-        # Prepare
-        message = "Hello World!"
-        to_number = "+1234567890"
-        from_number = "+0987654321"
-
-        # Create a mock Twilio client
-        client_instance = mock_client.return_value
-
-        client_instance.messages.create = MagicMock()
-        mock_client.return_value = client_instance
-
-        qsizes = []
-        for _ in range(4):
-            send_message(to_number, from_number, message)
-            qsizes.append(q.qsize())
-
-        self.assertEqual(len(qsizes), 4)
-        q.join()
-        self.assertEqual(q.qsize(), 0)
-
-    @patch('conversations.utils.Client')
-    @skip('Queue has a hard time when running test suite')
-    def test_send_message_too_long(self, mock_client):
-        # Prepare
-        message = "Hello World!" * 200
-        to_number = "+1234567890"
-        from_number = "+0987654321"
-
-        # Create a mock Twilio client
-        client_instance = mock_client.return_value
-
-        client_instance.messages.create = MagicMock()
-        mock_client.return_value = client_instance
-
-        # Run
-        send_message(to_number, from_number, message)
-
-        # Wait for the queue to empty
-        self.assertEqual(q.qsize(), 2)
-        q.join()
-        self.assertEqual(q.qsize(), 0)
-
-
-class SendMessageTest(CkcAPITestCase):
-    @patch('conversations.utils.Client')
-    def test_send_message_error_setting_message_field(self, mock_client):
-        # Create the mock Twilio client
-        mock_messages = MagicMock()
-        mock_messages.create.side_effect = TwilioRestException('Test error', 'Test message')
-        mock_client.return_value.messages = mock_messages
-
-        # Create mock message object with necessary attributes
-        mock_message_object = MagicMock()
-        mock_message_object.id = 1
-        mock_message_object.error_on_send = False
-
-        # Create queue
-        q = Queue()
-
-        # Replace 'your_module' with the name of the actual module where `send_message` is defined
-        with patch('conversations.utils.q', q):
-            # Run send_message function
-            send_message('+1234567890', '+0987654321', 'test message', message_object=mock_message_object)
-
-        # Get the queued function and execute it
-        work_message = q.get()
-        work_message()
-
-        # Check that the error_on_send attribute was updated
-        self.assertTrue(mock_message_object.error_on_send)
+    def test_send_message_task_rate_limit(self):
+        assert send_message_task.rate_limit == '0.66/s'

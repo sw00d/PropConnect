@@ -33,7 +33,7 @@ class Company(models.Model):
     @property
     def has_active_subscription(self):
         if self.current_subscription:
-            return self.current_subscription.status == 'active'
+            return self.current_subscription.status == 'active' or self.current_subscription.status == 'trialing'
         return False
 
 

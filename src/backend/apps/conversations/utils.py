@@ -6,6 +6,8 @@ import threading
 import queue
 import time
 import openai
+
+from conversations.tasks import send_message_task
 from utils import email
 
 from twilio.base.exceptions import TwilioRestException
@@ -61,7 +63,10 @@ def play_the_middle_man_util(request):
             body=body,
             media_urls=media_urls
         )
-        send_message(conversation.vendor.number, to_number, f"[TENANT]: {body}", media_urls, message_object=message)
+        body_message = ''
+        if body:
+            body_message = f"[TENANT]: {body}"
+        send_message(conversation.vendor.number, to_number, body_message, media_urls, message_object=message)
     elif is_from_vendor:
         logger.info(f'- Forwarding message from vendor to tenant. Conversation: {conversation.id}')
         message = create_message_and_content(
@@ -72,7 +77,10 @@ def play_the_middle_man_util(request):
             body=body,
             media_urls=media_urls
         )
-        send_message(conversation.tenant.number, to_number, f"[VENDOR]: {body}", media_urls, message_object=message)
+        body_message = ''
+        if body:
+            body_message = f"[VENDOR]: {body}"
+        send_message(conversation.tenant.number, to_number, body_message, media_urls, message_object=message)
 
     # Nothing should be returned because we're just forwarding the message
     return None
@@ -122,7 +130,8 @@ def handle_assistant_conversation(request):
 
     tenant.save()
 
-    conversation_with_point_of_contact = Conversation.objects.filter(tenant=tenant, vendor=None, point_of_contact_has_interjected=True)
+    conversation_with_point_of_contact = Conversation.objects.filter(tenant=tenant, vendor=None,
+                                                                     point_of_contact_has_interjected=True)
 
     if conversation_with_point_of_contact.exists():
         # TODO Test this
@@ -222,7 +231,7 @@ def create_chat_completion(conversation, retry_counter=10):
             model="gpt-3.5-turbo",
             messages=conversation
         )
-        print("GPT Response: ",  response['choices'][0]['message']['content'].strip())
+        print("GPT Response: ", response['choices'][0]['message']['content'].strip())
         return response['choices'][0]['message']['content'].strip()
     except openai.error.RateLimitError:
         if retry_counter > 0:
@@ -327,65 +336,20 @@ def assign_tenant_name_and_address(tenant, name, address):
 
 
 def send_message(to_number, from_number, message, media_urls=None, message_object=None):
-    # from_number HAS TO BE A TWILIO NUMBER
+    kwargs = {
+        'to_number': to_number,
+        'from_number': from_number,
+        'message': message,
+        'media_urls': media_urls,
+    }
+
+    if message_object:
+        kwargs['message_object_id'] = message_object.id
+
     if 'pytest' in argv[0]:
-        print('pytest detected. Using test credentials.')
-        client = Client(TWILIO_TEST_ACCOUNT_SID, TWILIO_TEST_AUTH_TOKEN)
-        from_number = "+15005550006"  # Twilio test number -- has to be this to work in tests unless we mock
+        send_message_task(**kwargs)
     else:
-        client = Client(twilio_sid, twilio_auth_token)
-
-    # Split message into chunks of 1600 characters each
-    message_chunks = [message[i:i + 1600] for i in range(0, len(message), 1600)]
-    for message_chunk in message_chunks:
-        def work_message():
-            logger.info(
-                f'=========================== Sending message to {to_number} from {from_number}: {message_chunk}')
-            try:
-                message_arguments = {
-                    'from_': from_number,
-                    'to': to_number,
-                    'body': message_chunk
-                }
-
-                client.messages.create(**message_arguments)
-
-            except TwilioRestException as e:
-                print(e)
-                if message_object:
-                    print("Setting error on send to true for: ", message_object)
-                    message_object.error_on_send = True
-                    message_object.save()
-
-                logger.error(e)
-                error_handler(e)
-
-        # Add the work to the queue
-        q.put(work_message)
-
-    if media_urls:
-        logger.info('Sending media')
-        message_arguments = {
-            'from_': from_number,
-            'to': to_number,
-        }
-
-        # Twilio expects a list of media URLs
-        if isinstance(media_urls, list):
-            message_arguments['media_url'] = media_urls
-        else:
-            message_arguments['media_url'] = [media_urls]
-
-        def work_media():
-            try:
-                client.messages.create(**message_arguments)
-            except TwilioRestException as e:
-                print(e)
-                logger.error(e)
-                error_handler(e)
-
-        # Add the work to the queue
-        q.put(work_media)
+        send_message_task.delay(**kwargs)
 
 
 def error_handler(e):

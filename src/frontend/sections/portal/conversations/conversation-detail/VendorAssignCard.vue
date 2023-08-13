@@ -64,6 +64,56 @@
                 </v-btn>
             </v-sheet>
         </div>
+
+        <hr class="my-4">
+
+        <div class="font-20 font-weight-bold">
+            Customize Intro Messages
+            <v-btn
+                color="white"
+                class="ml-2"
+                height="30px"
+                width="30px"
+                icon
+                @click="editIntroMessages = !editIntroMessages"
+            >
+                <v-icon v-if="!editIntroMessages">mdi-chevron-right</v-icon>
+                <v-icon v-else>mdi-chevron-down</v-icon>
+            </v-btn>
+        </div>
+        <v-slide-y-transition>
+            <div v-if="editIntroMessages">
+                <div class="mb-6 mt-5 font-14 opacity-8">
+                    Craft the first message that will be sent to the tenant and vendor in this conversation.
+                    Include any details for the vendor that you feel is relevant.
+                </div>
+                <v-row>
+                    <v-col cols="12" md="6">
+                        <v-textarea
+                            v-model="tenantIntroMessage"
+                            :rules="[formRules.ruleIntroMessage]"
+                            outlined
+                            label="Intro Message to Tenant"
+                            counter="800"
+                            variant="outlined"
+                        />
+                    </v-col>
+                    <v-col>
+                        <v-textarea
+                            v-model="vendorIntroMessage"
+                            :rules="[formRules.ruleIntroMessage]"
+                            outlined
+                            label="Intro Message to Vendor"
+                            counter="800"
+                            variant="outlined"
+                            rows="8"
+                        />
+                    </v-col>
+                </v-row>
+            </div>
+
+        </v-slide-y-transition>
+
     </v-alert>
 </template>
 
@@ -73,6 +123,8 @@
 // Data
 import { useRequest } from "~/composables/useRequest"
 import { useSnackbarStore } from "~/store/snackbarStore"
+import { useFormRules } from "~/composables/rules"
+import { useUserStore } from "~/store/userStore"
 
 const props = defineProps({
     conversation: {
@@ -80,14 +132,40 @@ const props = defineProps({
         required: true,
     },
 })
+
+const formRules = useFormRules()
 const emits = defineEmits(['refreshConversation'])
 const assigning = ref(false)
 const vendors = ref([])
-const selectedVendor = ref(null)
 const selectRef = ref(null)
 const snackbar = useSnackbarStore()
+const auth = useUserStore()
+const editIntroMessages = ref(true)
+const selectedVendor = ref(null)
+
+const tenantIntroMessage = ref('')
+
+const vendorIntroMessage = ref(`Hey there! I'm here on part of the ${ auth.authUser.company?.name } team.
+I have a tenant who is requesting some help.
+
+Tenant: ${ props.conversation.tenant?.name }
+Address: ${ props.conversation.tenant?.address }
+
+You are now connected with the tenant and can communicate directly with them here.`)
+
 
 // Lifecycle
+watch(selectedVendor, (newVendor, oldVendor) => {
+    if (!oldVendor && newVendor) {
+        editIntroMessages.value = true
+    }
+    tenantIntroMessage.value = `Hey there! I'm here on part of the ${ auth.authUser.company?.name } team.
+I've informed the vendor${ selectedVendor.value ? `, ${ selectedVendor.value?.name },` : '' } of your situation.
+
+You are now connected with the vendor and can communicate directly with them here.`
+}, { immediate: true })
+
+
 onMounted(() => {
     fetchVendors()
 })
@@ -99,6 +177,12 @@ const selectVendor = (item) => {
     }
 }
 const assignVendor = async () => {
+    // console.log({
+    //                     vendor: selectedVendor.value?.id,
+    //             tenant_intro_message: tenantIntroMessage.value,
+    //             vendor_intro_message: vendorIntroMessage.value,
+    // })
+    // return
     if (!selectedVendor.value?.has_opted_in || !selectedVendor.value?.id) {
         alert("Choose another vendor")
         return
@@ -110,6 +194,8 @@ const assignVendor = async () => {
             method: 'POST',
             body: {
                 vendor: selectedVendor.value?.id,
+                tenant_intro_message: tenantIntroMessage.value,
+                vendor_intro_message: vendorIntroMessage.value,
             }
         })
         await response.execute()
