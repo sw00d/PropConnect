@@ -107,9 +107,9 @@
                                 <!--                </v-btn>-->
                             </v-card-title>
                             <v-card-text class="d-flex align-center justify-center mt-16 flex-column flex-1 relative">
-                                <div class="text-body-1 font-weight-bold">
-                                    Coming soon
-                                </div>
+                                <v-btn class="text-body-1 font-weight-bold" to="/conversations">
+                                   View Conversations
+                                </v-btn>
                                 <v-sheet width="80%">
                                     <v-img :src="convoImg"/>
                                 </v-sheet>
@@ -136,9 +136,9 @@
                                 <v-sheet width="50%" max-height="300px">
                                     <v-img :src="vendorImg"/>
                                 </v-sheet>
-                                <div class="text-body-1 font-weight-bold d-flex justify-center ml-10">
-                                    Coming soon
-                                </div>
+                                <v-btn class="text-body-1 font-weight-bold d-flex justify-center ml-10" to="/vendors">
+                                    View Vendors
+                                </v-btn>
                             </v-card-text>
                         </v-card>
                     </v-slide-x-reverse-transition>
