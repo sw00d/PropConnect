@@ -30,10 +30,6 @@ class CompanyViewSet(viewsets.ModelViewSet):
 
     def get_permissions(self):
         self.permission_classes = [IsAuthenticated]
-        # if self.action in ['create', 'update', 'partial_update']:
-        #     self.permission_classes = [IsAuthenticated]
-        # else:
-        #     self.permission_classes = [AllowAny]
         return super().get_permissions()
 
     def get_serializer_class(self):
