@@ -12,8 +12,7 @@ from openai import OpenAIError
 from commands.management.commands.generate_data import generate_vendors
 from conversations.models import Conversation, Vendor, PhoneNumber, Tenant, Message
 from conversations.tasks import set_old_conversations_to_not_active, start_vendor_tenant_conversation
-from conversations.utils import handle_assistant_conversation, play_the_middle_man_util, \
-    create_chat_completion, send_message, get_message_history_for_gpt
+from conversations.utils import handle_assistant_conversation, create_chat_completion, create_chat_completion_with_functions
 from tests.utils import CkcAPITestCase
 from factories import CompanyFactory
 
@@ -151,40 +150,29 @@ class TestFullConversationFlow(CkcAPITestCase):
         assert type(fourth_response) == str
         assert conversation.messages.count() == 9
 
-        assert conversation.tenant.name is not None
-        assert conversation.tenant.address is not None
-
         assert len(mail.outbox) == 1
 
-        #  Make sure a conversation was started between the two parties
-        # assert conversation.messages.last().receiver_number == conversation.tenant.number
-        #
-        # # New phone number should have been purchased from twilio and created in our db
-        # assert PhoneNumber.objects.count() == 1
-        # assert PhoneNumber.objects.first().most_recent_conversation == conversation
-        # conversation.refresh_from_db()
-        #
-        # assert conversation.vendor.name == 'Appliance Specialist Sam'
-        # assert conversation.messages.count() == 18
-        #
-        # # Test middle-man webhook/sms forwarding between vendor and tenant
-        # request = HttpRequest()
-        # request.POST = {'Body': 'Test message from tenant', 'From': conversation.tenant.number,
-        #                 'To': PhoneNumber.objects.first().number}  # from tenant
-        # response = play_the_middle_man_util(request)
-        # assert conversation.messages.last().message_content == 'Test message from tenant'
-        # assert conversation.messages.last().sender_number == conversation.tenant.number
-        #
-        # request = HttpRequest()
-        # request.POST = {'Body': 'Test message from vendor', 'From': conversation.vendor.number,
-        #                 'To': PhoneNumber.objects.first().number}  # from vendor
-        # response = play_the_middle_man_util(request)
-        # assert conversation.messages.last().message_content == 'Test message from vendor'
-        # assert conversation.messages.last().sender_number == Conversation.objects.first().vendor.number
-        #
-        # assert conversation.company == self.company
-        #
-        # assert response is None  # Nothing should be returned because we're just forwarding the message
+        def populate_conversation_details(conversation, attempts=0):
+            # Base cases
+            if attempts >= 10:
+                return
+            if conversation.tenant.name is not None and conversation.tenant.address is not None:
+                print('Assigned tenant name and address in {} attempts'.format(attempts))
+                return
+
+            # Call the chat completion function
+            create_chat_completion_with_functions(conversation)
+
+            # Recursive call
+            populate_conversation_details(conversation, attempts + 1)
+
+        # Usage
+        if conversation.tenant.name is None or conversation.tenant.address is None:
+            populate_conversation_details(conversation)
+
+        assert conversation.tenant.name is not None
+        assert conversation.tenant.address is not None
+        assert False
 
     def test_set_old_conversations_to_not_active(self):
         tenant = Tenant.objects.create(number="1")  # Add necessary parameters
