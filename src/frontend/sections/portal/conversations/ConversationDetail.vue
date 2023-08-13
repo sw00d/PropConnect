@@ -106,28 +106,29 @@
                 </v-col>
 
                 <v-col md="6" sm="12">
-                    <div class="d-flex align-center">
-
-                        <v-chip
-                            class="mr-3"
-                            @click="switchConversationView('assistant')"
-                            :variant="activeConversationType === 'vendor' ? 'outlined' : 'flat'"
+                    <div>
+                        <div class="d-flex align-center">
+                            <v-chip
+                                class="mr-3"
+                                @click="switchConversationView('assistant')"
+                                :variant="activeConversationType === 'vendor' ? 'outlined' : 'flat'"
+                            >
+                                Assistant
+                            </v-chip>
+                            <v-chip
+                                :disabled="!conversation.vendor?.number"
+                                @click="switchConversationView('vendor')"
+                                :variant="activeConversationType === 'assistant' ? 'outlined' : 'flat'"
+                            >
+                                Vendor
+                            </v-chip>
+                        </div>
+                        <v-sheet
+                            class="font-12 bg-transparent ml-1 mt-2"
                         >
-                            Assistant
-                        </v-chip>
-                        <v-chip
-                            :disabled="!conversation.vendor?.number"
-                            @click="switchConversationView('vendor')"
-                            :variant="activeConversationType === 'assistant' ? 'outlined' : 'flat'"
-                        >
-                            Vendor
-                        </v-chip>
-                        <v-sheet width="200px" v-if="activeConversationType === 'assistant'"
-                                 class="font-12 ml-3 bg-transparent">
-                            *The initial conversation with the AI
-                        </v-sheet>
-                        <v-sheet width="200px" v-else class="font-12 ml-3 bg-transparent">
-                            *The conversation between the vendor and the tenant
+                            {{
+                                activeConversationType === 'assistant' ? 'The initial conversation with the AI' : 'The conversation between the vendor and the tenant'
+                            }}
                         </v-sheet>
                     </div>
                     <div
@@ -138,64 +139,46 @@
                         Tenant and vendor numbers are the same, so this conversation history may not be accurate
                     </div>
                     <v-sheet
-                        class="border pa-3 rounded-lg mt-4 overflow-auto bg-surface"
+                        class="border pa-3 rounded-lg mt-2 overflow-auto bg-surface"
                         max-height="80vh"
                         ref="conversationContainerRef"
                     >
+                        <v-row class="d-flex" v-if="activeConversationType === 'vendor'">
+                            <v-col>
+                                <div class="font-12 text-highContrast">
+                                    Initial Message to Tenant
+                                </div>
+                                <div class="bg-grey font-14 rounded-lg pa-2">
+
+                                    {{ conversation.tenant_intro_message }}
+                                </div>
+                            </v-col>
+                            <v-col>
+                                <div class="font-12 text-highContrast">
+                                    Initial Message to Vendor
+                                </div>
+                                <div class="bg-grey font-14 rounded-lg pa-2">
+
+                                    {{ conversation.vendor_intro_message }}
+                                </div>
+                            </v-col>
+                        </v-row>
                         <div
                             v-for="(message,i) in activeConversationMessages"
                             :key="i"
                             class="d-flex flex-column"
                         >
-                            <div v-if="message.role === 'user' && message.sender_number === tenant?.number"
-                                 class="left-msg">
-                                <div class="font-12 text-highContrast">
-                                    {{
-                                        conversation.tenant?.name || `Tenant ${$formatPhoneNumber(conversation.tenant.number)}`
-                                    }}
-                                </div>
-                                <div class="rounded-lg pa-2 bg-surfaceSecondary">
-                                    <MessageContent :message="message"/>
-                                </div>
-                            </div>
-
-                            <div v-else-if="vendor?.number === message.sender_number" class="right-msg">
-                                <div class="font-12 text-highContrast text-right">
-                                    {{
-                                        conversation.vendor?.name || `Vendor ${$formatPhoneNumber(conversation.vendor.number)}`
-                                    }}
-                                </div>
-                                <div class="rounded-lg pa-2 bg-primary">
-                                    <MessageContent :message="message"/>
-                                </div>
-                            </div>
-
-                            <div v-else-if="message.role === 'assistant'" class="right-msg mt-3">
-                                <div class="font-12 text-highContrast text-right">
-                                    {{
-                                        activeConversationType === 'assistant' ? 'AI Assistant' : conversation.vendor?.name
-                                    }}
-                                </div>
-                                <div class="rounded-lg pa-2 bg-primary">
-                                    <MessageContent :message="message"/>
-                                </div>
-                            </div>
-
-                            <div v-else-if="message.role === 'admin' || message.role === 'admin_to_tenant'"
-                                 class="right-msg mt-3">
-                                <div class="font-12 text-highContrast text-right">
-                                    Property Manager
-                                </div>
-                                <div class="rounded-lg pa-2 bg-blue">
-                                    <MessageContent :message="message"/>
-                                </div>
-                            </div>
-
+                            <Message
+                                :message="message"
+                                :tenant="tenant"
+                                :vendor="vendor"
+                                :activeConversationType="activeConversationType"
+                            />
                         </div>
                     </v-sheet>
 
 
-                    <div class="mt-3 text-right">* Refresh to load new messages</div>
+                    <div class="mt-3 text-right font-12">* Refresh to load new messages</div>
 
                     <div class="mt-2">
                         <div class="font-12 opacity-8 mb-1">Property manager:</div>
@@ -208,7 +191,7 @@
                                 class="mr-2"
                                 auto-grow
                                 rows="1"
-                                :disabled="!convoIsActive"
+                                :disabled="disabledCustomMessage"
                             />
                             <!--            TODO Disable this if the convo isn't active aka 3 days old I think? -->
                             <v-btn
@@ -217,20 +200,21 @@
                                 color="primary"
                                 :loading="sendingMessage"
                                 @click="sendMessage"
-                                :disabled="!convoIsActive || !message?.length"
+                                :disabled="disabledCustomMessage && !message?.length"
                             >
                                 Send
                             </v-btn>
                         </div>
                         <v-alert
-                            v-if="!conversation.point_of_contact_has_interjected && activeConversationType === 'assistant'"
+                            v-if="activeConversationType === 'assistant' && !conversation.vendor"
                             color="primary"
                             border="start"
                             variant="tonal"
                             class="text-warning d-flex weight-700 mt-3"
                         >
                             {{
-                                activeConversationType === 'assistant' && 'If you interject here, we will bypass all AI responses for the remainder of the conversation.'
+                                activeConversationType === 'assistant' &&
+                                'If you interject here, we will bypass all AI responses for the remainder of the conversation.'
                             }}
                         </v-alert>
 
@@ -248,7 +232,7 @@ import {useRoute} from 'vue-router'
 import {useRequest} from "../../../composables/useRequest"
 import {onMounted, ref, nextTick} from 'vue'
 import dayjs from "dayjs"
-import MessageContent from "../../../components/MessageContent"
+import Message from "../../../components/Message/Message.vue"
 import {useSnackbarStore} from "~/store/snackbarStore";
 import VendorAssignCard from "~/sections/portal/conversations/conversation-detail/VendorAssignCard.vue";
 
@@ -280,8 +264,8 @@ const activeConversationMessages = computed(() => {
     }
 })
 
-const convoIsActive = computed(() => {
-    return conversation.value.is_active || activeConversationToggle.value === 0
+const disabledCustomMessage = computed(() => {
+    return !conversation.value.is_active || (activeConversationType.value === 'assistant' && conversation.value.vendor)
 })
 
 const fetchConversation = async () => {
@@ -376,14 +360,4 @@ onMounted(() => {
     align-items center
 }
 
-.left-msg {
-    align-self: start;
-    max-width: 66%;
-}
-
-.right-msg {
-    align-self: end;
-    max-width: 66%;
-
-}
 </style>

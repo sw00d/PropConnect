@@ -78,6 +78,8 @@ class ConversationDetailSerializer(serializers.ModelSerializer):
             'vendor_messages',
             'twilio_number',
             'point_of_contact_has_interjected',
+            'tenant_intro_message',
+            'vendor_intro_message',
         )
 
 

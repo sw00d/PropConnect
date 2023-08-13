@@ -41,8 +41,7 @@ class Conversation(models.Model):
     vendor_detection_attempts = models.IntegerField(default=0)
     address = models.CharField(max_length=200, null=True)
     waiting_on_property_manager = models.BooleanField(default=False)
-    needs_more_information = models.BooleanField(default=True)  # TODO Unused
-    point_of_contact_has_interjected = models.BooleanField(default=False)
+    point_of_contact_has_interjected = models.BooleanField(default=False)  # This is if PM has sent a message to the tenant
 
     tenant_intro_message = models.CharField(max_length=800, null=True, blank=True)
     vendor_intro_message = models.CharField(max_length=800, null=True, blank=True)
