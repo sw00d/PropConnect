@@ -1,3 +1,4 @@
+import json
 import logging
 from sys import argv
 import requests
@@ -5,6 +6,9 @@ import threading
 import queue
 import time
 import openai
+
+from conversations.tasks import send_message_task
+from utils import email
 
 from twilio.base.exceptions import TwilioRestException
 from twilio.rest import Client
@@ -51,7 +55,7 @@ def play_the_middle_man_util(request):
 
     if is_from_tenant:
         logger.info(f'- Forwarding message from tenant to vendor. Conversation: {conversation.id}')
-        create_message_and_content(
+        message = create_message_and_content(
             sender_number=conversation.tenant.number,
             receiver_number=conversation.vendor.number,
             role="user",
@@ -59,10 +63,13 @@ def play_the_middle_man_util(request):
             body=body,
             media_urls=media_urls
         )
-        send_message(conversation.vendor.number, to_number, f"[TENANT]: {body}", media_urls)
+        body_message = ''
+        if body:
+            body_message = f"[TENANT]: {body}"
+        send_message(conversation.vendor.number, to_number, body_message, media_urls, message_object=message)
     elif is_from_vendor:
         logger.info(f'- Forwarding message from vendor to tenant. Conversation: {conversation.id}')
-        create_message_and_content(
+        message = create_message_and_content(
             sender_number=conversation.vendor.number,
             receiver_number=conversation.tenant.number,
             role="user",
@@ -70,7 +77,10 @@ def play_the_middle_man_util(request):
             body=body,
             media_urls=media_urls
         )
-        send_message(conversation.tenant.number, to_number, f"[VENDOR]: {body}", media_urls)
+        body_message = ''
+        if body:
+            body_message = f"[VENDOR]: {body}"
+        send_message(conversation.tenant.number, to_number, body_message, media_urls, message_object=message)
 
     # Nothing should be returned because we're just forwarding the message
     return None
@@ -103,8 +113,6 @@ def create_message_and_content(sender_number, receiver_number, role, conversatio
 
 
 def handle_assistant_conversation(request):
-    from .tasks import start_vendor_tenant_conversation
-
     logger.info(
         "Message Received! \n"
         f"from number: , {request.POST.get('From', None)} \n"
@@ -112,7 +120,7 @@ def handle_assistant_conversation(request):
         f"body: , {request.POST.get('Body', None)} \n"
     )
 
-    # Handles the initial conversation between the tenant and the bot
+    # Handles the initial conversation between the tenant and the AI
     from_number = request.POST.get('From', None)
     to_number = request.POST.get('To', None)
     body = request.POST.get('Body', None)
@@ -122,29 +130,42 @@ def handle_assistant_conversation(request):
 
     tenant.save()
 
-    # TODO filter this by time as well. Should be a new convo after a few days maybe?
-    conversation, _ = Conversation.objects.get_or_create(tenant=tenant, vendor=None)
-    conversation.company = company
+    conversation_with_point_of_contact = Conversation.objects.filter(tenant=tenant, vendor=None,
+                                                                     point_of_contact_has_interjected=True)
 
+    if conversation_with_point_of_contact.exists():
+        # TODO Test this
+        # This is for when a prop manager has interjected and is talking to the tenant via the web app.
+        # We'll want to skip all AI in this case
+        # TODO Should be a web socket eventually
+        Message.objects.create(
+            message_content=body,
+            role="user",
+            conversation=conversation_with_point_of_contact.first(),
+            sender_number=from_number,
+            receiver_number=to_number,
+        )
+        return None
+
+    # TODO filter this by time as well. Should be a new convo after a few days maybe?
+    conversation, _ = Conversation.objects.get_or_create(tenant=tenant, vendor=None, waiting_on_property_manager=False)
+    conversation.company = company
     conversation.save()
 
     logger.info(company)
 
-    if conversation.vendor_detection_attempts > 2:
-        return "Sorry, it looks like your issue is out of the scope of what this bot handles. Please contact your property manager directly."
-
-    if company.current_subscription is None:
+    if company is None or company.current_subscription is None:
         return f"This assistant is not active. Please contact your property manager directly."
 
     if conversation.messages.count() == 0:
-        vocations = Vendor.objects.filter(active=True, has_opted_in=True, company=company).values_list('vocation', flat=True)
-        vocations_set = set(vocations)
-
         content = f"You are a helpful assistant for a property management company, {conversation.company.name}," \
                   "that communicates via text messages with tenants to handle their maintenance issues. " \
                   "Your primary goal is to collect the tenant's full name, address, and a detailed description of the problem they are experiencing. " \
-                  "Once you have gathered this information, you need to suggest the type of profession they might need for their situation (without explicitly naming the profession in your response)." \
-                  f"The profession types available include {vocations_set}."
+                  "Once they have provided their name and address, you can keep asking for more information over and over again. Once the user responds" \
+                  "with DONE or the conversation exceeds 10 messages (but please don't tell them this)," \
+                  " the property manager will be informed and the tenant will be put in contact with the vendor via" \
+                  "a direct text message conversation that we set up just for their conversation. Respond to the user in responses less than 160 characters."
+
         Message.objects.create(
             message_content=content,
             role="system",
@@ -163,130 +184,45 @@ def handle_assistant_conversation(request):
 
     conversation_json = get_message_history_for_gpt(conversation)
 
-    completion_from_gpt = create_chat_completion(conversation_json)
-    # TODO Only do vendor check if proposed vendor isn't populated?
-    vendor_found = get_vendor_from_conversation(conversation)
-    last_assistant_message = Message.objects.filter(conversation=conversation, role="assistant").last()
+    if not tenant.name or not tenant.address:
+        create_chat_completion_with_functions(conversation)
 
-    confirmation_message_conditions = [
-        'If that sounds like the correct vendor for your situation, reply YES, otherwise reply NO.',
-        "I'm sorry! I'm a little confused. Please reply YES or NO."
-    ]
+    response_to_send = create_chat_completion(conversation_json)
 
-    # Check if the last message from assistant was a vendor suggestion or a confusion clarification
-    if last_assistant_message and confirmation_message_conditions[0] in last_assistant_message.message_content:
-
-        yes_synonyms = ['yes', 'yep', 'yeah', 'yup', 'sure', 'absolutely', 'definitely', 'certainly', 'yea',
-                        'affirmative', 'uh-huh', 'indeed', 'of course', 'true']
-        no_synonyms = ['no', 'nope', 'nah', 'negative', 'not at all', 'nay', 'absolutely not', 'by no means',
-                       'certainly not', 'definitely not']
-
-        # Last step -- detect vendor confirmation
-        if any(word in body.lower() for word in yes_synonyms) and not any(word in body.lower() for word in no_synonyms):
-            # Vendor is confirmed
-            response = "Thanks for confirming! I'll connect you with the vendor now. You should be receiving a text " \
-                       "shortly."
-
-            if 'pytest' in argv[0]:
-                # Call without delay during pytests
-                start_vendor_tenant_conversation(conversation.id, conversation.proposed_vendor.id)
-            else:
-                logger.info(f'Starting vendor tenant conversation. Conversation: {conversation.id}')
-                start_vendor_tenant_conversation.delay(conversation.id, conversation.proposed_vendor.id)
-
-        elif any(word in body.lower() for word in no_synonyms) and not any(
-            word in body.lower() for word in yes_synonyms):
-            logger.info(f'Vendor was denied by user. Conversation: {conversation.id}')
-
-            # Vendor is denied
-            response = "Oh sorry about that! Either tell me more specifics about your situation, or you can reach out " \
-                       "to your property manager."  # don't include period here (twilio hates it)
-
-            conversation.proposed_vendor = None
-            conversation.save()
-
-        else:
-            # Unexpected response
-            response = completion_from_gpt
-
-        Message.objects.create(
-            message_content=response,
-            role="assistant",
-            conversation=conversation,
-            sender_number=to_number,
-            receiver_number=from_number
-        )
-        send_message(from_number, to_number, response)
-        return None
-
-    elif vendor_found and Message.objects.filter(conversation=conversation, role="user").count() > 1:
-        # Second to last step -- detect vendor confirmation
-
-        # Hardcoded success message right before we connect the vendor and tenant
-        vendor_found_response = f"Thanks! Sounds good, I think our {vendor_found.vocation} is best suited for your situation. " \
-                                f"If that sounds like the correct vendor for your situation, reply YES, otherwise reply NO."
-        Message.objects.create(
-            message_content=vendor_found_response,
-            role="assistant",
-            conversation=conversation,
-            sender_number=to_number,
-            receiver_number=from_number
-        )
-        conversation.proposed_vendor = vendor_found
+    done_synonyms = ['done', 'done.', 'done!']
+    if body.strip().lower() in done_synonyms or conversation.messages.count() > 10:
+        conversation.waiting_on_property_manager = True
         conversation.save()
+        response_to_send = "Thanks for reaching out! You'll be receiving a text from our staff shortly!"
+        property_manager = conversation.company.point_of_contact
+        email.new_maintenance_request(property_manager.email, conversation)
 
-        return vendor_found_response
-    else:
-        Message.objects.create(
-            message_content=completion_from_gpt,
-            role="assistant",
-            conversation=conversation,
-            sender_number=to_number,
-            receiver_number=from_number
-        )
-        send_message(from_number, to_number, completion_from_gpt)
-        return None
+    elif conversation.messages.count() > 3:
+        response_to_send += "\n\n\n Reply DONE if you feel you have provided enough information."
+
+    message = Message.objects.create(
+        message_content=response_to_send,
+        role="assistant",
+        conversation=conversation,
+        sender_number=to_number,
+        receiver_number=from_number
+    )
+    send_message(from_number, to_number, response_to_send, message_object=message)
+    return None
 
 
 def get_message_history_for_gpt(conversation):
     messages = conversation.messages.all()
     serializer = MessageSerializer(messages, many=True)
-
+    # TODO Factor in admin_to_tenant and admin roles here for messages
     data = []
     for item in serializer.data:
+        content = item['message_content'].replace('\nReply DONE if you feel you have provided enough information.', '')
         data.append({
             'role': item['role'],
-            'content': item['message_content'],
+            'content': content,
         })
     return data
-
-
-def get_vendor_from_conversation(conversation):
-    # GPT approach (less dumb than keyword but still not perfect)
-    vocations = "`, `".join(list(Vendor.objects.filter(active=True, has_opted_in=True, company=conversation.company, company__isnull=False).values_list('vocation', flat=True)))
-    user_messages = '. '.join(list(conversation.messages.filter(role="user").values_list('message_content', flat=True)))
-
-    prompt = (
-        "Pretend you are only allowed to answer with one of the following: {vocations}, 'need more information', and 'no applicable vendor'. \n\n"
-        "If you don't have enough information, say 'need more information'. \n\n"
-        "If the type of vendor doesn't exist in the list above say, say 'need more no applicable vendor'. \n\n"
-        "The only information you have is: '{user_messages}'\n\n"
-    ).format(vocations=vocations, user_messages=user_messages)
-    response = create_chat_completion([{'content': prompt, 'role': 'system'}])
-
-    if response.lower().replace('.', '') in vocations.lower():
-        logger.info(f'Vendor exists within response. GPT res: {response}. Convo: {conversation}.')
-        for vocation in vocations.split(', '):
-            formatted_vocation = vocation.replace('`', '').lower()
-            if formatted_vocation in response.lower():
-                vendor = Vendor.objects.get(vocation=formatted_vocation, company=conversation.company)
-                logger.info(f'Vendor found: {vendor}.')
-                return vendor
-    else:
-        conversation.vendor_detection_attempts = conversation.vendor_detection_attempts + 1
-        conversation.save()
-        logger.info(f'No Vendor found. GPT res: {response}. \n\n Convo: {conversation}. \n\n Attempts: {conversation.vendor_detection_attempts}')
-        return None
 
 
 def create_chat_completion(conversation, retry_counter=10):
@@ -295,6 +231,7 @@ def create_chat_completion(conversation, retry_counter=10):
             model="gpt-3.5-turbo",
             messages=conversation
         )
+        print("GPT Response: ", response['choices'][0]['message']['content'].strip())
         return response['choices'][0]['message']['content'].strip()
     except openai.error.RateLimitError:
         if retry_counter > 0:
@@ -311,61 +248,108 @@ def create_chat_completion(conversation, retry_counter=10):
                "your property manager."  # don't include period here (twilio hates it)
 
 
-def send_message(to_number, from_number, message, media_urls=None):
-    # from_number HAS TO BE A TWILIO NUMBER
-    if 'pytest' in argv[0]:
-        print('pytest detected. Using test credentials.')
-        client = Client(TWILIO_TEST_ACCOUNT_SID, TWILIO_TEST_AUTH_TOKEN)
-        from_number = "+15005550006"  # Twilio test number -- has to be this to work in tests unless we mock
-    else:
-        client = Client(twilio_sid, twilio_auth_token)
+def create_chat_completion_with_functions(conversation, retry_counter=10):
+    messages = get_message_history_for_gpt(conversation)
+    # For getting info about tenant
+    functions = [
+        {
+            "name": "assign_tenant_name_and_address",
+            "description": "Extract a name OR an address from the conversation and assign it to the tenant.",
+            "parameters": {
+                "type": "object",
+                "properties": {
+                    "name": {
+                        "type": "string",
+                        "description": "The name of user",
+                    },
+                    "address": {
+                        "type": "string",
+                        "description": "The address of user",
+                    },
+                },
+            },
+        },
+    ]
+    try:
+        response = openai.ChatCompletion.create(
+            model="gpt-3.5-turbo",
+            messages=messages,
+            functions=functions
+        )
 
-    print(client)
-    # Split message into chunks of 1600 characters each
-    message_chunks = [message[i:i + 1600] for i in range(0, len(message), 1600)]
-    for message_chunk in message_chunks:
-        def work_message():
-            logger.info(f'=========================== Sending message to {to_number} from {from_number}: {message_chunk}')
-            try:
-                message_arguments = {
-                    'from_': from_number,
-                    'to': to_number,
-                    'body': message_chunk
-                }
+        response_message = response["choices"][0]["message"]
+        if response_message.get("function_call"):
+            available_functions = {
+                "assign_tenant_name_and_address": assign_tenant_name_and_address,
+            }
 
-                client.messages.create(**message_arguments)
+            function_name = response_message["function_call"]["name"]
+            function_to_call = available_functions[function_name]
+            logger.info(f'GPT calling function: {function_name}')
+            function_args = json.loads(response_message["function_call"]["arguments"])
+            function_to_call(
+                tenant=conversation.tenant,
+                name=function_args.get('name'),
+                address=function_args.get('address'),
+            )
+        return conversation.tenant
 
-            except TwilioRestException as e:
-                print(e)
-                logger.error(e)
-                error_handler(e)
-
-        # Add the work to the queue
-        q.put(work_message)
-
-    if media_urls:
-        logger.info('Sending media')
-        message_arguments = {
-            'from_': from_number,
-            'to': to_number,
-        }
-
-        # Twilio expects a list of media URLs
-        if isinstance(media_urls, list):
-            message_arguments['media_url'] = media_urls
+    except KeyError as e:
+        if retry_counter > 0:
+            logger.error(f'- Rate limit. Making another request in 5s. Retries left: {retry_counter}')
+            time.sleep(10)
+            return create_chat_completion(conversation, retry_counter - 1)
         else:
-            message_arguments['media_url'] = [media_urls]
+            raise "Max retries exceeded."
 
-        def work_media():
-            try:
-                client.messages.create(**message_arguments)
-            except TwilioRestException as e:
-                print(e)
-                logger.error(e)
-                error_handler(e)
-        # Add the work to the queue
-        q.put(work_media)
+    except json.JSONDecodeError:
+        if retry_counter > 0:
+            logger.error(f'- Rate limit. Making another request in 5s. Retries left: {retry_counter}')
+            time.sleep(10)
+            return create_chat_completion(conversation, retry_counter - 1)
+        else:
+            raise "Max retries exceeded."
 
+    except openai.error.RateLimitError:
+        if retry_counter > 0:
+            logger.error(f'- Rate limit. Making another request in 5s. Retries left: {retry_counter}')
+            time.sleep(10)
+            return create_chat_completion(conversation, retry_counter - 1)
+        else:
+            raise "Max retries exceeded."
+
+    except Exception as e:
+        print('error', e)
+        error_handler(e)
+        # Maybe test alex here as well/instead?
+        return "Sorry, we're having some issues over here. Please reach out directly to " \
+               "your property manager."  # don't include period here (twilio hates it)
+
+
+def assign_tenant_name_and_address(tenant, name, address):
+    if name:
+        tenant.name = name
+    if address:
+        tenant.address = address
+
+    tenant.save()
+
+
+def send_message(to_number, from_number, message, media_urls=None, message_object=None):
+    kwargs = {
+        'to_number': to_number,
+        'from_number': from_number,
+        'message': message,
+        'media_urls': media_urls,
+    }
+
+    if message_object:
+        kwargs['message_object_id'] = message_object.id
+
+    if 'pytest' in argv[0]:
+        send_message_task(**kwargs)
+    else:
+        send_message_task.delay(**kwargs)
 
 
 def error_handler(e):

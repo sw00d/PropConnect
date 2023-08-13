@@ -2,12 +2,15 @@
 
 https://factoryboy.readthedocs.io/en/latest/recipes.html
 """
+import string
+import random
+
 import factory
 
 from django.contrib.auth import get_user_model
 
 from companies.models import Company
-from conversations.models import Tenant, Conversation, PhoneNumber, Vendor
+from conversations.models import Tenant, Conversation, PhoneNumber, Vendor, Message
 from djstripe.models import Subscription, Customer
 from datetime import timedelta
 from django.utils import timezone
@@ -58,9 +61,51 @@ class TwilioNumberFactory(factory.django.DjangoModelFactory):
         model = PhoneNumber
 
 
+def generate_random_string(length=10):
+    """Generate a random string of fixed length """
+    letters_and_digits = string.ascii_letters + string.digits
+    return ''.join(random.choices(letters_and_digits, k=length))
+
+
+class CustomerFactory(factory.django.DjangoModelFactory):
+    class Meta:
+        model = Customer
+
+    id = factory.LazyFunction(lambda: f"fake-customer-{generate_random_string()}")
+    # ... add any other needed fields ...
+
+
+class SubscriptionFactory(factory.django.DjangoModelFactory):
+    class Meta:
+        model = Subscription
+
+    id = factory.LazyFunction(lambda: f"fake-subscription-{generate_random_string()}")
+    current_period_end = (timezone.now() + timedelta(days=30)).isoformat()  # 30 days from now, in UNIX timestamp format
+    current_period_start = timezone.now().isoformat()
+    customer = factory.SubFactory(CustomerFactory)
+    status = "active"
+
+
+class CompanyFactory(factory.django.DjangoModelFactory):
+    number_of_doors = factory.Faker('random_int', min=1, max=100)
+
+    # by default, set the stripe IDs to some fake IDs
+    current_subscription = factory.SubFactory(SubscriptionFactory)
+    point_of_contact = factory.SubFactory(UserFactory)
+
+    class Meta:
+        model = Company
+
+    @factory.lazy_attribute
+    def name(self):
+        return f"Test Company"
+
+
+
 class ConversationFactory(factory.django.DjangoModelFactory):
     tenant = factory.SubFactory(TenantFactory)
     vendor = factory.SubFactory(VendorFactory)
+    company = factory.SubFactory(CompanyFactory)
     is_active = factory.Faker('boolean')
     last_viewed = factory.Faker('past_datetime', start_date="-30d", tzinfo=None)
     date_created = factory.Faker('past_datetime', start_date="-30d", tzinfo=None)
@@ -68,6 +113,14 @@ class ConversationFactory(factory.django.DjangoModelFactory):
     class Meta:
         model = Conversation
 
+
+class MessageFactory(factory.django.DjangoModelFactory):
+    message_content = 'My address is 2093 E. Greenleaf ave san diego CA, 92117'
+    role = "user",
+    conversation = factory.SubFactory(ConversationFactory)
+
+    class Meta:
+        model = Message
 
 # class PaymentMethodFactory(factory.django.DjangoModelFactory):
 #     class Meta:
@@ -90,34 +143,3 @@ class ConversationFactory(factory.django.DjangoModelFactory):
 #     })
 
 
-class CustomerFactory(factory.django.DjangoModelFactory):
-    class Meta:
-        model = Customer
-
-    id = factory.Sequence(lambda n: f"fake-customer-{n}")
-    # ... add any other needed fields ...
-
-
-class SubscriptionFactory(factory.django.DjangoModelFactory):
-    class Meta:
-        model = Subscription
-
-    id = factory.Sequence(lambda n: f"fake-subscription-{n}")
-    current_period_end = (timezone.now() + timedelta(days=30)).isoformat()  # 30 days from now, in UNIX timestamp format
-    current_period_start = timezone.now().isoformat()
-    customer = factory.SubFactory(CustomerFactory)
-    status = "active"
-
-
-class CompanyFactory(factory.django.DjangoModelFactory):
-    number_of_doors = factory.Faker('random_int', min=1, max=100)
-
-    # by default, set the stripe IDs to some fake IDs
-    current_subscription = factory.SubFactory(SubscriptionFactory)
-
-    class Meta:
-        model = Company
-
-    @factory.lazy_attribute
-    def name(self):
-        return f"Test Company"

@@ -117,6 +117,7 @@ class TestCompanies(CkcAPITestCase):
         assert response.status_code == status.HTTP_201_CREATED
         assert Company.objects.count() == 2
         assert Company.objects.get(name='New Company')
+        assert Company.objects.get(name='New Company').point_of_contact == self.admin_user
 
         # Get the ID of the newly created company from the response
         company_id = self.admin_user.company.id

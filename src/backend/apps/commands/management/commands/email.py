@@ -20,8 +20,10 @@ class Command(BaseCommand):
     def handle(self, *args, **kwargs):
         email_factory = getattr(email_factories, kwargs['name'])
         assert email_factory, f"Invalid email template name: {kwargs['name']}"
-        assert settings.ANYMAIL.get("MANDRILL_API_KEY") or settings.ANYMAIL.get('MAILJET_API_KEY'), \
-            "Some email backend API key is required to send test email -- MANDRILL_API_KEY, MAILJET_API_KEY, etc."
+        # SENDGRID_API_KEY
+        assert settings.ANYMAIL.get("SENDGRID_API_KEY")
+        # assert settings.ANYMAIL.get("MANDRILL_API_KEY") or settings.ANYMAIL.get('MAILJET_API_KEY'), \
+        #     "Some email backend API key is required to send test email -- MANDRILL_API_KEY, MAILJET_API_KEY, etc."
 
         # TODO: ability to pass extra kwargs n such here?
         email_factory(kwargs["to_email"])

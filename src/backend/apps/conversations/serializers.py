@@ -26,6 +26,7 @@ class MessageSerializer(serializers.ModelSerializer):
             'role',
             'message_content',
             'conversation',
+            'error_on_send',
         )
 
 
@@ -76,6 +77,9 @@ class ConversationDetailSerializer(serializers.ModelSerializer):
             'assistant_messages',
             'vendor_messages',
             'twilio_number',
+            'point_of_contact_has_interjected',
+            'tenant_intro_message',
+            'vendor_intro_message',
         )
 
 

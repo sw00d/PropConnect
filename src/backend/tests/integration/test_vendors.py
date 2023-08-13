@@ -111,7 +111,7 @@ class VendorTests(CkcAPITestCase):
 
         # Check that send_message was called with correct arguments
         mock_send_message.assert_called_once_with(post_data['From'], post_data['To'],
-                                                  "Thank you! You will now receive messages from your tenants.")
+                                                  "Thank you! You will now receive messages from tenants.")
 
         # Check that the response has a status code of 200
         self.assertEqual(response.status_code, 200)
@@ -138,7 +138,7 @@ class VendorTests(CkcAPITestCase):
         mock_send_message.assert_called_once_with(
             post_data['From'],
             post_data['To'],
-            "Sounds good! You will not receive messages from your tenants. If you ever change your mind, feel free to respond 'yes' to this message."
+            "Sounds good! You will not receive messages from any tenants. If you ever change your mind, feel free to respond 'yes' to this message."
         )
 
         # Check that the response has a status code of 200

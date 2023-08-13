@@ -18,22 +18,24 @@
                 </div>
                 <br>
                 <br>
-                Onboarding your vendors can be scary, we get it! But don't worry, our system is simple and seamless to
-                interact
-                with. All your vendors need is a number they can text from and they're ready to go! Here's what you
-                should know:
+                We understand the apprehensions around onboarding vendors – but with PropConnect, it's as
+                straightforward as it gets! Our system is crafted for simplicity, ensuring smooth interactions every
+                step of the way. Here's a brief rundown:
                 <br>
                 <br>
-                <b>1)</b> Add vendors by clicking the <i>Add Vendor</i> button below.
+                <b>1) Quick Vendor Additions:</b> Add vendors by clicking the <i>Add Vendor</i> button below.
                 <br>
                 <br>
-                <b>2)</b> Once you add a vendor, they'll receive a text and must opt in.
+                <b>2) Opting In:</b> As soon as you add a vendor, they'll be pinged with a text message, inviting them
+                to opt in.
                 <br>
                 <br>
-                <b>3)</b> Upon opting in, they'll be in our system and ready to take on your tenants issues.
+                <b>3) Seamless Integration: </b> Once they've opted in, they're all set to tackle any tenant issues
+                thrown their way.
                 <br>
                 <br>
-                <b>4)</b> When a vendor gets assigned to a tenant issue, they'll receive a text message that is a direct
+                <b>4) Direct Communication:</b> When a vendor gets assigned to a tenant issue, they'll receive a text
+                message that is a direct
                 line of
                 communication between them and the tenant.
                 They can use this to ask the tenant questions, get more information, schedule a visit, or even send
@@ -42,16 +44,16 @@
                 issue.
                 <br>
                 <br>
-                <b>5)</b> You can view all conversations in the
+                <b>5) Conversation Oversight:</b> Peek into all active and past dialogues under the
                 <nuxt-link to="/conversations">
                     <b class="text-decoration-underline">Conversations</b>
                 </nuxt-link>
                 tab.
                 <br>
                 <br>
-                <b>Pro tip:</b> Before you start onboarding vendors/tenants, add yourself as a vendor and have a friend
-                text
-                your hotline just so you can understand the experience your vendors will be having.
+                <b>Pro tip:</b> Kickstart the onboarding by enlisting yourself as a vendor. Prompt a friend to shoot a
+                text to your hotline – this way, you can firsthand grasp the vendor's experience, ensuring everything's
+                up to par.
 
             </v-alert>
         </v-container>
@@ -143,7 +145,9 @@
                                     <v-list-item-title class="font-weight-bold">{{ vendor.name }}</v-list-item-title>
                                     <v-list-item-title>{{ vendor.number }}</v-list-item-title>
                                     <v-list-item-subtitle>
-                                        {{ Object.values(vendorOptions).find((v) => v.value === vendor.vocation).label }}
+                                        {{
+                                            Object.values(vendorOptions).find((v) => v.value === vendor.vocation).label
+                                        }}
                                     </v-list-item-subtitle>
                                 </v-list-item-content>
                             </v-list-item>
@@ -216,18 +220,17 @@ const showIntro = ref(false)
 const resending = ref(null)
 
 const vendorOptions = [
-    // These values have to be very specific because they are used to filter vendors via GPT
-    // When adding more, thoroughly test on backend
     { label: 'Plumber', value: 'plumber' },
     { label: 'Electrician', value: 'electrician' },
     { label: 'Handyman', value: 'handyman' },
     { label: 'Appliance Specialist', value: 'appliance specialist' },
-    { label: 'HVAC specialist', value: 'air-condition specialist' },
+    { label: 'HVAC specialist', value: 'HVAC specialist' },
     { label: 'Locksmith', value: 'locksmith' },
     { label: 'Flooring Specialist', value: 'flooring specialist' },
     { label: 'Painter', value: 'painter' },
     { label: 'Drywall Specialist', value: 'drywall specialist' },
     { label: 'Landscaper', value: 'landscaper' },
+    { label: 'Other', value: 'other' },
 ]
 
 const createVendor = async () => {

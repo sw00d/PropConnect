@@ -13,7 +13,6 @@ from anymail.exceptions import AnymailRecipientsRefused
 
 from users.models import OTPVerificationCode
 
-
 logger = logging.getLogger()
 User = get_user_model()
 
@@ -26,6 +25,11 @@ def password_reset(user: User):
     uid = urlsafe_base64_encode(force_bytes(user.pk))
     token = default_token_generator.make_token(user)
     return _send_mail('password_reset', [user.email], uid=uid, token=token)
+
+
+def new_maintenance_request(to_email, conversation):
+    tenant = conversation.tenant
+    return _send_mail('new_maintenance_request', [to_email], tenant=tenant, conversation=conversation)
 
 
 def otp_email_verification(user: User):

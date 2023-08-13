@@ -39,6 +39,12 @@ class Conversation(models.Model):
     last_viewed = models.DateTimeField(auto_now_add=True)  # last time the conversation was viewed by the admin
     company = models.ForeignKey(Company, null=True, related_name="conversations", on_delete=models.SET_NULL)
     vendor_detection_attempts = models.IntegerField(default=0)
+    address = models.CharField(max_length=200, null=True)
+    waiting_on_property_manager = models.BooleanField(default=False)
+    point_of_contact_has_interjected = models.BooleanField(default=False)  # This is if PM has sent a message to the tenant
+
+    tenant_intro_message = models.CharField(max_length=800, null=True, blank=True)
+    vendor_intro_message = models.CharField(max_length=800, null=True, blank=True)
 
     def __str__(self):
         return f"Conversation ({self.pk}) between {self.tenant} and vendor {self.vendor}"
@@ -55,7 +61,7 @@ class Conversation(models.Model):
         from .models import Message
         number = self.company.assistant_phone_number
         return Message.objects.filter(
-            Q(receiver_number=number) | Q(sender_number=number),
+            Q(receiver_number=number) | Q(sender_number=number) | Q(role='admin_to_tenant'),
             conversation=self
         )
 
@@ -99,6 +105,7 @@ class Message(models.Model):
         on_delete=models.CASCADE,
     )
     date_sent = models.DateTimeField(auto_now_add=True)
+    error_on_send = models.BooleanField(default=False)
 
     def __str__(self):
         # Return first 50 characters of message content

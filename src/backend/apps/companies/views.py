@@ -30,10 +30,6 @@ class CompanyViewSet(viewsets.ModelViewSet):
 
     def get_permissions(self):
         self.permission_classes = [IsAuthenticated]
-        # if self.action in ['create', 'update', 'partial_update']:
-        #     self.permission_classes = [IsAuthenticated]
-        # else:
-        #     self.permission_classes = [AllowAny]
         return super().get_permissions()
 
     def get_serializer_class(self):
@@ -56,7 +52,8 @@ class CompanyViewSet(viewsets.ModelViewSet):
                 {
                     "price": price.stripe_price_id,
                 },
-            ]
+            ],
+            trial_period_days=7  # This offers a 7-day free trial
         )
 
         djstripe_subscription = Subscription.sync_from_stripe_data(stripe_subscription)

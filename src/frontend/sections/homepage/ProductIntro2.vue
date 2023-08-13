@@ -27,7 +27,7 @@
             vendors. Your tenants can now skip
             the hassle of new accounts and passwords. With our accessible <i><b>help line</b></i>, tenants can text
             anytime, and our
-            <i><b>AI</b></i> will connect them with the vendor that fits their needs.
+            <i><b>AI</b></i> will collect information, allowing you to connect them with the vendor that best fits their needs.
           </div>
         </v-sheet>
       </v-col>

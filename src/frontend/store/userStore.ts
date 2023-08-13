@@ -13,7 +13,7 @@ export const useUserStore = defineStore('user', {
     }),
     getters:{
         hasActiveSubscription(): boolean {
-            return this.authUser?.company?.current_subscription?.status === 'active'
+            return this.authUser?.company?.current_subscription?.status === 'active' || this.authUser?.company?.current_subscription?.status === 'trialing'
         }
     },
     actions: {

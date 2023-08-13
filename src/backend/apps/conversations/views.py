@@ -1,6 +1,9 @@
 import logging
+from sys import argv
+
 from django.utils.timezone import now
 
+from rest_framework.exceptions import ValidationError
 from rest_framework import status
 from rest_framework.response import Response
 from rest_framework.pagination import PageNumberPagination
@@ -16,6 +19,7 @@ from conversations.utils import handle_assistant_conversation, play_the_middle_m
 
 from .models import Conversation, Message, Vendor, PhoneNumber
 from .serializers import ConversationDetailSerializer, ConversationListSerializer, VendorSerializer
+from .tasks import start_vendor_tenant_conversation
 
 logger = logging.getLogger(__name__)
 
@@ -89,7 +93,26 @@ class ConversationViewSet(ModelViewSet):
         return Response({'status': 'last_viewed time updated'})
 
     @action(detail=True, methods=['post'])
-    def send_admin_message(self, request, *args, **kwargs):
+    def assign_vendor(self, request, pk=None):
+        conversation = self.get_object()
+        try:
+            conversation.vendor = Vendor.objects.get(id=request.data.get('vendor'))
+            conversation.tenant_intro_message = request.data.get('tenant_intro_message')
+            conversation.vendor_intro_message = request.data.get('vendor_intro_message')
+            conversation.save()
+            if 'pytest' in argv[0]:
+                print('pytest detected. Using test credentials.')
+                start_vendor_tenant_conversation(conversation.id, conversation.vendor.id)
+            else:
+                start_vendor_tenant_conversation.delay(conversation.id, conversation.vendor.id)
+        except Vendor.DoesNotExist:
+            raise ValidationError({"error": "Vendor not found."})
+        conversation.save()
+
+        return Response({'status': 'Vendor assigned to conversation.'})
+
+    @action(detail=True, methods=['post'])
+    def send_admin_message_to_tenant(self, request, *args, **kwargs):
         # This is so admin can inject messages into the conversation
         message_body = request.data.get('message_body')
 
@@ -98,10 +121,40 @@ class ConversationViewSet(ModelViewSet):
                             status=status.HTTP_400_BAD_REQUEST)
 
         # from_number = self.get_object().twilio_number.number
-        from_number = PhoneNumber.objects.get(most_recent_conversation=self.get_object())
+        conversation = self.get_object()
+        from_number = conversation.company.assistant_phone_number
+        tenant_number = conversation.tenant.number
+        message = Message.objects.create(
+            message_content=message_body,
+            role="admin_to_tenant",
+            conversation=conversation,
+            sender_number=from_number
+        )
+
+        conversation.point_of_contact_has_interjected = True
+        conversation.save()
+
+        try:
+            logger.info(f"Sending admin message to conversation ({conversation}) from with body: {message_body}")
+            send_message(tenant_number, from_number, message_body, message_object=message)
+            return Response({'status': 'Message sent.'})
+        except Exception as e:
+            return Response({'error': str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+    @action(detail=True, methods=['post'])
+    def send_admin_message_to_group(self, request, *args, **kwargs):
+        # This is so admin can inject messages into the conversation
+        message_body = request.data.get('message_body')
+
+        if not message_body:
+            return Response({'error': 'Message_body must be provided.'},
+                            status=status.HTTP_400_BAD_REQUEST)
+
+        # from_number = self.get_object().twilio_number.number
+        from_number = PhoneNumber.objects.get(most_recent_conversation=self.get_object()).number
         tenant_number = self.get_object().tenant.number
         vendor_number = self.get_object().vendor.number
-        Message.objects.create(
+        message = Message.objects.create(
             message_content=message_body,
             role="admin",
             conversation=self.get_object(),
@@ -109,9 +162,9 @@ class ConversationViewSet(ModelViewSet):
         )
 
         try:
-            logger.info(f"Sending admin message to conversation ({self.get_object()}) from with body: {message_body}")
-            send_message(tenant_number, from_number, message_body)
-            send_message(vendor_number, from_number, message_body)
+            logger.info(f"Sending admin message to conversation ({self.get_object()}) with body: {message_body}")
+            send_message(tenant_number, from_number, message_body, message_object=message)
+            send_message(vendor_number, from_number, message_body, message_object=message)
             return Response({'status': 'Message sent.'})
         except Exception as e:
             return Response({'error': str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
@@ -151,11 +204,11 @@ def init_conversation(request):
             vendor.active = True
             vendor.save()
             # Reply to vendor
-            send_message(from_number, to_number, "Thank you! You will now receive messages from your tenants.")
+            send_message(from_number, to_number, "Thank you! You will now receive messages from tenants.")
         elif any(word in body.lower() for word in no_synonyms):
             # Reply to vendor
             send_message(from_number, to_number,
-                         "Sounds good! You will not receive messages from your tenants. If you ever change your mind, feel free to respond 'yes' to this message.")
+                         "Sounds good! You will not receive messages from any tenants. If you ever change your mind, feel free to respond 'yes' to this message.")
 
         return HttpResponse()
 

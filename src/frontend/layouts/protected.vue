@@ -9,14 +9,14 @@
             </template>
         </ScreenSwitcher>
         <v-main style="min-height: 100vh">
-            <!--            <SubscriptionDialog-->
-            <!--                :model-value="showSubscriptionDialog"-->
-            <!--                @input="showSubscriptionDialog=$event"-->
-            <!--            />-->
-            <ReleasingSoonDialog
-                :model-value="showSubscriptionDialog"
-                @input="showSubscriptionDialog=$event"
-            />
+                        <SubscriptionDialog
+                            :model-value="showSubscriptionDialog"
+                            @input="showSubscriptionDialog=$event"
+                        />
+<!--            <ReleasingSoonDialog-->
+<!--                :model-value="showSubscriptionDialog"-->
+<!--                @input="showSubscriptionDialog=$event"-->
+<!--            />-->
             <slot/>
         </v-main>
     </v-layout>

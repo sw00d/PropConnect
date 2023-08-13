@@ -54,7 +54,7 @@
                     How it works:
                     <br>
                     <br>
-                    <b>1)</b> Start by adding vendors from the
+                    <b>1) Vendor Integration:</b> Begin by adding vendors from the
                     <nuxt-link to="/vendors">
                         <b class="text-decoration-underline">Vendors</b>
                     </nuxt-link>
@@ -62,34 +62,35 @@
 
                     <br>
                     <br>
-                    <b>2)</b> You now have a dedicated AI hotline, <b>{{ company.assistant_phone_number }}</b>. This is
-                    the number
-                    your tenants will
-                    text when wanting to submit a maintenance request.
+                    <b>2) AI Hotline Setup:</b> You now have a dedicated AI hotline,
+                    <b>{{ company.assistant_phone_number }}</b>. This is the primary number your tenants will text to
+                    initiate a maintenance request.
                     <br>
                     <br>
-                    <b>3)</b> Once our AI has gotten enough information from the tenant, the tenant and vendor will be
-                    connected
-                    via a secondary phone number.
-                    Both the vendor and tenant will get an introduction text, making sure each party knows who and what
-                    the
-                    conversation is about.
+                    <b>3) Information Gathering:</b> Once our AI has collated sufficient details from the tenant, an
+                    email notification will be sent to the property manager. This email prompts the property manager to
+                    assign an appropriate vendor for the task at hand.
                     <br>
                     <br>
-                    <b>4)</b> From there, both the tenant and vendor can directly text each other using this secondary
-                    number.
+                    <b>4) Establishing Connection:</b> After vendor assignment, a direct text-based chat is set up
+                    between the tenant and the vendor via a secondary phone number. Both parties will receive an
+                    introductory text, ensuring clarity about the participants and the topic of the conversation.
                     <br>
                     <br>
-                    <b>5)</b> View all conversations in the
+                    <b>5) Seamless Communication:</b> The tenant and vendor can now directly communicate through this
+                    secondary number.
+                    <br>
+                    <br>
+                    <b>6) Conversation Overview:</b> Monitor and review all interactions under the Conversations tab.
                     <nuxt-link to="/conversations">
                         <b class="text-decoration-underline">Conversations</b>
                     </nuxt-link>
                     tab.
                     <br>
                     <br>
-                    <b>Pro tip:</b> Before adding any vendors, you should text your hotline just to get a feel for
-                    things and know what your tenants and vendors will experience.
-
+                    <b>Pro tip:</b> Before bringing vendors into the fold, take a moment to text your AI hotline.
+                    Familiarizing yourself ensures you understand the experience both your tenants and vendors will
+                    undergo.
                 </v-alert>
             </v-slide-y-transition>
 
@@ -106,9 +107,9 @@
                                 <!--                </v-btn>-->
                             </v-card-title>
                             <v-card-text class="d-flex align-center justify-center mt-16 flex-column flex-1 relative">
-                                <div class="text-body-1 font-weight-bold">
-                                    Coming soon
-                                </div>
+                                <v-btn class="text-body-1 font-weight-bold" to="/conversations">
+                                   View Conversations
+                                </v-btn>
                                 <v-sheet width="80%">
                                     <v-img :src="convoImg"/>
                                 </v-sheet>
@@ -135,9 +136,9 @@
                                 <v-sheet width="50%" max-height="300px">
                                     <v-img :src="vendorImg"/>
                                 </v-sheet>
-                                <div class="text-body-1 font-weight-bold d-flex justify-center ml-10">
-                                    Coming soon
-                                </div>
+                                <v-btn class="text-body-1 font-weight-bold d-flex justify-center ml-10" to="/vendors">
+                                    View Vendors
+                                </v-btn>
                             </v-card-text>
                         </v-card>
                     </v-slide-x-reverse-transition>
