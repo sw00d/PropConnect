@@ -1,15 +1,13 @@
-from queue import Queue
-from unittest import skip
-from unittest.mock import patch, MagicMock, Mock, call
+from unittest.mock import patch, Mock
+
 from twilio.rest import Client
 
 from twilio.base.exceptions import TwilioRestException
 
 from commands.management.commands.generate_data import generate_vendors
-from conversations.models import Message, Vendor, Conversation, Tenant, PhoneNumber
+from conversations.models import Message, Vendor, PhoneNumber
 from conversations.tasks import purchase_phone_number_util, send_message_task, get_conversation_recap_util
-from conversations.utils import send_message, q
-from factories import ConversationFactory, UserFactory, TwilioNumberFactory, CompanyFactory, MessageFactory
+from factories import ConversationFactory, UserFactory, CompanyFactory, MessageFactory
 from settings.base import TWILIO_AUTH_TOKEN, TWILIO_ACCOUNT_SID
 from tests.utils import CkcAPITestCase
 from django.urls import reverse
@@ -127,8 +125,12 @@ class ConversationViewSetTestCase(CkcAPITestCase):
         conversation = ConversationFactory()  # Assuming a simple create works. Adjust as needed.
 
         MessageFactory(message_content="Hi! I need help.", role="user", conversation=conversation)
-        MessageFactory(message_content="What do you need help with?", role="assistant", conversation=conversation)
-        MessageFactory(message_content="My faucet is broken. Reply DONE if you feel you have provided enough information.", role="user", conversation=conversation)
+        MessageFactory(message_content="What do you need help with? Reply DONE if you feel you have provided enough information.", role="assistant", conversation=conversation)
+        MessageFactory(message_content="My faucet is broken.", role="user", conversation=conversation)
+        MessageFactory(message_content="How's it broken? Reply DONE if you feel you have provided enough information.", role="assistant", conversation=conversation)
+        MessageFactory(message_content="It has a crack in it.", role="user", conversation=conversation)
+        MessageFactory(message_content="Can I have your email and address and stuff? Reply DONE if you feel you have provided enough information.", role="assistant", conversation=conversation)
+        MessageFactory(message_content="Sam wood. 2032 greenleaf ave. san diego", role="user", conversation=conversation)
 
         recap = get_conversation_recap_util(conversation)
 
