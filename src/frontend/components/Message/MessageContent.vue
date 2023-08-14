@@ -20,7 +20,8 @@
                 </v-btn>
             </a>
         </div>
-        {{ message.message_content }}
+        <pre class="text-pre-line">{{ message.message_content }}</pre>
+
     </div>
 </template>
 
@@ -42,5 +43,4 @@ defineProps({
 </script>
 
 <style scoped lang="stylus">
-
 </style>

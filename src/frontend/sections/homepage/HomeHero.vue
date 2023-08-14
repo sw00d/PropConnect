@@ -2,7 +2,7 @@
     <div class="wrapper">
         <div class="d-flex flex-column">
             <div class="d-flex justify-center w-100">
-                <v-container class="d-flex align-center">
+                <v-container class="d-flex align-center justify-space-between">
                     <div class="d-flex align-center justify-space-between mb-4">
                         <v-sheet class="d-flex align-center mr-4 bg-transparent" max-height="56px">
                             <v-img :src="logoGraphic" width="40px" height="56px"/>
@@ -11,7 +11,7 @@
                             PropConnect
                         </v-toolbar-title>
                     </div>
-                    <v-spacer class="hidden-sm-and-down"></v-spacer>
+
                     <nuxt-link :to="store?.isLoggedIn ? '/dashboard' : '/sign-in'">
                         <button
                             class="border-b sign-in font-14 text-primary"

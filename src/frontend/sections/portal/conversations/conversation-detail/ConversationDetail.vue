@@ -49,7 +49,7 @@
                                 </div>
                             </div>
 
-                              <div class="table-row border-b">
+                            <div class="table-row border-b">
                                 <div class="weight-700 font-16">
                                     Address:
                                 </div>
@@ -157,19 +157,13 @@
                                 <div class="font-12 text-highContrast">
                                     Initial Message to Tenant
                                 </div>
-                                <div class="bg-grey font-14 rounded-lg pa-2">
-
-                                    {{ conversation.tenant_intro_message }}
-                                </div>
+                                <pre class="bg-grey font-14 rounded-lg pa-2 text-pre-line">{{ conversation.tenant_intro_message }}</pre>
                             </v-col>
                             <v-col>
                                 <div class="font-12 text-highContrast">
                                     Initial Message to Vendor
                                 </div>
-                                <div class="bg-grey font-14 rounded-lg pa-2">
-
-                                    {{ conversation.vendor_intro_message }}
-                                </div>
+                                <pre class="bg-grey font-14 rounded-lg pa-2 text-pre-line">{{ conversation.vendor_intro_message }}</pre>
                             </v-col>
                         </v-row>
                         <div
@@ -352,12 +346,14 @@ const switchConversationView = (view) => {
     activeConversationType.value = view
 }
 
-
 onMounted(() => {
-        fetchConversation()
-        setLastViewed()
-    }
-)
+    fetchConversation()
+    setLastViewed()
+})
+
+onUnmounted(() => {
+    setLastViewed()
+})
 
 </script>
 
