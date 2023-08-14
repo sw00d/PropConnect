@@ -10,14 +10,10 @@ import openai
 from conversations.tasks import send_message_task
 from utils import email
 
-from twilio.base.exceptions import TwilioRestException
-from twilio.rest import Client
-
 from companies.models import Company
 from conversations.models import Vendor, Conversation, Tenant, Message, PhoneNumber, MediaMessageContent
 from conversations.serializers import MessageSerializer
-from settings.base import OPEN_API_KEY, TWILIO_AUTH_TOKEN, TWILIO_ACCOUNT_SID, WEBHOOK_URL, TWILIO_TEST_ACCOUNT_SID, \
-    TWILIO_TEST_AUTH_TOKEN
+from settings.base import OPEN_API_KEY, TWILIO_AUTH_TOKEN, TWILIO_ACCOUNT_SID
 
 openai.api_key = OPEN_API_KEY
 twilio_auth_token = TWILIO_AUTH_TOKEN
@@ -148,11 +144,17 @@ def handle_assistant_conversation(request):
         return None
 
     # TODO filter this by time as well. Should be a new convo after a few days maybe?
-    conversation, _ = Conversation.objects.get_or_create(tenant=tenant, vendor=None, waiting_on_property_manager=False)
+    conversation, _ = Conversation.objects.get_or_create(
+        tenant=tenant,
+        vendor=None,
+        is_active=True,
+        waiting_on_property_manager=False
+    )
     conversation.company = company
     conversation.save()
 
     logger.info(company)
+
 
     if company is None or company.current_subscription is None:
         return f"This assistant is not active. Please contact your property manager directly."
@@ -174,6 +176,14 @@ def handle_assistant_conversation(request):
             receiver_number="assistant msg",
         )
 
+    media_urls = []
+    i = 0
+    while request.POST.get(f'MediaUrl{i}', None):
+        media_urls.append(request.POST.get(f'MediaUrl{i}'))
+        i += 1
+    if media_urls:
+        return "Media not supported with AI chat. Please send media to vendor when connected."
+
     Message.objects.create(
         message_content=body,
         role="user",
@@ -190,14 +200,18 @@ def handle_assistant_conversation(request):
     response_to_send = create_chat_completion(conversation_json)
 
     done_synonyms = ['done', 'done.', 'done!']
-    if body.strip().lower() in done_synonyms or conversation.messages.count() > 10:
+    message_max_length_hit = conversation.messages.count() > 10
+    if body.strip().lower() in done_synonyms or message_max_length_hit:
         conversation.waiting_on_property_manager = True
         conversation.save()
-        response_to_send = "Thanks for reaching out! You'll be receiving a text from our staff shortly!"
+        if message_max_length_hit:
+            response_to_send = "This conversation has exceeded the maximum number of messages. We will be in touch shortly!"
+        else:
+            response_to_send = "Thanks for reaching out! You'll be receiving a text from our staff shortly!"
         property_manager = conversation.company.point_of_contact
         email.new_maintenance_request(property_manager.email, conversation)
 
-    elif conversation.messages.count() > 3:
+    elif conversation.messages.count() > 3 and 'Reply DONE if you feel you have provided enough information.' not in response_to_send:
         response_to_send += "\n\n\n Reply DONE if you feel you have provided enough information."
 
     message = Message.objects.create(
@@ -225,19 +239,21 @@ def get_message_history_for_gpt(conversation):
     return data
 
 
-def create_chat_completion(conversation, retry_counter=10):
+def create_chat_completion(messages, retry_counter=10):
     try:
         response = openai.ChatCompletion.create(
             model="gpt-3.5-turbo",
-            messages=conversation
+            messages=messages
         )
-        print("GPT Response: ", response['choices'][0]['message']['content'].strip())
-        return response['choices'][0]['message']['content'].strip()
+        processed_response = response['choices'][0]['message']['content'].strip().replace(
+            "\n\nReply DONE if you feel you have provided enough information.", '')
+        print("GPT Response: ", processed_response)
+        return processed_response
     except openai.error.RateLimitError:
         if retry_counter > 0:
             logger.error(f'- Rate limit. Making another request in 5s. Retries left: {retry_counter}')
             time.sleep(10)
-            return create_chat_completion(conversation, retry_counter - 1)
+            return create_chat_completion(messages, retry_counter - 1)
         else:
             raise "Max retries exceeded."
 

@@ -217,15 +217,15 @@ def purchase_phone_number_util(phone_number, api_endpoint="/play_the_middle_man/
             emergency_address_sid=address_sid  # make sure this is being set on purchased numbers
         )
 
-        if type_of_number == 'a2p':
-            # Register a2p number for vendor/tenant coms
-            service = client.verify.v2.services.list(limit=1)[0]  # Get first and only service/campaign
-
-            # Here's where we assign the purchased number to the messaging service
-            client.proxy.v1 \
-                .services(service.sid) \
-                .phone_numbers \
-                .create(sid=purchased_number.sid)
+        # if type_of_number == 'a2p':
+        #     # Register a2p number for vendor/tenant coms
+        #     service = client.verify.v2.services.list(limit=1)[0]  # Get first and only service/campaign
+        #
+        #     # Here's where we assign the purchased number to the messaging service
+        #     client.proxy.v1 \
+        #         .services(service.sid) \
+        #         .phone_numbers \
+        #         .create(sid=purchased_number.sid)
 
         if type_of_number == 'toll-free':
             # TODO maybe verify this number in the future?

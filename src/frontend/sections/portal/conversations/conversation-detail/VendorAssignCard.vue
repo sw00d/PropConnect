@@ -22,6 +22,7 @@
             <v-sheet min-width="30%" class="d-flex flex-1 align-center my-2">
                 <div class="flex-1">
                     <v-select
+                        :menu-props="{ closeOnContentClick: true }"
                         :items="vendors"
                         hide-details
                         v-model="selectedVendor"
