@@ -155,6 +155,7 @@ def handle_assistant_conversation(request):
 
     logger.info(company)
 
+
     if company is None or company.current_subscription is None:
         return f"This assistant is not active. Please contact your property manager directly."
 
@@ -174,6 +175,14 @@ def handle_assistant_conversation(request):
             sender_number="assistant msg",
             receiver_number="assistant msg",
         )
+
+    media_urls = []
+    i = 0
+    while request.POST.get(f'MediaUrl{i}', None):
+        media_urls.append(request.POST.get(f'MediaUrl{i}'))
+        i += 1
+    if media_urls:
+        return "Media not supported with AI chat. Please send media to vendor when connected."
 
     Message.objects.create(
         message_content=body,
