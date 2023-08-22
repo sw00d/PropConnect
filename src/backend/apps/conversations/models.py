@@ -121,9 +121,11 @@ class PhoneNumber(models.Model):
         on_delete=models.CASCADE,
         related_name='twilio_number'
     )
+    company = models.OneToOneField(Company, null=True, on_delete=models.SET_NULL, related_name="base_phone_number_object")
+
     # this will be True for the main number that talks to GPT and initializes convo
-    is_base_number = models.BooleanField(default=False)
-    # company = models.OneToOneField(Company, null=True, on_delete=models.SET_NULL, related_name="base_phone_number_object") TODO This could be added to keep track of company that 'owns' this number
+    is_base_number = models.BooleanField(default=False)  # could be "is_assistant_number"
+
 
     def __str__(self):
         return self.number
