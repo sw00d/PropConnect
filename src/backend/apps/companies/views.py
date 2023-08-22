@@ -71,7 +71,7 @@ class CompanyViewSet(viewsets.ModelViewSet):
             logger.info(f"Purchasing new company number: {number.phone_number}")
             purchase_phone_number_util(number.phone_number, "/init_conversation/", 'toll-free')
             company.assistant_phone_number = number.phone_number
-            PhoneNumber.objects.create(number=number.phone_number, is_base_number=True, company=company)
+            PhoneNumber.objects.create(number=number.phone_number, is_base_number=True)
 
         company.save()
 
