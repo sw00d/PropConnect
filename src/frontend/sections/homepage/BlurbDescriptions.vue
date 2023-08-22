@@ -11,9 +11,12 @@
 
         <v-sheet class="blurb one bg-primary">
             <div class="font-30 font-weight-bold">
-                1) AI-Powered Tenant Hotline
+                1) Direct Tenant Hotline
             </div>
             <div class="font-20 mt-6">
+                <!--                Provide your tenants with a unique hotline where they can quickly and effortlessly report maintenance-->
+                <!--                issues. Our AI does the heavy lifting, collecting all necessary details for the tenant. This direct SMS-based system makes issue reporting a breeze.-->
+
                 Grant your tenants access to a unique, AI-powered hotline, facilitating fast and hassle-free reporting
                 of their
                 maintenance issues. This direct line of communication simplifies the process, enabling efficient issue
@@ -26,10 +29,8 @@
                 2) Manual Vendor Assignment
             </div>
             <div class="font-20 mt-6">
-                Our AI efficiently gathers and organizes the details of maintenance requests. However, as the property
-                manager, you retain full control.
-                You'll be prompted to assign the most suitable vendor from your network, ensuring personalized service
-                tailored to each tenant's unique situation.
+                While our system collects and arranges the maintenance request details, you maintain complete control.
+                Choose the vendor that best suits each request, ensuring a personalized touch for every tenant.
             </div>
         </v-sheet>
 
@@ -38,9 +39,9 @@
                 3) Streamlined Vendor Communication
             </div>
             <div class="font-20 mt-6">
-                Once the property manager assign a vendor, a secure and transparent communication channel between the
-                tenant and the vendor is set up.
-                This streamlines real-time updates, photo sharing, and convenient scheduling.
+                Upon vendor selection, an immediate and clear SMS communication channel is created between the tenant
+                and the vendor. This ensures timely updates, easy photo sharing, and efficient scheduling without any
+                app downloads or logins.
             </div>
         </v-sheet>
     </v-container>

@@ -140,13 +140,14 @@
                             }}
                         </v-sheet>
                     </div>
-                    <div
+                    <v-alert
                         v-if="conversation.vendor?.number === conversation.tenant.number && activeConversationType === 'vendor'"
-                        class="text-warning mt-3 font-12"
+                        class="mt-3 font-12"
+                        color="warning"
                     >
                         <v-icon>mdi-alert</v-icon>
                         Tenant and vendor numbers are the same, so this conversation history may not be accurate
-                    </div>
+                    </v-alert>
                     <v-sheet
                         class="border pa-3 rounded-lg mt-2 overflow-auto bg-surface"
                         max-height="80vh"

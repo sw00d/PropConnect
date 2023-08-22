@@ -26,8 +26,9 @@
         <v-container class="mt-sm-10">
             <div class="d-flex justify-space-between align-center">
                 <div class="text-h3 text-sm-h2 font-weight-black lh-70">
-                    Meet Your New AI <br/>
-                    Maintenance Coordinator
+                    Maintenance Coordination
+                    <br>
+                    Made Easy
                 </div>
                 <v-sheet width="250px" height="250px" class="bg-transparent hidden-xs">
                     <v-img

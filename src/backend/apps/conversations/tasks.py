@@ -119,7 +119,9 @@ def start_vendor_tenant_conversation(conversation_id, vendor_id):
         number = client.available_phone_numbers("US").local.list(area_code='619')[0]  # TODO This area code should be based off company location
         logger.info(f"Purchasing new number: {number.phone_number}")
         purchase_phone_number_util(number.phone_number)
-        conversation_number = PhoneNumber.objects.create(number=number.phone_number, most_recent_conversation=conversation)
+        logger.info(f'Purchased new number: {number.phone_number}. Creating django object.')
+        new_phone_obj = PhoneNumber.objects.create(number=number.phone_number, most_recent_conversation=conversation)
+        conversation_number = new_phone_obj
     else:
         conversation_number = available_numbers.first()
         logger.info(f"Using existing number: {conversation_number.number} for conversation: {conversation_id}")
@@ -160,7 +162,6 @@ def start_vendor_tenant_conversation(conversation_id, vendor_id):
         sender_number=conversation_number.number
     )
     send_message(conversation.tenant.number, conversation_number.number, conversation.tenant_intro_message, message_object=message)
-
 
 # This is used for the main convo-flow
 def get_conversation_recap_util(conversation):

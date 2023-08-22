@@ -123,6 +123,7 @@ class PhoneNumber(models.Model):
     )
     # this will be True for the main number that talks to GPT and initializes convo
     is_base_number = models.BooleanField(default=False)
+    # company = models.OneToOneField(Company, null=True, on_delete=models.SET_NULL, related_name="base_phone_number_object") TODO This could be added to keep track of company that 'owns' this number
 
     def __str__(self):
         return self.number
