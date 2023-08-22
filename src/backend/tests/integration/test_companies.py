@@ -4,12 +4,12 @@ from unittest.mock import patch, MagicMock
 import stripe
 from django.urls import reverse
 from rest_framework import status
-from rest_framework.test import APIClient
 
 from commands.management.commands.generate_data import sync_stripe_product
 from companies.models import Company
 from factories import UserFactory, CompanyFactory
 from tests.utils import CkcAPITestCase
+from djstripe.models import Subscription
 
 
 class TestCompanies(CkcAPITestCase):
@@ -71,8 +71,10 @@ class TestCompanies(CkcAPITestCase):
     @patch('stripe.Subscription.create')
     @patch('djstripe.models.Customer.get_or_create')
     @patch('djstripe.models.PaymentMethod.sync_from_stripe_data')
+    @patch('djstripe.models.Subscription.sync_from_stripe_data')
     def test_company_signup(
         self,
+        subscription_sync_from_stripe_data_mock,
         sync_from_stripe_data_mock,
         get_or_create_mock,
         subscription_create_mock,
@@ -97,6 +99,9 @@ class TestCompanies(CkcAPITestCase):
 
         # Mock the PaymentMethod.sync_from_stripe_data method
         sync_from_stripe_data_mock.return_value = MagicMock()
+        mock_subscription = MagicMock(spec=Subscription)
+        mock_subscription._state = MagicMock()
+        subscription_sync_from_stripe_data_mock.return_value = mock_subscription
 
         url = reverse('companies-list')
         data = {
@@ -139,11 +144,9 @@ class TestCompanies(CkcAPITestCase):
         create_mock.return_value = stripe_customer_dict
         retrieve_mock.return_value = stripe_customer_dict
 
-        # TODO FIX THIS TEST
         # Call the finalize_signup action
-        # TODO     @patch('conversations.tasks.purchase_phone_number_util') cause we don't wanna buy a number every test run
         # signup_url = reverse('companies-finalize-signup', kwargs={'pk': company_id})
-
+        # TODO Fix all this
         # signup_response = self.client.post(signup_url)
         # assert signup_response.status_code == status.HTTP_200_OK
         # assert Company.objects.get(id=company_id).current_subscription is not None

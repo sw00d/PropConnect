@@ -5,7 +5,9 @@ from rest_framework.decorators import action, api_view
 from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework.response import Response
 
+from conversations.models import PhoneNumber
 from conversations.tasks import purchase_phone_number_util
+from conversations.utils import send_message
 from stripe_features.models import Product
 from .models import Company
 from .serializers import CompanyCreateSerializer, CompanyUpdateSerializer
@@ -66,11 +68,16 @@ class CompanyViewSet(viewsets.ModelViewSet):
             print(f"Using admin number: {DEFAULT_TWILIO_NUMBER}")
             company.assistant_phone_number = DEFAULT_TWILIO_NUMBER
         else:
-            logger.info(f"Purchasing new number: {number.phone_number}")
+            logger.info(f"Purchasing new company number: {number.phone_number}")
             purchase_phone_number_util(number.phone_number, "/init_conversation/", 'toll-free')
             company.assistant_phone_number = number.phone_number
+            PhoneNumber.objects.create(number=number.phone_number, is_base_number=True, company=company)
 
         company.save()
+
+        # Just alerting Sam that a new conversation has started, and he should probably go look at it
+        send_message('+12086608828', DEFAULT_TWILIO_NUMBER,
+                     f"New company signed up {company.name} with phone number {company.assistant_phone_number}")
         return Response({"message": "Signup finalized."}, status=status.HTTP_200_OK)
 
 
