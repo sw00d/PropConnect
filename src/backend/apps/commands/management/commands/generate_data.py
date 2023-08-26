@@ -191,35 +191,33 @@ def generate_conversations():
         days_ago += 1
 
 
-def sync_stripe_product():
+def sync_stripe_products():
     products = stripe.Product.list()
 
     for product in products:
-        # Check if the product already exists in the DB
-        db_product = Product.objects.filter(stripe_product_id=product.id).first()
-        if not db_product:
-            # If not, create a new product
-            db_product = Product.objects.create(
-                stripe_product_id=product.id,
-                name=product.name,
-                active=product.active
-            )
+        # Create or update product based on the stripe_product_id
+        db_product, _ = Product.objects.update_or_create(
+            stripe_product_id=product.id,
+            defaults={
+                'name': product.name,
+                'active': product.active
+            }
+        )
 
         # Get the prices associated with this product
         prices = stripe.Price.list(product=product.id)
 
         for price in prices:
-            # Check if the price already exists in the DB
-            if not Price.objects.filter(stripe_price_id=price.id).exists():
-                # If not, create a new price
-                Price.objects.create(
-                    stripe_price_id=price.id,
-                    product=db_product,
-                    unit_amount=price.unit_amount,
-                    currency=price.currency,
-                    recurring=price.recurring is not None
-                    # This is a simple way to check if the price is recurring or not
-                )
+            # Create or update price based on the stripe_price_id
+            Price.objects.update_or_create(
+                stripe_price_id=price.id,
+                defaults={
+                    'product': db_product,
+                    'unit_amount': price.unit_amount,
+                    'currency': price.currency,
+                    'recurring': price.recurring is not None and price.recurring is not False
+                }
+            )
 
 
 class Command(BaseCommand):
