@@ -35,6 +35,7 @@ def assign_company_assistant_number(request, company: Company):
         print(f"Using admin number: {DEFAULT_TWILIO_NUMBER}")
         company.assistant_phone_number = DEFAULT_TWILIO_NUMBER
     elif available_toll_free_number:
+        print(f"Using available, already purchased number: {available_toll_free_number}")
         company.assistant_phone_number = available_toll_free_number
         phone_num_obj, _ = PhoneNumber.objects.get_or_create(number=available_toll_free_number)
         phone_num_obj.is_base_number = True
