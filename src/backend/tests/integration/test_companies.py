@@ -5,7 +5,7 @@ import stripe
 from django.urls import reverse
 from rest_framework import status
 
-from commands.management.commands.generate_data import sync_stripe_product
+from commands.management.commands.generate_data import sync_stripe_products
 from companies.models import Company
 from factories import UserFactory, CompanyFactory
 from tests.utils import CkcAPITestCase
@@ -22,7 +22,7 @@ class TestCompanies(CkcAPITestCase):
         self.test_company = CompanyFactory(current_subscription=None)
         self.admin_user = UserFactory(is_staff=True, company=self.test_company)
         self.normal_user = UserFactory()
-        sync_stripe_product()
+        sync_stripe_products()
 
     @patch.object(stripe.Subscription, 'retrieve')
     def test_get_company(self, mock_subscription_retrieve):

@@ -64,7 +64,8 @@ class CompanyViewSet(viewsets.ModelViewSet):
         client = Client(twilio_sid, twilio_auth_token)
         number_to_purchase = client.available_phone_numbers("US").toll_free.list(limit=3)[0]
         # Fetch all purchased phone numbers
-        numbers = client.incoming_phone_numbers.list()
+        numbers = client.incoming_phone_numbers.list(limit=100)
+        # TODO once we get more than 100 toll free numbers, we'll have to revise this I think
 
         # Filter for toll-free numbers (assuming they start with '+18' for North America)
         toll_free_numbers = [number.phone_number for number in numbers if number.phone_number.startswith('+18')]

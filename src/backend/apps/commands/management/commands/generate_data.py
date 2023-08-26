@@ -235,7 +235,7 @@ class Command(BaseCommand):
         # TODO Extract these to a separate command so we can run from heroku and whatnot
         # generate_vendors()
         # generate_conversations()
-        sync_stripe_product()
+        sync_stripe_products()
 
         # Loading products from stripe
 
