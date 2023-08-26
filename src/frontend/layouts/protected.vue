@@ -9,14 +9,14 @@
             </template>
         </ScreenSwitcher>
         <v-main style="min-height: 100vh">
-                        <SubscriptionDialog
-                            :model-value="showSubscriptionDialog"
-                            @input="showSubscriptionDialog=$event"
-                        />
-<!--            <ReleasingSoonDialog-->
-<!--                :model-value="showSubscriptionDialog"-->
-<!--                @input="showSubscriptionDialog=$event"-->
-<!--            />-->
+            <SubscriptionDialog
+                :model-value="showSubscriptionDialog"
+                @input="showSubscriptionDialog=$event"
+            />
+            <RegisteringNumberDialog
+                :model-value="showRegisteringDialog"
+                @input="showRegisteringDialog=$event"
+            />
             <slot/>
         </v-main>
     </v-layout>
@@ -27,17 +27,18 @@
 import {useThemeSwitcher} from "~/composables/useThemeSwitcher";
 import {useUserStore} from "~/store/userStore";
 import {useRoute} from "vue-router";
-import SubscriptionDialog from "~/sections/portal/subscription-dialog/SubscriptionDialog.vue";
+import SubscriptionDialog from "~/components/SubscriptionDialog/SubscriptionDialog.vue";
 import PortalNavigationDrawer from "~/components/Layout/PortalNavigationDrawer.vue";
 import ScreenSwitcher from "~/components/ScreenSwitcher/ScreenSwitcher.vue";
 import PortalMobileHeader from "~/components/Layout/PortalMobileHeader.vue";
-import ReleasingSoonDialog from "~/sections/portal/ReleasingSoonDialog/ReleasingSoonDialog.vue";
+import RegisteringNumberDialog from "~/components/RegisteringNumberDialog/RegisteringNumberDialog.vue";
 
-const user = useUserStore()
+const auth = useUserStore()
 const route = useRoute()
 
 useThemeSwitcher()
 const showSubscriptionDialog = ref(false)
+const showRegisteringDialog = ref(false)
 
 watch(() => route.path, () => {
     handleSubscriptionCheck()
@@ -47,8 +48,10 @@ onMounted(() => {
 })
 const handleSubscriptionCheck = () => {
     setTimeout(() => {
-        if (!user.hasActiveSubscription) {
+        if (!auth.hasActiveSubscription) {
             showSubscriptionDialog.value = true
+        } else if (!auth.authUser?.company?.assistant_phone_is_verified){
+            showRegisteringDialog.value = true
         }
     }, 1500)
 }

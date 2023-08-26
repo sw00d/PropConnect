@@ -29,6 +29,7 @@ class Company(models.Model):
                                          related_name='point_of_contact_companies')
 
     assistant_phone_number = models.CharField(max_length=20, blank=True, null=True)
+    assistant_phone_is_verified = models.BooleanField(default=False)
 
     @property
     def has_active_subscription(self):
