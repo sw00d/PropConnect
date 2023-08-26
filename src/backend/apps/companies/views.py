@@ -60,6 +60,7 @@ class CompanyViewSet(viewsets.ModelViewSet):
         company.current_subscription = djstripe_subscription
 
         assign_company_assistant_number(self.request, company=company)
+        
         return Response({"message": "Signup finalized."}, status=status.HTTP_200_OK)
 
 
