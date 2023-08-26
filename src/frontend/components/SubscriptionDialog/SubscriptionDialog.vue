@@ -110,10 +110,10 @@
 </template>
 
 <script setup>
-import amex from '@/assets/portal/misc/amex.png'
-import mastercard from '@/assets/portal/misc/mastercard.png'
-import visa from '@/assets/portal/misc/visa.png'
-import discover from '@/assets/portal/misc/discover.png'
+import amex from 'assets/portal/misc/amex.png'
+import mastercard from 'assets/portal/misc/mastercard.png'
+import visa from 'assets/portal/misc/visa.png'
+import discover from 'assets/portal/misc/discover.png'
 
 import { ref, watch, onMounted } from 'vue'
 import { loadStripe } from '@stripe/stripe-js'

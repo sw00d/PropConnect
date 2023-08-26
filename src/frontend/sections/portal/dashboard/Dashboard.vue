@@ -8,7 +8,7 @@
                             {{ user.authUser?.company?.name }}
                         </div>
                         <div>
-                            <div>
+                            <div v-if="user.authUser?.company?.assistant_phone_is_verified">
                                 <div class="font-12 lh-12 mt-10 mt-md-0">
                                     Your hotline
                                     <v-btn
@@ -270,7 +270,7 @@ onMounted(() => {
 
     setTimeout(() => {
         mounted.value.rightBottomCard = true
-        if (user.hasActiveSubscription) {
+        if (user.hasActiveSubscription && user.authUser?.company?.assistant_phone_is_verified) {
             showInfo.value = true
         }
     }, 1300)
