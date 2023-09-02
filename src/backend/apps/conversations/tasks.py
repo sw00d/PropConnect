@@ -98,8 +98,6 @@ def start_vendor_tenant_conversation(conversation_id, vendor_id):
     conversation = Conversation.objects.get(id=conversation_id)
 
     # See if we have any available numbers in twilio and if not, buy one
-
-    # TODO Now we need to filter out purchased numbers that are tied to active conversations maybe ????
     available_numbers = PhoneNumber.objects.filter(
         Q(most_recent_conversation__is_active=False) | Q(most_recent_conversation__isnull=True),
         is_base_number=False

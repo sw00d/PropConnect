@@ -59,8 +59,9 @@ class CompanyViewSet(viewsets.ModelViewSet):
         djstripe_subscription = Subscription.sync_from_stripe_data(stripe_subscription)
         company.current_subscription = djstripe_subscription
 
-        assign_company_assistant_number(self.request, company=company)
-        
+        if not company.assistant_phone_number:
+            assign_company_assistant_number(self.request, company=company)
+
         return Response({"message": "Signup finalized."}, status=status.HTTP_200_OK)
 
 
