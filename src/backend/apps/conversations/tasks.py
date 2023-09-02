@@ -22,18 +22,6 @@ logger = logging.getLogger(__name__)
 # def bill_for_conversations():
 #     from companies.models import Company
 
-# TODO Before monthly billing cycle, go through twilio numbers that aren't active and delete them -- something like this:
-# def delete_inactive_twilio_numbers():
-#     client = Client(settings.TWILIO_ACCOUNT_SID, settings.TWILIO_AUTH_TOKEN)
-#     TODO When companys cancel their subscription:
-#     TODO 1. Delete the twilio number from the twilio account but keep it in our database so we can buy it later
-#     numbers = client.incoming_phone_numbers.list()
-#
-#     for number in numbers:
-#         # Replace `number.is_active` with actual condition or method to check if number is active
-#         if number has no active conversations tied to it:
-#             client.incoming_phone_numbers(number.sid).delete()
-
 
 @celery_app.task(rate_limit='0.66/s')  # Once every 1.5 seconds
 def send_message_task(to_number, from_number, message, media_urls=None, message_object_id=None):
@@ -110,6 +98,8 @@ def start_vendor_tenant_conversation(conversation_id, vendor_id):
     conversation = Conversation.objects.get(id=conversation_id)
 
     # See if we have any available numbers in twilio and if not, buy one
+
+    # TODO Now we need to filter out purchased numbers that are tied to active conversations maybe ????
     available_numbers = PhoneNumber.objects.filter(
         Q(most_recent_conversation__is_active=False) | Q(most_recent_conversation__isnull=True),
         is_base_number=False
@@ -195,9 +185,9 @@ def get_conversation_recap_util(conversation):
 
 def purchase_phone_number_util(phone_number, api_endpoint="/play_the_middle_man/", type_of_number='a2p'):
     from .utils import error_handler
-
     try:
         if 'pytest' in argv[0]:
+            print("USING TEST CREDENTIALS")
             client = Client(TWILIO_TEST_ACCOUNT_SID, TWILIO_TEST_AUTH_TOKEN)
         else:
             client = Client(twilio_sid, twilio_auth_token)
@@ -208,6 +198,7 @@ def purchase_phone_number_util(phone_number, api_endpoint="/play_the_middle_man/
             test_client_with_prod_creds = Client(twilio_sid, twilio_auth_token)
             address_sid = test_client_with_prod_creds.addresses.list(limit=1)[0].sid
             webhook_url = 'https://propconnect.io' + api_endpoint
+            phone_number = '+15005550006' # twilio test num
         else:
             address_sid = client.addresses.list(limit=1)[0].sid  # Should eventually be the company's address
 
@@ -218,18 +209,15 @@ def purchase_phone_number_util(phone_number, api_endpoint="/play_the_middle_man/
             emergency_address_sid=address_sid  # make sure this is being set on purchased numbers
         )
 
-        # if type_of_number == 'a2p':
-        #     # Register a2p number for vendor/tenant coms
-        #     service = client.verify.v2.services.list(limit=1)[0]  # Get first and only service/campaign
-        #
-        #     # Here's where we assign the purchased number to the messaging service
-        #     client.proxy.v1 \
-        #         .services(service.sid) \
-        #         .phone_numbers \
-        #         .create(sid=purchased_number.sid)
-
-        if type_of_number == 'toll-free':
-            # TODO maybe verify this number in the future?
+        if type_of_number == 'a2p':
+            # Register a2p number for vendor/tenant coms
+            # service = client.verify.v2.services.list(limit=1)[0]  # Get first and only service/campaign
+            # messaging_service = client.messaging.v1.services.list()[0]
+            # # Here's where we assign the purchased number to the messaging service
+            # client.proxy.v1 \
+            #     .services(service.sid) \
+            #     .phone_numbers \
+            #     .create(sid=purchased_number.sid)
             pass
 
         return purchased_number

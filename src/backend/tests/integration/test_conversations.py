@@ -163,7 +163,7 @@ class ConversationViewSetTestCase(CkcAPITestCase):
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         self.assertGreaterEqual(self.conversation1.last_viewed, time)
 
-    def test_purchase_toll_free_phone_number(self):
+    def test_purchase_phone_number(self):
         # --------------------------------------------
         # Doing what we can here with test credentials (very limited atm)
         # --------------------------------------------
@@ -171,8 +171,7 @@ class ConversationViewSetTestCase(CkcAPITestCase):
         number = client.available_phone_numbers("US").toll_free.list(limit=3)[0]
 
         # we have to use +15005550006 because that's the only number we can use in test mode
-        purchased_number = purchase_phone_number_util('+15005550006', api_endpoint="/init_conversation/",
-                                                      type_of_number='toll_free')
+        purchased_number = purchase_phone_number_util('+15005550006', api_endpoint="/init_conversation/")
 
         assert number.phone_number.startswith('+18')
         assert purchased_number is not None
