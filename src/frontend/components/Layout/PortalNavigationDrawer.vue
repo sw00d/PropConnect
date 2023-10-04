@@ -26,7 +26,7 @@
         ></v-list-item>
       </NuxtLink>
 
-      <NuxtLink to="/conversations">
+      <NuxtLink to="#">
         <v-list-item
           class="my-3"
           prepend-icon="mdi-forum"
