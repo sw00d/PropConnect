@@ -27,7 +27,6 @@
 import {useThemeSwitcher} from "~/composables/useThemeSwitcher";
 import {useUserStore} from "~/store/userStore";
 import {useRoute} from "vue-router";
-import SubscriptionDialog from "~/components/SubscriptionDialog/SubscriptionDialog.vue";
 import PortalNavigationDrawer from "~/components/Layout/PortalNavigationDrawer.vue";
 import ScreenSwitcher from "~/components/ScreenSwitcher/ScreenSwitcher.vue";
 import PortalMobileHeader from "~/components/Layout/PortalMobileHeader.vue";
