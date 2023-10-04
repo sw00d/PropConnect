@@ -8,7 +8,7 @@
 import CompanyInformation from "~/sections/company-signup/CompanyInformation.vue";
 
 definePageMeta({
-  middleware: ["auth"],
+  // middleware: ["auth"],
   layout: "signup",
 })
 

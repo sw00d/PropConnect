@@ -136,25 +136,27 @@ const onSubmit = async () => {
         // Sign up user and logs them in
         submitting.value = true
         errors.value = {}
-        const res = await auth.createUser({
-            first_name: firstName.value,
-            last_name: lastName.value,
-            email: email.value,
-            password: password.value,
-            agreeToTerms: agreeToTerms.value,
-        })
+        // const res = await auth.createUser({
+        //     first_name: firstName.value,
+        //     last_name: lastName.value,
+        //     email: email.value,
+        //     password: password.value,
+        //     agreeToTerms: agreeToTerms.value,
+        // })
+        setTimeout(() => {
 
-        submitting.value = false
-
-        if (res.error?.value) {
-            errors.value = res.error.value.data
-            if (res.error.value.statusCode !== 400) {
-                const snackbar = useSnackbarStore()
-                snackbar.displaySnackbar('error', "Error signing up. Please try again later.")
-            }
-        } else {
+            submitting.value = false
             router.push('/signup/company-info')
-        }
+        }, 1000)
+
+        // if (res.error?.value) {
+        //     errors.value = res.error.value.data
+        //     if (res.error.value.statusCode !== 400) {
+        //         const snackbar = useSnackbarStore()
+        //         snackbar.displaySnackbar('error', "Error signing up. Please try again later.")
+        //     }
+        // } else {
+        // }
 
     }
     // Submit form here

@@ -12,13 +12,13 @@
                         </v-toolbar-title>
                     </div>
 
-                    <nuxt-link :to="store?.isLoggedIn ? '/dashboard' : '/sign-in'">
-                        <button
-                            class="border-b sign-in font-14 text-primary"
-                        >
-                            {{ store?.isLoggedIn ? 'Portal' : 'Sign in' }}
-                        </button>
-                    </nuxt-link>
+<!--                    <nuxt-link :to="store?.isLoggedIn ? '/dashboard' : '/sign-in'">-->
+<!--                        <button-->
+<!--                            class="border-b sign-in font-14 text-primary"-->
+<!--                        >-->
+<!--                            {{ store?.isLoggedIn ? 'Portal' : 'Sign in' }}-->
+<!--                        </button>-->
+<!--                    </nuxt-link>-->
                 </v-container>
             </div>
         </div>

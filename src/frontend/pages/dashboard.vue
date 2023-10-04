@@ -7,7 +7,7 @@ import { useDisplay } from 'vuetify'
 import Dashboard from "../sections/portal/dashboard/Dashboard"
 
 definePageMeta({
-  middleware: ["auth"],
+  // middleware: ["auth"],
   layout: 'protected'
 })
 

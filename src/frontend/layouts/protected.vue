@@ -9,10 +9,10 @@
             </template>
         </ScreenSwitcher>
         <v-main style="min-height: 100vh">
-            <SubscriptionDialog
-                :model-value="showSubscriptionDialog"
-                @input="showSubscriptionDialog=$event"
-            />
+<!--            <SubscriptionDialog-->
+<!--                :model-value="showSubscriptionDialog"-->
+<!--                @input="showSubscriptionDialog=$event"-->
+<!--            />-->
             <RegisteringNumberDialog
                 :model-value="showRegisteringDialog"
                 @input="showRegisteringDialog=$event"
@@ -38,7 +38,7 @@ const route = useRoute()
 
 useThemeSwitcher()
 const showSubscriptionDialog = ref(false)
-const showRegisteringDialog = ref(false)
+const showRegisteringDialog = ref(true)
 
 watch(() => route.path, () => {
     handleSubscriptionCheck()

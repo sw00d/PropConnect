@@ -19,13 +19,13 @@
                     Thanks for joining! 🎉
                 </div>
                 <div class="font-14 text-black mt-4 text-center">
-                    We are in the process of setting up your dedicated hotline. While it typically takes a few business
-                    days, rest assured you'll be notified via email once your number is primed for use.
+                    We're setting things up on our end.
                     <br>
-                    <br>
-                    <i>
-                        Note: Your trial will commence only after the setup is finalized.
-                    </i>
+                    Thanks for showing interest 😃
+<!--                    <br>-->
+<!--                    <i>-->
+<!--                        Note: Your trial will commence only after the setup is finalized.-->
+<!--                    </i>-->
                 </div>
 
                 <v-btn
