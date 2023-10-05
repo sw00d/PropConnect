@@ -11,13 +11,13 @@ const url = "https://propconnect.io";
 // https://v3.nuxtjs.org/api/configuration/nuxt.config
 export default defineNuxtConfig({
     // Runtime Config
-    runtimeConfig: {
-        public: {
-            server_url: process.env.API_BASE_URL || 'http://localhost:8000/api',
-            DEFAULT_TWILIO_NUMBER: process.env.DEFAULT_TWILIO_NUMBER,
-            STRIPE_PUBLISHABLE_KEY: process.env.STRIPE_PUBLISHABLE_KEY,
-        },
-    },
+    // runtimeConfig: {
+    //     public: {
+    //         server_url: process.env.API_BASE_URL || 'http://localhost:8000/api',
+    //         DEFAULT_TWILIO_NUMBER: process.env.DEFAULT_TWILIO_NUMBER,
+    //         STRIPE_PUBLISHABLE_KEY: process.env.STRIPE_PUBLISHABLE_KEY,
+    //     },
+    // },
 
     // import styles
     css: ["@/assets/main.scss", "@/assets/stylus/index.styl"],

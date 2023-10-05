@@ -9,10 +9,10 @@
             </template>
         </ScreenSwitcher>
         <v-main style="min-height: 100vh">
-            <SubscriptionDialog
-                :model-value="showSubscriptionDialog"
-                @input="showSubscriptionDialog=$event"
-            />
+<!--            <SubscriptionDialog-->
+<!--                :model-value="showSubscriptionDialog"-->
+<!--                @input="showSubscriptionDialog=$event"-->
+<!--            />-->
             <RegisteringNumberDialog
                 :model-value="showRegisteringDialog"
                 @input="showRegisteringDialog=$event"
@@ -27,7 +27,6 @@
 import {useThemeSwitcher} from "~/composables/useThemeSwitcher";
 import {useUserStore} from "~/store/userStore";
 import {useRoute} from "vue-router";
-import SubscriptionDialog from "~/components/SubscriptionDialog/SubscriptionDialog.vue";
 import PortalNavigationDrawer from "~/components/Layout/PortalNavigationDrawer.vue";
 import ScreenSwitcher from "~/components/ScreenSwitcher/ScreenSwitcher.vue";
 import PortalMobileHeader from "~/components/Layout/PortalMobileHeader.vue";
@@ -38,7 +37,7 @@ const route = useRoute()
 
 useThemeSwitcher()
 const showSubscriptionDialog = ref(false)
-const showRegisteringDialog = ref(false)
+const showRegisteringDialog = ref(true)
 
 watch(() => route.path, () => {
     handleSubscriptionCheck()
